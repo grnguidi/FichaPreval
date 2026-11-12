@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b2520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Prevalecentes — Ficha de Mesa</title>
+<!--PWA-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>/*CSS*/</style>
+</head>
+<body>
+<header class="topo">
+  <div class="nome"><b id="t-nome">Prevalecentes</b><small id="t-sub"></small></div>
+  <div class="nivel" id="nivel"><button data-a="nivel" data-d="-1" aria-label="Diminuir nível">−</button><span id="nv">Nv 1</span><button data-a="nivel" data-d="1" aria-label="Subir nível">+</button></div>
+  <button class="icone" data-a="menu" aria-label="Menu">☰</button>
+</header>
+<main class="pagina" id="pagina"></main>
+<nav class="nav" id="nav">
+  <button data-a="aba" data-aba="ficha"><i>⚜</i>Ficha</button>
+  <button data-a="aba" data-aba="combate"><i>⚔</i>Combate</button>
+  <button data-a="aba" data-aba="pericias"><i>✎</i>Perícias</button>
+  <button data-a="aba" data-aba="grimorio"><i>✧</i>Grimório</button>
+  <button data-a="aba" data-aba="talentos"><i>❖</i>Talentos</button>
+</nav>
+<div class="veu" id="veu"></div>
+<section class="folha" id="folha" role="dialog" aria-modal="true">
+  <div class="alca"></div>
+  <header><h3 id="folha-tit"></h3><button class="icone" style="background:var(--campo);color:var(--tinta);border-color:var(--linha)" data-a="fechar" aria-label="Fechar">✕</button></header>
+  <div class="corpo" id="folha-corpo"></div>
+  <div class="rodape" id="folha-rod"></div>
+</section>
+<div class="toast" id="toast"></div>
+<input type="file" id="arquivo" accept=".json,application/json" hidden>
+<script>window.DADOS=/*DADOS*/;</script>
+<script>/*REGRAS*/</script>
+<script>/*APP*/</script>
+</body>
+</html>

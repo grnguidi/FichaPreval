@@ -1,0 +1,50 @@
+"""Gera o app de celular em ../docs (publicado pelo GitHub Pages).
+
+Uso:  py celular/build.py
+Junta estilo, dados do livro (de dados_prevalecentes.py), regras.js e app.js num index.html só,
+e copia manifest, service worker e ícones. Os efeitos de talento vêm de regras.py, para que
+PC e celular usem a mesma tabela.
+"""
+import json
+import os
+import re
+import shutil
+import sys
+
+AQUI = os.path.dirname(os.path.abspath(__file__))
+RAIZ = os.path.dirname(AQUI)
+SAIDA = os.path.join(RAIZ, "docs")
+sys.path.insert(0, RAIZ)
+import regras  # noqa: E402
+from dados_prevalecentes import DADOS  # noqa: E402
+
+
+def ler(*p):
+    with open(os.path.join(AQUI, *p), encoding="utf-8") as f:
+        return f.read()
+
+
+def main():
+    dados = json.loads(json.dumps(DADOS))
+    for e in dados["encantamentos"]:          # campos que o app de mesa não usa
+        for v in e["versoes"]:
+            for k in ("base", "mana_num", "req_cajado", "req_selo"):
+                v.pop(k, None)
+    dj = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    efeitos = json.dumps(regras.EFEITOS_TALENTOS, ensure_ascii=False)
+    js_regras = re.sub(r"const EFEITOS_TALENTOS = \{.*?\};", lambda m: f"const EFEITOS_TALENTOS = {efeitos};", ler("regras.js"), count=1, flags=re.S)
+    pwa = ('<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" href="icone-192.png">\n'
+           '<link rel="apple-touch-icon" href="icone-192.png">')
+    html = (ler("src", "index.tpl.html").replace("<!--PWA-->", pwa).replace("/*CSS*/", ler("src", "estilo.css"))
+            .replace("/*DADOS*/", dj).replace("/*REGRAS*/", js_regras).replace("/*APP*/", ler("src", "app.js")))
+    os.makedirs(SAIDA, exist_ok=True)
+    with open(os.path.join(SAIDA, "index.html"), "w", encoding="utf-8", newline="\n") as f:
+        f.write(html)
+    for nome in ("manifest.webmanifest", "sw.js", "icone-192.png", "icone-512.png"):
+        shutil.copy(os.path.join(AQUI, "src", nome), os.path.join(SAIDA, nome))
+    open(os.path.join(SAIDA, ".nojekyll"), "w").close()
+    print(f"docs/index.html gerado ({len(html) // 1024} KB)")
+
+
+if __name__ == "__main__":
+    main()

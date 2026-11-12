@@ -48,6 +48,20 @@ Observações:
 - Redes que isolam dispositivos entre si (Wi-Fi de visitantes, hotéis, escolas) impedem a conexão.
 - Portas utilizadas: 5757 (TCP), 5758 (UDP) e 5760 (HTTP).
 - A sessão troca apenas o sinal de mão levantada. Nenhum dado da ficha é transmitido.
+- Celular com a tela bloqueada continua na mesa: o mestre vê "(sem sinal)" ao lado do nome depois de 20 segundos e a mão continua na fila. O jogador só sai da mesa depois de 10 minutos sem contato.
+- Se a conexão cair, o jogador no computador vê "Conexão perdida" e um botão para conectar de novo. Quando o mestre não é encontrado na rede, o programa sugere o último IP usado.
+
+## App de celular (ficha de mesa)
+
+Versão para usar na mesa pelo celular: Vida, Mana e Vigor, atributos, características, perícias, armas com ações, rolagens de ataque e conjuração, grimório e talentos. Abre os mesmos arquivos `.json` do programa de PC e funciona sem internet depois de instalado.
+
+**Instalar no Android:** abra https://grnguidi.github.io/FichaPreval/ no Chrome e toque em ⋮ → "Instalar app" (ou "Adicionar à tela inicial").
+
+- "Abrir arquivo .json" carrega uma ficha salva pelo PC. As fichas ficam guardadas no celular.
+- Para levar de volta ao PC: menu ☰ → Exportar ficha (.json).
+- O que o app de mesa não edita (alma, inventário, set, notas) é mantido ao exportar.
+
+**Para desenvolver:** o código está em `celular/`. Depois de mudar algo, rode `py celular/build.py` para gerar a pasta `docs/`, que é o que o GitHub Pages publica. Os dados do livro e a tabela de efeitos de talento vêm de `dados_prevalecentes.py` e `regras.py`, então PC e celular continuam iguais. `sh celular/testes/rodar.sh` confere que as regras do celular dão os mesmos resultados que as do PC (requer Node.js).
 
 ## Dados do livro
 
@@ -69,3 +83,5 @@ As fichas são salvas manualmente em arquivos `.json` (Ctrl+S) e abertas com Ctr
 | `dados_prevalecentes.py` | Dados do livro embutidos |
 | `dados_livro (para editar).json` | Cópia editável dos dados do livro |
 | `GERAR_EXE.bat` | Gera o executável |
+| `celular/` | Código do app de celular (`build.py` gera a pasta `docs/`) |
+| `docs/` | App de celular pronto, publicado pelo GitHub Pages |

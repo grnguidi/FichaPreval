@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+celular/testes/casos*.json
+celular/testes/dados.json
