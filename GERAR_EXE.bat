@@ -21,7 +21,7 @@ echo == Instalando PyInstaller e reportlab (PDF)...
 if errorlevel 1 goto erro
 
 echo == Gerando o executavel...
-%PY% -m PyInstaller --noconfirm --clean --onefile --windowed --collect-all reportlab --hidden-import pdf_ficha --hidden-import assistente --hidden-import sessao--name FichaPrevalecentes prevalecentes.py
+%PY% -m PyInstaller --noconfirm --clean --onefile --windowed --collect-all reportlab --hidden-import pdf_ficha --hidden-import assistente --hidden-import sessao --name FichaPrevalecentes prevalecentes.py
 if errorlevel 1 goto erro
 
 copy /y "dist\FichaPrevalecentes.exe" "FichaPrevalecentes.exe" >nul

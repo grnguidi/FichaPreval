@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Scripts do Windows precisam de CRLF, inclusive no ZIP baixado do GitHub
+*.bat text eol=crlf
+*.exe binary
