@@ -193,11 +193,16 @@ function calcular() {
   }
   return C;
 }
-function statusArma(C, grupo, nv) {
+function statusArma(C, grupo, nv, props = []) {
   const m = [];
   if (nv > C.d.max_nivel_arma) m.push(`nível de personagem ${2 * nv - 1}`);
-  return m.concat(R.reqFalta(R.reqArma(ARMAS[grupo], nv), C.a));
+  return m.concat(R.reqFalta(R.reqComProps(R.reqArma(ARMAS[grupo], nv), props), C.a));
 }
+function efeitoArma(w, nv) {
+  const ar = ARMAS[w.grupo], l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0];
+  return R.efeitoProps(R.lerProps(w.props), R.danoComDados(l.dano, Math.floor(R.cap(C.a[ar.ataque]) / 30)), int(l.critico, 20));
+}
+const propsMax = (w) => { const ar = ARMAS[w.grupo]; if (!ar) return 0; const l = ar.tabela.find((x) => x.nivel === int(w.nivel, 1)) || ar.tabela[0]; return l.propriedades + (C.escolha.dominio[w.grupo] || 0); };
 function statusProtecao(C, tipo, it) {
   const m = [], forca = Math.max(R.cap(C.a.FOR), R.cap(C.a.TEN));
   if (it.req && forca < it.req) m.push(`${it.req} de Força ou Tenacidade`);
@@ -344,18 +349,21 @@ function linhaArma(i) {
     ${ar ? `<button class="sel" style="width:96px" data-a="esc-nivel-arma" data-i="${i}">Nv ${int(w.nivel, 1)}</button>` : ""}</div>`;
   if (!ar) return h + "</div>";
   const nv = int(w.nivel, 1), l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0], k = ar.ataque;
-  const extra = Math.floor(R.cap(C.a[k]) / 30), acerto = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + (C.escolha.maestria.includes(w.grupo) ? 1 : 0);
-  const dom = C.escolha.dominio[w.grupo] || 0;
+  const props = R.lerProps(w.props), ep = efeitoArma(w, nv);
+  const extra = Math.floor(R.cap(C.a[k]) / 30), acerto = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + (C.escolha.maestria.includes(w.grupo) ? 1 : 0) + ep.acerto;
+  const dom = C.escolha.dominio[w.grupo] || 0, pmax = l.propriedades + dom, prob = R.problemasProps(props, pmax);
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : "—";
-  const falta = statusArma(C, w.grupo, nv);
-  h += `<dl><div><dt>Dano</dt><dd>${esc(R.danoComDados(l.dano, extra))}</dd></div><div><dt>Ataque</dt><dd>1d20 +${acerto}${R.vantagem(C.a[k]) ? " (vant.)" : ""}</dd></div>
-    <div><dt>Crítico</dt><dd>${esc(l.critico)}</dd></div><div><dt>Tipo</dt><dd>${esc(l.tipo)}</dd></div><div><dt>DT</dt><dd>${10 + C.d.bc[k] + C.d.n3}</dd></div>
+  const falta = statusArma(C, w.grupo, nv, props);
+  h += `<dl><div><dt>Dano</dt><dd>${esc(ep.dano + ep.extras.filter((x) => !x[2]).map((x) => ` + ${x[0]} ${x[1]}`).join(""))}</dd></div><div><dt>Ataque</dt><dd>1d20 +${acerto}${R.vantagem(C.a[k]) ? " (vant.)" : ""}</dd></div>
+    <div><dt>Crítico</dt><dd>${ep.margem}${ep.mult === 3 ? " ×3" : ""}</dd></div><div><dt>Tipo</dt><dd>${esc(l.tipo)}</dd></div><div><dt>DT</dt><dd>${10 + C.d.bc[k] + C.d.n3}</dd></div>
     <div><dt>Vigor/atk</dt><dd>${vig}</dd></div></dl>
-    <div class="sub">${k} · ${l.propriedades}${dom ? ` +${dom} (Domínio)` : ""} propriedade(s) · peso ${l.espaco}${C.escolha.maestria.includes(w.grupo) ? " · Maestria +1" : ""}${extra ? ` · +${extra} dado de dano por ${k}` : ""}</div>
+    <button class="sel ${props.length ? "" : "vazio"}" style="margin-top:6px;font-size:14px" data-a="esc-props" data-i="${i}">Propriedades ${props.length}/${pmax}${dom ? ` (+${dom} Domínio)` : ""}: ${esc(props.join(", ") || "nenhuma")}</button>
+    ${prob.length ? `<div class="erro" style="font-size:13.5px;margin-top:4px">${NO} ${esc(prob.join("; "))}</div>` : ""}
+    <div class="sub">${k} · peso ${l.espaco}${C.escolha.maestria.includes(w.grupo) ? " · Maestria +1" : ""}${extra ? ` · +${extra} dado de dano por ${k}` : ""}</div>
     ${falta.length ? `<div class="erro" style="font-size:13.5px;margin-top:4px">${NO} falta: ${esc(falta.join(", "))}</div>` : ""}
     ${(() => { const dg = S.desgaste[i] || {}; return dg.desgastada
       ? `<div class="erro" style="font-size:13.5px;margin-top:4px">Desgastada: sem uso por um turno. <a href="#" data-a="reafiar" data-i="${i}">Já passou</a></div>`
-      : `<div class="sub">Afiada: ${R.DESGASTE_TURNOS - int(dg.usados)}/${R.DESGASTE_TURNOS} turnos · o crítico reafia</div>`; })()}
+      : `<div class="sub">Afiada: ${ep.desgaste - int(dg.usados)}/${ep.desgaste} turnos · o crítico reafia</div>`; })()}
     <div class="linhabts"><button class="botao prim" data-a="rolar-arma" data-i="${i}">🎲 Atacar</button></div>
     <details class="acoes"><summary>Ações da arma (${(ar.acoes || []).length})</summary>
     ${ar.descricao ? `<p class="sub">${esc(ar.descricao)}</p>` : ""}
@@ -431,7 +439,8 @@ function pPericias() {
       const tr = C.treinadas.has(nome), at = atrs || [S.prevalencia_attr || "ARC"];
       const [melhor, bonus0, dados] = R.periciaFora(C.a, C.nv, at, tr);
       const mestre = C.escolha.pericia_mestre.includes(nome);
-      const bonus = bonus0 + (C.ef.pericia[nome] || 0) + (mestre ? 2 : 0);
+      const discreta = nome === "Furtividade" && S.armas.some((w) => ARMAS[w.grupo] && R.lerProps(w.props).map(R.nomeProp).includes("Discreta")) ? 5 : 0;
+      const bonus = bonus0 + (C.ef.pericia[nome] || 0) + (mestre ? 2 : 0) + discreta;
       return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados + (mestre ? 1 : 0)}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
         <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados + (mestre ? 1 : 0)}d20${mestre ? " · Mestre" : ""}</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
     }).join("")}</div><p class="sub">Toque na perícia para rolar (${"1d20 a mais a cada 20 pontos do atributo, fica o maior"}). A caixa marca o treino (Modo Edição). • exige treino.</p>`;
@@ -590,7 +599,7 @@ A["peca"] = (el) => {
 A["peca-ok"] = (el) => { const p = el.dataset.p, st = $("#pc-s").value, n = $("#pc-n").value.trim(); fecharFolha(); mudar((s) => { s.set[p] = { set: st, nome: n }; }); };
 
 // ------------------------------------------------------------------ modo jogo / edição
-const SO_EDICAO = new Set(["tal-escolha", "nivel", "pts", "manual", "modo-vida", "rolar-vida", "esc-arma", "esc-nivel-arma", "esc-protecao", "esc-talisma",
+const SO_EDICAO = new Set(["esc-props", "props-ok", "tal-escolha", "nivel", "pts", "manual", "modo-vida", "rolar-vida", "esc-arma", "esc-nivel-arma", "esc-protecao", "esc-talisma",
   "esc-talento", "treinar", "per-atk", "prev-attr", "aprender", "prox-versao", "rem-enc", "ident", "peca", "editar-vinc"]);
 A["modo"] = () => {
   banco.modo = banco.modo === "edicao" ? "jogo" : "edicao"; gravarLocal(); fecharFolha(); render();
@@ -704,8 +713,9 @@ A["rolar-arma"] = (el) => {
   const i = int(el.dataset.i), w = S.armas[i], ar = ARMAS[w.grupo]; if (!ar) return;
   const nv = int(w.nivel, 1), k = ar.ataque, nvD = Math.min(10, nv + C.ef.dano_nivel);
   const l = ar.tabela.find((x) => x.nivel === nv), lD = ar.tabela.find((x) => x.nivel === nvD) || l;
-  const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0;
-  const bonus = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + maestria;
+  const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0, props = R.lerProps(w.props);
+  const ep = R.efeitoProps(props, R.danoComDados(lD.dano, Math.floor(R.cap(C.a[k]) / 30)), int(l.critico, 20));
+  const bonus = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + maestria + ep.acerto;
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : 0;
   const dg = S.desgaste[i] = Object.assign({ usados: 0, desgastada: false, em: 0, contado: -1 }, S.desgaste[i] || {});
   if (dg.desgastada) {
@@ -714,23 +724,33 @@ A["rolar-arma"] = (el) => {
     return;
   }
   pagar("vigor_atual", C.d.vigor, vig, "Vigor", (custo) => {
-    const at = R.rolarAtaque(bonus, R.vantagem(C.a[k]), int(l.critico, 20), rng);
+    const at = R.rolarAtaque(bonus, R.vantagem(C.a[k]), ep.margem, rng);
     const linhas = [txtAtaque(at)];
     const turno = sessao.ativa && sessao.meusTurnos ? sessao.meusTurnos : null;
     if (at.critico || turno === null || dg.contado !== turno) {
-      const [u, gastou] = R.desgasteAposAtaque(int(dg.usados), at.critico);
+      const [u, gastou] = R.desgasteAposAtaque(int(dg.usados), at.critico, ep.desgaste);
       dg.usados = u; dg.contado = turno === null ? -1 : turno;
       if (gastou) { dg.desgastada = true; dg.em = sessao.meusTurnos || 0; }
     }
     salvar();
     if (!at.desastre) {
-      const [tot, partes] = R.rolarExpr(R.danoComDados(lD.dano, Math.floor(R.cap(C.a[k]) / 30)), rng, at.critico);
-      linhas.push(txtDano(tot, partes) + ` · ${esc(lD.tipo)}` + (nvD !== nv ? ` · dano de nível ${nvD} (talento)` : ""));
+      const [tot, partes] = R.rolarExpr(ep.dano, rng, at.critico, ep.mult);
+      linhas.push(txtDano(tot, partes) + ` · ${esc(lD.tipo)}` + (nvD !== nv ? ` · dano de nível ${nvD} (talento)` : "") + (at.critico && ep.mult === 3 ? " · crítico ×3 (Destruidora)" : ""));
+      for (const [x, tipo, cnd] of ep.extras) {
+        const [t2, p2] = R.rolarExpr(x, rng, at.critico, ep.mult);
+        linhas.push(txtDano(t2, p2, `+ ${esc(tipo)}`) + (cnd ? ` <span class="sub">(${esc(cnd)})</span>` : ""));
+      }
+      if (ep.voraz && at.critico) {
+        const cura = R.rolarExpr("1d10", rng)[0], mx = C.d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? mx : int(S.vida.atual, mx);
+        S.vida.atual = String(Math.min(mx, antes + cura)); salvar();
+        linhas.push(`Voraz: recupera ${cura} de Vida (${antes} → ${Math.min(mx, antes + cura)}).`);
+      }
     }
+    if (props.length) linhas.push(`<span class="sub">Propriedades: ${esc(props.join(", "))}</span>`);
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
     if (C.ef.acerto) linhas.push(`<span class="sub">Inclui +${C.ef.acerto} de acerto de talento situacional.</span>`);
     if (maestria) linhas.push(`<span class="sub">Inclui +1 de Maestria nesta arma.</span>`);
-    linhas.push(`<span class="sub">${at.critico ? `Desgaste: o crítico reafiou a arma.` : dg.desgastada ? `<b class="erro">A arma desgastou</b>: sem uso no próximo turno.` : `Desgaste: restam ${R.DESGASTE_TURNOS - dg.usados} turno(s) afiado(s).`}</span>`);
+    linhas.push(`<span class="sub">${at.critico ? `Desgaste: o crítico reafiou a arma.` : dg.desgastada ? `<b class="erro">A arma desgastou</b>: sem uso no próximo turno.` : `Desgaste: restam ${ep.desgaste - dg.usados} turno(s) afiado(s).`}</span>`);
     render();
     mostrarRolagem(`⚔ ${ar.nome} nv ${nv}`, linhas);
   });
@@ -743,6 +763,29 @@ A["rolar-per"] = (el) => {
   const r = R.rolarPericia(int(el.dataset.b), int(el.dataset.d, 1), rng);
   mostrarRolagem(`🎲 ${esc(el.dataset.n)}`, [`${esc(el.dataset.n)}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${r.bonus}]</span>`,
     `<span class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</span>`]);
+};
+A["esc-props"] = (el) => {
+  const i = int(el.dataset.i), w = S.armas[i], max = propsMax(w), atuais = R.lerProps(w.props);
+  const tem = (n) => atuais.find((p) => R.nomeProp(p) === n), elAtual = (tem("Elemental") || "").split("(")[1];
+  const outras = atuais.filter((p) => !R.NOMES_PROPRIEDADES.includes(R.nomeProp(p)));
+  folha(`Propriedades — ${esc(w.grupo)} nv ${int(w.nivel, 1)}`, `<p class="sub" id="pp-c"></p><div class="lista">${R.PROPRIEDADES.map(([n, d]) =>
+    `<label class="item" style="cursor:pointer"><input type="checkbox" class="pp" value="${esc(n)}" ${tem(n) ? "checked" : ""} style="width:22px;height:22px;margin-right:10px">
+      <div class="tx"><b>${esc(n)}</b><small>${esc(d)}</small>${n === "Elemental" ? `<select id="pp-el" style="margin-top:4px">${R.ELEMENTOS_PROP.map((x) => `<option ${elAtual && elAtual.startsWith(x) ? "selected" : ""}>${x}</option>`).join("")}</select>` : ""}</div></label>`).join("")}</div>
+    <label class="campo"><span>Outras (armas especiais), separadas por vírgula</span><input id="pp-o" value="${esc(outras.join(", "))}"></label><p class="erro" id="pp-e"></p>`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="props-ok" data-i="${i}">Salvar</button>`, (c) => {
+    const conta = () => {
+      const n = c.querySelectorAll(".pp:checked").length;
+      $("#pp-c").innerHTML = `<b class="${n > max ? "erro" : ""}">${n} de ${max}</b> (tabela da arma${C.escolha.dominio[w.grupo] ? ` + ${C.escolha.dominio[w.grupo]} do Domínio` : ""})`;
+    };
+    c.querySelectorAll(".pp").forEach((x) => x.addEventListener("change", conta)); conta();
+  });
+};
+A["props-ok"] = (el) => {
+  const i = int(el.dataset.i), w = S.armas[i];
+  const props = [...document.querySelectorAll(".pp:checked")].map((x) => x.value === "Elemental" ? `Elemental (${$("#pp-el").value})` : x.value).concat(R.lerProps($("#pp-o").value));
+  const prob = R.problemasProps(props, propsMax(w));
+  if (prob.length && !el.dataset.ok) { $("#pp-e").innerHTML = `${esc(prob.join("; "))}. Toque em Salvar de novo para salvar assim.`; el.dataset.ok = "1"; return; }
+  fecharFolha(); mudar((s) => { s.armas[i].props = props.join(", "); });
 };
 A["reafiar"] = (el) => {
   const i = int(el.dataset.i), rolar = el.dataset.rolar;

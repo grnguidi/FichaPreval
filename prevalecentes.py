@@ -885,7 +885,9 @@ class App(tk.Tk):
             pr = tk.Frame(f, bg=cor)
             pr.pack(fill="x", pady=(2, 0))
             tk.Label(pr, text="Propriedades:", bg=cor, fg=TINTA2, font=(FONTE, 9)).pack(side="left")
-            self.ed(ttk.Entry(pr, textvariable=ui["props"], width=60)).pack(side="left", padx=6)
+            self.ed(ttk.Button(pr, text="Escolher…", command=lambda i=idx: self.escolher_props(i), style="Peq.TButton")).pack(side="left", padx=6)
+            ui["l_props"] = Rot(pr, bg=cor, size=9, bold=False, wraplength=760, justify="left")
+            ui["l_props"].pack(side="left")
             self.armas_ui.append(ui)
         self.l_duplo = Rot(c, size=9, bold=False, wraplength=980, justify="left")
         self.l_duplo.grid(row=2, column=0, sticky="w", pady=(4, 0))
@@ -1566,6 +1568,9 @@ class App(tk.Tk):
             atrs = pinfo["attrs"] or [self.v_prev_attr.get() or "ARC"]
             _, bonus, dados = R.pericia_fora(a, nivel, atrs, nome in treinadas)
             bonus += ef["pericia"].get(nome, 0)
+            if nome == "Furtividade" and any("Discreta" in [R.nome_prop(x) for x in R.ler_props(u["props"].get())]
+                                             for u in self.armas_ui if u["grupo"].get()):
+                bonus += 5   # propriedade Discreta
             if nome in self.esc["pericia_mestre"]:
                 bonus, dados = bonus + 2, dados + 1   # Mestre das Perícias: +2 e 1 vantagem
             pinfo["bonus"].configure(text=f"+{bonus}" + ("*" if nome in ef["pericia"] or nome in self.esc["pericia_mestre"] else ""))
@@ -1596,7 +1601,8 @@ class App(tk.Tk):
         for i, b in enumerate(self.bt_rolar_arma):
             g = self.armas_ui[i]["grupo"].get()
             dg = self.desgaste.get(i, {})
-            st = (" · DESGASTADA" if dg.get("desgastada") else f" · afiada {R.DESGASTE_TURNOS - dg.get('usados', 0)}/{R.DESGASTE_TURNOS}")
+            lim = 4 if "Reforçada" in [R.nome_prop(x) for x in R.ler_props(self.armas_ui[i]["props"].get())] else R.DESGASTE_TURNOS
+            st = (" · DESGASTADA" if dg.get("desgastada") else f" · afiada {lim - dg.get('usados', 0)}/{lim}")
             b.configure(text=f"🎲 {g} nv {self.armas_ui[i]['nivel'].get()}{st}" if g else f"🎲 Arma {i + 1} (vazia)")
             b.state(["!disabled"] if g else ["disabled"])
         partes = []
@@ -1687,13 +1693,73 @@ class App(tk.Tk):
                 return l
         return None
 
-    def _status_arma(self, grupo, nv):
+    def _status_arma(self, grupo, nv, props=()):
         arma = self.armas_por_nome[grupo]
         mot = []
         if nv > self.d.get("max_nivel_arma", 1):
             mot.append(f"nível de personagem {2 * nv - 1}")
-        mot += R.req_falta(R.req_arma(arma, nv), self.a)
+        mot += R.req_falta(R.req_com_props(R.req_arma(arma, nv), list(props)), self.a)
         return mot
+
+    def props_max(self, i):
+        ui = self.armas_ui[i]
+        g = ui["grupo"].get()
+        l = self._linha_arma(g, to_int(ui["nivel"].get(), 1)) if g in self.armas_por_nome else None
+        return (l["propriedades"] if l else 0) + self.esc["dominio"].get(g, 0)
+
+    def escolher_props(self, i):
+        """Lista das propriedades do livro, com o limite da arma (tabela + Domínio)."""
+        ui = self.armas_ui[i]
+        if ui["grupo"].get() not in self.armas_por_nome:
+            messagebox.showinfo(APP_NOME, "Escolha a arma primeiro.")
+            return
+        self.recalc()
+        maximo = self.props_max(i)
+        atuais = R.ler_props(ui["props"].get())
+        marcadas = {R.nome_prop(p): p for p in atuais}
+        w = tk.Toplevel(self)
+        w.title(f"Propriedades — {ui['grupo'].get()} nv {ui['nivel'].get()}")
+        w.configure(background=PERG)
+        w.transient(self)
+        f = tk.Frame(w, bg=PERG, padx=18, pady=12)
+        f.pack(fill="both", expand=True)
+        tk.Label(f, text=f"Propriedades de {ui['grupo'].get()}", bg=PERG, fg=VINHO, font=(FONTE_TIT, 13, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+        cont = tk.Label(f, bg=PERG, fg=TINTA2, font=(FONTE, 10, "italic"))
+        cont.grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 8))
+        vs, el = {}, tk.StringVar(value=(marcadas.get("Elemental", "").partition("(")[2].rstrip(")").strip() or R.ELEMENTOS_PROP[0]))
+
+        def conta(*_):
+            n = sum(v.get() for v in vs.values())
+            cont.configure(text=f"{n} de {maximo} (tabela da arma no nível {ui['nivel'].get()}"
+                                + (f" + {self.esc['dominio'].get(ui['grupo'].get(), 0)} do Domínio" if self.esc["dominio"].get(ui["grupo"].get()) else "") + ")",
+                           fg=VINHO if n > maximo else TINTA2)
+        for r, (nome, desc) in enumerate(R.PROPRIEDADES, start=2):
+            vs[nome] = tk.BooleanVar(value=nome in marcadas)
+            ttk.Checkbutton(f, text=nome, variable=vs[nome], command=conta).grid(row=r, column=0, sticky="w", pady=1)
+            tk.Label(f, text=desc, bg=PERG, fg=TINTA2, font=(FONTE, 9), wraplength=420, justify="left", anchor="w").grid(row=r, column=1, sticky="w", padx=8)
+            if nome == "Elemental":
+                ttk.Combobox(f, values=R.ELEMENTOS_PROP, textvariable=el, width=10, state="readonly").grid(row=r, column=2, sticky="w")
+        outras = [p for p in atuais if R.nome_prop(p) not in R.NOMES_PROPRIEDADES]
+        v_outras = tk.StringVar(value=", ".join(outras))
+        tk.Label(f, text="Outras (de armas especiais), separadas por vírgula:", bg=PERG, fg=TINTA, font=(FONTE, 9)).grid(row=40, column=0, columnspan=3, sticky="w", pady=(8, 0))
+        ttk.Entry(f, textvariable=v_outras, width=60).grid(row=41, column=0, columnspan=3, sticky="we")
+        msg = tk.Label(f, text="", bg=PERG, fg=VINHO, font=(FONTE, 9, "bold"))
+        msg.grid(row=42, column=0, columnspan=3, sticky="w")
+
+        def ok():
+            props = [f"Elemental ({el.get()})" if n == "Elemental" else n for n, v in vs.items() if v.get()] + R.ler_props(v_outras.get())
+            m = R.problemas_props(props, maximo)
+            if m and not messagebox.askyesno(APP_NOME, "Atenção: " + "; ".join(m) + ".\n\nSalvar mesmo assim?", parent=w):
+                return
+            ui["props"].set(", ".join(props))
+            w.destroy()
+            self.recalc()
+        bt = tk.Frame(f, bg=PERG)
+        bt.grid(row=43, column=0, columnspan=3, sticky="e", pady=(10, 0))
+        ttk.Button(bt, text="Cancelar", command=w.destroy).pack(side="right")
+        ttk.Button(bt, text="Salvar", command=ok).pack(side="right", padx=6)
+        conta()
+        w.grab_set()
 
     def _valores_armas(self, cb, idx):
         vals = []
@@ -1795,19 +1861,28 @@ class App(tk.Tk):
             l = self._linha_arma(g, nv)
             k = arma["ataque"]
             extra = R.cap(a[k]) // 30
-            ui["l_dano"].configure(text=R.dano_com_dados(l["dano"], extra) + (f"  (+{extra} dado por {k})" if extra else ""))
+            props = R.ler_props(ui["props"].get())
+            ep = R.efeito_props(props, R.dano_com_dados(l["dano"], extra), to_int(l["critico"], 20))
+            ui["l_dano"].configure(text=ep["dano"] + "".join(f" + {x} {t}" for x, t, cnd in ep["extras"] if not cnd)
+                                   + (f"  (+{extra} dado por {k})" if extra else ""))
             ui["l_tipo"].configure(text=l["tipo"])
-            acerto = d["bc"][k] + nivel // 3 + R.ACERTO_ARMA.get(nv, 0) + self.ef["acerto"] + (1 if g in self.esc["maestria"] else 0)
+            acerto = (d["bc"][k] + nivel // 3 + R.ACERTO_ARMA.get(nv, 0) + self.ef["acerto"] + (1 if g in self.esc["maestria"] else 0)
+                      + ep["acerto"])
             ui["l_acerto"].configure(text=f"1d20 +{acerto}" + (" (2d20, maior)" if R.vantagem(a[k]) else "") + f"  [{k}]")
-            ui["l_crit"].configure(text=str(l["critico"]))
+            ui["l_crit"].configure(text=f"{ep['margem']}" + (" ×3" if ep["mult"] == 3 else ""))
             extra_p = self.esc["dominio"].get(g, 0)
-            ui["l_props_max"].configure(text=str(l["propriedades"]) + (f" +{extra_p} (Domínio)" if extra_p else ""))
+            ui["l_props_max"].configure(text=f"{len(props)}/{l['propriedades'] + extra_p}" + (f" (+{extra_p} Domínio)" if extra_p else ""))
+            prob = R.problemas_props(props, l["propriedades"] + extra_p)
+            ui["l_props"].configure(text=(", ".join(props) or "nenhuma") + (f"   {NO} {'; '.join(prob)}" if prob else ""),
+                                    style="Erro.TLabel" if prob else "TLabel")
+            if prob:
+                avisos.append(("erro", f"Arma {i + 1} ({g}): propriedades — {'; '.join(prob)}."))
             ui["l_peso"].configure(text=str(l["espaco"]))
             vig = 10 if nv >= 8 else 8 if nv >= 4 else 5
             ui["l_vigor"].configure(text=str(vig) if arma.get("vigor") else "—")
             ui["l_dt"].configure(text=str(10 + d["bc"][k] + nivel // 3))
-            rq = R.req_arma(arma, nv)
-            falta = self._status_arma(g, nv)
+            rq = R.req_com_props(R.req_arma(arma, nv), props)
+            falta = self._status_arma(g, nv, props)
             ui["l_req"].configure(text="Requisitos: " + ", ".join(f"{v} {R.NOMES_ATR[x]}" for x, v in rq.items())
                                        + (f"   {NO} falta: {', '.join(falta)}" if falta else f"   {OK}"),
                                   style="Erro.TLabel" if falta else "Ok.TLabel")
@@ -2271,7 +2346,9 @@ class App(tk.Tk):
         linha = self._linha_arma(arma["nome"], nv)
         linha_dano = self._linha_arma(arma["nome"], nv_dano) or linha
         maestria = 1 if arma["nome"] in self.esc["maestria"] else 0
-        bonus = self.d["bc"][k] + self.nivel() // 3 + R.ACERTO_ARMA.get(nv, 0) + ef["acerto"] + maestria
+        props = R.ler_props(ui["props"].get())
+        ep = R.efeito_props(props, R.dano_com_dados(linha_dano["dano"], R.cap(self.a[k]) // 30), to_int(linha["critico"], 20))
+        bonus = self.d["bc"][k] + self.nivel() // 3 + R.ACERTO_ARMA.get(nv, 0) + ef["acerto"] + maestria + ep["acerto"]
         dg = self.desgaste.setdefault(i, {"usados": 0, "desgastada": False, "em": 0, "contado": -1})
         if dg["desgastada"]:
             if not messagebox.askyesno(APP_NOME, f"{arma['nome']} está desgastada: não pode ser usada por um turno.\n\n"
@@ -2282,19 +2359,30 @@ class App(tk.Tk):
         ok, txt_custo = self._pagar(self.v_vigor_atual, self.d["vigor"], vig, "Vigor")
         if not ok:
             return
-        at = R.rolar_ataque(bonus, R.vantagem(self.a[k]), to_int(linha["critico"], 20), self._rng)
+        at = R.rolar_ataque(bonus, R.vantagem(self.a[k]), ep["margem"], self._rng)
         # desgaste: conta 1 turno afiado por turno em que atacou (na sessão, pelo turno do mestre; fora dela, por ataque)
         turno = self.meus_turnos if self.janela_sessao is not None and self.meus_turnos else None
         if at["critico"] or turno is None or dg["contado"] != turno:
-            dg["usados"], gastou = R.desgaste_apos_ataque(dg["usados"], at["critico"])
+            dg["usados"], gastou = R.desgaste_apos_ataque(dg["usados"], at["critico"], ep["desgaste"])
             dg["contado"] = turno if turno is not None else -1
             if gastou:
                 dg.update(desgastada=True, em=self.meus_turnos)
         linhas = [self._txt_ataque(at)]
         if not at["desastre"]:
-            expr = R.dano_com_dados(linha_dano["dano"], R.cap(self.a[k]) // 30)
-            total, partes = R.rolar_expr(expr, self._rng, dobrar=at["critico"])
-            linhas.append(self._txt_dano(total, partes) + f"  · {linha_dano['tipo']}" + (f"  · dano de nível {nv_dano} (talento)" if nv_dano != nv else ""))
+            total, partes = R.rolar_expr(ep["dano"], self._rng, dobrar=at["critico"], mult=ep["mult"])
+            linhas.append(self._txt_dano(total, partes) + f"  · {linha_dano['tipo']}" + (f"  · dano de nível {nv_dano} (talento)" if nv_dano != nv else "")
+                          + ("  · crítico ×3 (Destruidora)" if at["critico"] and ep["mult"] == 3 else ""))
+            for x, tipo, cnd in ep["extras"]:
+                t2, p2 = R.rolar_expr(x, self._rng, dobrar=at["critico"], mult=ep["mult"])
+                linhas.append(self._txt_dano(t2, p2).replace("Dano:", f"+ {tipo}:") + (f"  ({cnd})" if cnd else ""))
+            if ep["voraz"] and at["critico"]:
+                cura, _ = R.rolar_expr("1d10", self._rng)
+                mx = self.d["vida"]
+                antes = self._atual(self.v_vida_atual, mx)
+                self.v_vida_atual.set(str(min(mx, antes + cura)))
+                linhas.append(f"Voraz: recupera {cura} de Vida ({antes} → {min(mx, antes + cura)}).")
+        if props:
+            linhas.append("Propriedades: " + ", ".join(props))
         if txt_custo:
             linhas.append(txt_custo)
         if ef["acerto"]:
@@ -2302,11 +2390,11 @@ class App(tk.Tk):
         if maestria:
             linhas.append("Inclui +1 de Maestria nesta arma.")
         if at["critico"]:
-            linhas.append(f"Desgaste: o crítico reafiou a arma ({R.DESGASTE_TURNOS}/{R.DESGASTE_TURNOS}).")
+            linhas.append(f"Desgaste: o crítico reafiou a arma ({ep['desgaste']}/{ep['desgaste']}).")
         elif dg["desgastada"]:
             linhas.append("Desgaste: a arma desgastou — não pode ser usada no próximo turno.")
         else:
-            linhas.append(f"Desgaste: restam {R.DESGASTE_TURNOS - dg['usados']} turno(s) afiado(s).")
+            linhas.append(f"Desgaste: restam {ep['desgaste'] - dg['usados']} turno(s) afiado(s).")
         self.registrar(f"⚔ {arma['nome']} nv {nv}", linhas, destaque=at["critico"] or at["desastre"])
         self.recalc()
 
@@ -3400,6 +3488,9 @@ Talentos com escolha: Maestria/Maestria dupla +1 de ataque só na arma escolhida
 (+1 com Arma de família); Matrícula −1 Mana e −1 espaço na escola escolhida (mínimo 1), Matrícula avançada −2 de Mana
 ou uma segunda escola, Matrícula Suprema vale para todas (até −3); Condição Endurecida +20 na barra escolhida;
 Mestre das Perícias +2 e 1 vantagem na perícia escolhida.
+Propriedades de armas: limite = tabela da arma no nível + Domínio. Afiada +1 dado; Cruel +3; Poderosa +2 (exige Cruel);
+Pesada dado um nível acima (d12: +1 dado) e o dobro de Força; Certeira margem −1; Destruidora crítico ×3; Equilibrada +1 ataque;
+Elemental/Sagrada/Profana +1d6; Reforçada desgaste 4; Voraz cura 1d10 no crítico; Discreta +5 Furtividade.
 Talismãs: 1 espaço + 1 a cada 6 níveis (máx. 5).
 
 Talentos aplicados automaticamente: Vida Dura, Fôlego de Guerreiro, Mochileiro, Mula de Carga, Cabeça Cheia, Mente Expandida,

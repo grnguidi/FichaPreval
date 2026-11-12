@@ -18,6 +18,12 @@ for (const c of casos) {
   if (R.pesoPecasSet(c.pecas) !== c.peso_set) falha(c, "peso set", R.pesoPecasSet(c.pecas), c.peso_set);
   if (R.cargaExtraItens(c.inv, itens) !== c.extra) falha(c, "mochila", R.cargaExtraItens(c.inv, itens), c.extra);
   if (Math.abs(R.pesoInventario(c.inv) - c.peso_inv) > 1e-9) falha(c, "peso inv", R.pesoInventario(c.inv), c.peso_inv);
+  const ep = R.efeitoProps(c.props, c.linha_dano, c.linha_crit);
+  if (!igual(ep, c.ef_props)) falha(c, "propriedades", ep, c.ef_props);
+  const pp = R.problemasProps(c.props, c.mx_props);
+  if (!igual(pp, c.prob_props)) falha(c, "problemas props", pp, c.prob_props);
+  const rq = R.reqComProps(c.req_arma, c.props);
+  if (!igual(rq, c.req_props)) falha(c, "req pesada", rq, c.req_props);
   const esc = R.efeitosEscolhas(c.slots, c.escolhas);
   if (!igual(esc, c.esc)) falha(c, "escolhas", esc, c.esc);
   const desc = R.descontoMatricula(esc, c.escola, c.mana, c.esp);

@@ -43,6 +43,11 @@ for _ in range(3000):
     esc = R.efeitos_escolhas(slots, escolhas)
     escola, mana = rnd.choice(["Magias Lunares", "Feitiços de Fogo", "Magias de Morte"]), rnd.choice([None, 0, 1, 3, 10])
     esp = rnd.randint(1, 4)
+    props = rnd.sample(R.NOMES_PROPRIEDADES + ["Elemental (Fogo)", "Elemental (Veneno)", "Sagrada", "Inventada"], rnd.randint(0, 5))
+    arma = rnd.choice(DADOS["armas"]); linha = rnd.choice(arma["tabela"])
+    casos[-1].update(props=props, linha_dano=linha["dano"], linha_crit=linha["critico"],
+                     ef_props=R.efeito_props(props, linha["dano"], linha["critico"]), mx_props=(mxp := rnd.randint(0, 5)), prob_props=R.problemas_props(props, mxp),
+                     req_props=R.req_com_props(R.req_arma(arma, linha["nivel"]), props), req_arma=R.req_arma(arma, linha["nivel"]))
     casos[-1].update(slots=slots, escolhas=escolhas, esc=esc, escola=escola, mana=mana, esp=esp,
                      desconto=list(R.desconto_matricula(esc, escola, mana, esp)))
 json.dump({"casos": casos, "itens": DADOS["itens"]}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)

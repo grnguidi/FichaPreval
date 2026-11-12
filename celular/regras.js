@@ -178,12 +178,12 @@
     return out;
   }
   // ---------------- Dados ----------------
-  function rolarExpr(expr, rng, dobrar = false) {
+  function rolarExpr(expr, rng, dobrar = false, mult = 2) {
     let total = 0; const partes = [];
     for (const m of String(expr || "").matchAll(/([+-]?)\s*(\d+)\s*d\s*(\d+)|([+-]?)\s*(\d+)/g)) {
       if (m[2]) {
         const sinal = m[1] === "-" ? -1 : 1; let q = +m[2]; const f = +m[3];
-        if (dobrar) q *= 2;
+        if (dobrar) q *= mult;
         const vals = [...Array(q)].map(() => rng(f));
         const sub = sinal * vals.reduce((a, b) => a + b, 0);
         partes.push([`${sinal < 0 ? "-" : ""}${q}d${f}`, vals, sub]); total += sub;
@@ -240,10 +240,10 @@
     return [novos, cond];
   }
   const pocaoEspiritualDados = (nivel, curvaVit) => Math.max(2, Math.floor(nivel / 2) + Math.floor(curvaVit / 2));
-  function desgasteAposAtaque(usados, critico) {
+  function desgasteAposAtaque(usados, critico, limite = DESGASTE_TURNOS) {
     if (critico) return [0, false];
     usados += 1;
-    return [usados, usados >= DESGASTE_TURNOS];
+    return [usados, usados >= limite];
   }
   function condicoesDoEncantamento(desc) {
     const out = [];
@@ -308,6 +308,50 @@
     return [m, Math.max(1, espaco - (esc.espaco || 0))];
   }
 
+  // ---------------- Propriedades de armas (tabela vem de regras.py pelo build) ----------------
+  const { PROPRIEDADES, ELEMENTOS_PROP } = LIVRO;
+  const NOMES_PROPRIEDADES = (PROPRIEDADES || []).map((p) => p[0]);
+  const DADO_ACIMA = { 4: 6, 6: 8, 8: 10, 10: 12 };
+  const lerProps = (t) => String(t || "").split(",").map((p) => p.trim()).filter(Boolean);
+  const nomeProp = (p) => p.split("(")[0].trim();
+  function problemasProps(props, maximo) {
+    const nomes = props.map(nomeProp), m = [];
+    if (props.length > maximo) m.push(`${props.length} propriedades, o limite é ${maximo}`);
+    const rep = [...new Set(nomes.filter((n) => nomes.filter((x) => x === n).length > 1))].sort();
+    if (rep.length) m.push("repetidas: " + rep.join(", "));
+    if (nomes.includes("Poderosa") && !nomes.includes("Cruel")) m.push("Poderosa exige Cruel");
+    if (props.some((p) => nomeProp(p) === "Elemental" && !p.includes("("))) m.push("Elemental sem elemento");
+    return m;
+  }
+  function subirDado(expr) {
+    const dados = [...String(expr).matchAll(/(\d+)d(\d+)/g)].map((m) => [+m[1], +m[2]]);
+    if (!dados.length) return expr;
+    if (Math.max(...dados.map((x) => x[1])) >= 12) return danoComDados(expr, 1);
+    return String(expr).replace(/(\d+)d(\d+)/g, (_, q, f) => `${q}d${DADO_ACIMA[+f] || +f}`);
+  }
+  function efeitoProps(props, dano, critico) {
+    const nomes = props.map(nomeProp);
+    const out = { dano, margem: parseInt(critico, 10), mult: 2, acerto: 0, extras: [], desgaste: DESGASTE_TURNOS, voraz: false, furtividade: 0, forca_x2: false };
+    if (nomes.includes("Pesada")) { out.dano = subirDado(out.dano); out.forca_x2 = true; }
+    if (nomes.includes("Afiada")) out.dano = danoComDados(out.dano, 1);
+    const fixo = (nomes.includes("Cruel") ? 3 : 0) + (nomes.includes("Poderosa") && nomes.includes("Cruel") ? 2 : 0);
+    if (fixo) out.dano = `${out.dano} + ${fixo}`;
+    if (nomes.includes("Certeira")) out.margem -= 1;
+    if (nomes.includes("Destruidora")) out.mult = 3;
+    if (nomes.includes("Equilibrada")) out.acerto = 1;
+    if (nomes.includes("Reforçada")) out.desgaste = 4;
+    out.voraz = nomes.includes("Voraz");
+    if (nomes.includes("Discreta")) out.furtividade = 5;
+    for (const p of props) {
+      const n = nomeProp(p);
+      if (n === "Elemental") { const el = p.includes("(") ? p.slice(p.indexOf("(") + 1, p.lastIndexOf(")")).trim() : ""; if (el) out.extras.push(["1d6", el, ""]); }
+      else if (n === "Sagrada") out.extras.push(["1d6", "Sagrado", "contra profanos, mortos-vivos ou de Podridão"]);
+      else if (n === "Profana") out.extras.push(["1d6", "Necrótico", "contra sagrados ou celestiais"]);
+    }
+    return out;
+  }
+  const reqComProps = (reqs, props) => props.map(nomeProp).includes("Pesada") && "FOR" in reqs ? Object.assign({}, reqs, { FOR: reqs.FOR * 2 }) : reqs;
+
   const R = {
     ATRIBUTOS, NOMES_ATR, ATR_POR_NOME, VALORES_INICIAIS, NIVEL_MAX, PERICIAS, PERICIAS_ATAQUE, PERICIAS_DEFESA, RESISTENCIAS,
     CONDICOES, LIMIARES_ACOES, ACERTO_ARMA, GRUPOS_ARMA, BONUS_SEM_ALMA,
@@ -318,6 +362,7 @@
     receberCondicao, defesasContraDano, rolarPericia, rolarDefesa, descanso, pocaoEspiritualDados, desgasteAposAtaque,
     condicoesDoEncantamento, escalarArcano, pesoPecasSet, cargaExtraItens, pesoInventario,
     ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
+    PROPRIEDADES, NOMES_PROPRIEDADES, ELEMENTOS_PROP, lerProps, nomeProp, problemasProps, subirDado, efeitoProps, reqComProps,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = R; else raiz.R = R;
 })(typeof window !== "undefined" ? window : globalThis);

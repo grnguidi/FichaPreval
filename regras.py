@@ -284,7 +284,7 @@ def efeitos_talentos(talentos, ativos, armadura=""):
 _TERMO = re.compile(r"([+-]?)\s*(\d+)\s*d\s*(\d+)|([+-]?)\s*(\d+)")
 
 
-def rolar_expr(expr, rng, dobrar=False):
+def rolar_expr(expr, rng, dobrar=False, mult=2):
     """Rola uma expressão como '3d6 + 1d4 + 2'. rng(faces) devolve 1..faces.
     dobrar=True (crítico) rola o dobro de dados; modificadores fixos não dobram.
     Devolve (total, partes) com partes = [(texto, [valores], subtotal)]."""
@@ -293,7 +293,7 @@ def rolar_expr(expr, rng, dobrar=False):
         if m.group(2):
             sinal = -1 if m.group(1) == "-" else 1
             q, f = int(m.group(2)), int(m.group(3))
-            q = q * 2 if dobrar else q
+            q = q * mult if dobrar else q
             vals = [rng(f) for _ in range(q)]
             sub = sinal * sum(vals)
             partes.append((f"{'-' if sinal < 0 else ''}{q}d{f}", vals, sub))
@@ -447,12 +447,12 @@ def pocao_espiritual_dados(nivel, curva_vit):
 DESGASTE_TURNOS = 3   # turnos afiados; o crítico reinicia; ao acabar a arma fica 1 turno sem uso
 
 
-def desgaste_apos_ataque(usados, critico):
-    """Devolve (usados, desgastou). O crítico reinicia a contagem."""
+def desgaste_apos_ataque(usados, critico, limite=DESGASTE_TURNOS):
+    """Devolve (usados, desgastou). O crítico reinicia a contagem. Reforçada: limite 4."""
     if critico:
         return 0, False
     usados += 1
-    return (usados, True) if usados >= DESGASTE_TURNOS else (usados, False)
+    return (usados, True) if usados >= limite else (usados, False)
 
 
 # ---------------- Arcano nos dados de condição dos encantamentos ----------------
@@ -584,3 +584,108 @@ def desconto_matricula(esc, escola, mana, espaco):
         return mana, espaco
     m = None if mana is None else (mana if mana <= 0 else max(1, mana - esc["mana"]))
     return m, max(1, espaco - esc.get("espaco", 0))
+
+
+
+# ---------------- Propriedades de armas (capítulo Equipamentos) ----------------
+PROPRIEDADES = [
+    ("Afiada", "+1 dado de dano, do maior dado da arma."),
+    ("Canalizada", "Ação bônus: vantagem no próximo golpe."),
+    ("Certeira", "Margem de crítico da arma −1."),
+    ("Cruel", "+3 de dano."),
+    ("Destruidora", "O crítico vira ×3 (triplica os dados)."),
+    ("Discreta", "+5 em Furtividade com a arma equipada."),
+    ("Longa", "Alcance da arma +1,5 m."),
+    ("Penetrante", "Ignora redução de dano do tipo da arma igual ao nível da arma."),
+    ("Poderosa", "+2 de dano. Exige Cruel."),
+    ("Equilibrada", "+1 nos testes de ataque com a arma."),
+    ("Pesada", "Dado de dano um nível acima (d8→d10; com d12, +1 dado), mas exige o dobro da Força da arma."),
+    ("Sagrada", "+1d6 de dano Sagrado contra profanos, mortos-vivos ou de Podridão."),
+    ("Profana", "+1d6 de dano Necrótico contra sagrados ou celestiais."),
+    ("Elemental", "+1d6 de dano do elemento escolhido (Fogo, Glacial, Elétrico ou Veneno)."),
+    ("Reforçada", "Desgaste só depois de 4 turnos afiados."),
+    ("Voraz", "No crítico, recupera 1d10 de Vida."),
+]
+NOMES_PROPRIEDADES = [p[0] for p in PROPRIEDADES]
+ELEMENTOS_PROP = ["Fogo", "Glacial", "Elétrico", "Veneno"]
+_DADO_ACIMA = {4: 6, 6: 8, 8: 10, 10: 12}
+
+
+def ler_props(texto):
+    """'Afiada, Elemental (Fogo)' -> ['Afiada', 'Elemental (Fogo)']"""
+    return [p.strip() for p in str(texto or "").split(",") if p.strip()]
+
+
+def nome_prop(p):
+    return p.split("(")[0].strip()
+
+
+def problemas_props(props, maximo):
+    """Avisos: acima do limite, repetidas, Poderosa sem Cruel, Elemental sem elemento."""
+    nomes = [nome_prop(p) for p in props]
+    m = []
+    if len(props) > maximo:
+        m.append(f"{len(props)} propriedades, o limite é {maximo}")
+    rep = sorted({n for n in nomes if nomes.count(n) > 1})
+    if rep:
+        m.append("repetidas: " + ", ".join(rep))
+    if "Poderosa" in nomes and "Cruel" not in nomes:
+        m.append("Poderosa exige Cruel")
+    if any(nome_prop(p) == "Elemental" and "(" not in p for p in props):
+        m.append("Elemental sem elemento")
+    return m
+
+
+def subir_dado(expr):
+    """Pesada: cada dado sobe um tamanho; se o maior já é d12, ganha +1 dado de d12."""
+    dados = [(int(q), int(f)) for q, f in re.findall(r"(\d+)d(\d+)", expr)]
+    if not dados:
+        return expr
+    if max(f for _, f in dados) >= 12:
+        return dano_com_dados(expr, 1)
+    return re.sub(r"(\d+)d(\d+)", lambda m: f"{m.group(1)}d{_DADO_ACIMA.get(int(m.group(2)), int(m.group(2)))}", expr)
+
+
+def efeito_props(props, dano, critico):
+    """Aplica as propriedades ao ataque. dano: expressão da tabela (já com dados extras por atributo).
+    Devolve {'dano', 'margem', 'mult', 'acerto', 'extras': [(expr, tipo, condição)], 'desgaste', 'voraz', 'furtividade', 'forca_x2'}."""
+    nomes = [nome_prop(p) for p in props]
+    out = {"dano": dano, "margem": int(critico), "mult": 2, "acerto": 0, "extras": [], "desgaste": DESGASTE_TURNOS,
+           "voraz": False, "furtividade": 0, "forca_x2": False}
+    if "Pesada" in nomes:
+        out["dano"] = subir_dado(out["dano"])
+        out["forca_x2"] = True
+    if "Afiada" in nomes:
+        out["dano"] = dano_com_dados(out["dano"], 1)
+    fixo = (3 if "Cruel" in nomes else 0) + (2 if "Poderosa" in nomes and "Cruel" in nomes else 0)
+    if fixo:
+        out["dano"] = f"{out['dano']} + {fixo}"
+    if "Certeira" in nomes:
+        out["margem"] -= 1
+    if "Destruidora" in nomes:
+        out["mult"] = 3
+    if "Equilibrada" in nomes:
+        out["acerto"] = 1
+    if "Reforçada" in nomes:
+        out["desgaste"] = 4
+    out["voraz"] = "Voraz" in nomes
+    if "Discreta" in nomes:
+        out["furtividade"] = 5
+    for p in props:
+        n = nome_prop(p)
+        if n == "Elemental":
+            el = p[p.find("(") + 1:p.rfind(")")].strip() if "(" in p else ""
+            if el:
+                out["extras"].append(("1d6", el, ""))
+        elif n == "Sagrada":
+            out["extras"].append(("1d6", "Sagrado", "contra profanos, mortos-vivos ou de Podridão"))
+        elif n == "Profana":
+            out["extras"].append(("1d6", "Necrótico", "contra sagrados ou celestiais"))
+    return out
+
+
+def req_com_props(reqs, props):
+    """Pesada exige o dobro da Força da arma."""
+    if "Pesada" in [nome_prop(p) for p in props] and "FOR" in reqs:
+        return dict(reqs, FOR=reqs["FOR"] * 2)
+    return reqs
