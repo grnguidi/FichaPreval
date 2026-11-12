@@ -35,5 +35,15 @@ for _ in range(3000):
                   "pecas": pecas, "peso_set": R.peso_pecas_set(pecas), "inv": inv, "extra": R.carga_extra_itens(inv, DADOS["itens"]),
                   "peso_inv": R.peso_inventario(inv)})
     casos[-1]["pocao"] = R.pocao_espiritual_dados(casos[-1]["nv"], casos[-1]["cv"])
+    nomes_esc = list(R.ESCOLHA_TALENTO) + ["Matrícula Suprema", "Arma de família", "Vida Dura", ""]
+    slots = {str(2 * i + 2): rnd.choice(nomes_esc) for i in range(rnd.randint(0, 8))}
+    if rnd.random() < .3: slots["extra"] = rnd.choice(nomes_esc)
+    opc = ["Espada", "Adaga", "Magias Lunares", "Feitiços de Fogo", R.MATRICULA_MANA2, "Veneno", "Sono", "Acrobacia", ""]
+    escolhas = {sl: rnd.choice(opc) for sl in slots if rnd.random() < .85}
+    esc = R.efeitos_escolhas(slots, escolhas)
+    escola, mana = rnd.choice(["Magias Lunares", "Feitiços de Fogo", "Magias de Morte"]), rnd.choice([None, 0, 1, 3, 10])
+    esp = rnd.randint(1, 4)
+    casos[-1].update(slots=slots, escolhas=escolhas, esc=esc, escola=escola, mana=mana, esp=esp,
+                     desconto=list(R.desconto_matricula(esc, escola, mana, esp)))
 json.dump({"casos": casos, "itens": DADOS["itens"]}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
 print(len(casos), "casos")

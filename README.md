@@ -24,6 +24,7 @@ Execute `GERAR_EXE.bat`. O script instala PyInstaller, reportlab e segno, compil
 - Menus de armas, encantamentos, talentos, armaduras, escudos, talismãs e sets, indicando o que está disponível e o motivo de cada restrição.
 - Assistente de criação de personagem, seguindo o capítulo "Criando seu Personagem".
 - Rolagens de ataque, conjuração e perícias (1d20 a mais a cada 20 pontos do atributo, fica o maior), com consumo de Vigor e Mana e diário de rolagens.
+- Talentos com escolha (Maestria, Maestria dupla, Domínio, Matrícula, Matrícula avançada, Condição Endurecida, Mestre das Perícias): ao lado do talento você escolhe a arma, a escola, a condição ou a perícia, e o efeito vale só para ela (acerto +1 na arma da Maestria, propriedade extra na arma do Domínio, −Mana e −espaço nos encantamentos da escola, +20 na barra da condição, +2 e 1 vantagem na perícia).
 - Encantamentos com dados de condição já escalados pelo Arcano (cópias a cada 20, dados inferiores a cada 15).
 - Desgaste de armas: 3 turnos afiados, o crítico reafia; a arma desgastada fica um turno parada.
 - Descanso curto e longo (Vida, Mana, Vigor e barras de condição) e Poção Espiritual.

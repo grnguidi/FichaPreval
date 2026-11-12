@@ -35,6 +35,7 @@ def regras_js():
         "NOTA_EFEITOS": regras.NOTA_EFEITOS, "CONDICAO_TESTE": regras.CONDICAO_TESTE, "CONDICAO_ATIVA": regras.CONDICAO_ATIVA,
         "CONDICAO_DESCANSO_CURTO": regras.CONDICAO_DESCANSO_CURTO, "DESCANSOS_CURTOS_MAX": regras.DESCANSOS_CURTOS_MAX,
         "DESGASTE_TURNOS": regras.DESGASTE_TURNOS, "PECAS_SET_PESO": regras.PECAS_SET_PESO, "DADO_INFERIOR": regras.DADO_INFERIOR,
+        "ESCOLHA_TALENTO": regras.ESCOLHA_TALENTO, "ROTULO_ESCOLHA": regras.ROTULO_ESCOLHA, "MATRICULA_MANA2": regras.MATRICULA_MANA2,
     }.items()}, ensure_ascii=False)
     js = re.sub(r"const EFEITOS_TALENTOS = \{.*?\};", lambda m: f"const EFEITOS_TALENTOS = {efeitos};", ler("regras.js"), count=1, flags=re.S)
     return js.replace("const LIVRO = {};", f"const LIVRO = {livro};", 1)

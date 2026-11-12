@@ -18,6 +18,10 @@ for (const c of casos) {
   if (R.pesoPecasSet(c.pecas) !== c.peso_set) falha(c, "peso set", R.pesoPecasSet(c.pecas), c.peso_set);
   if (R.cargaExtraItens(c.inv, itens) !== c.extra) falha(c, "mochila", R.cargaExtraItens(c.inv, itens), c.extra);
   if (Math.abs(R.pesoInventario(c.inv) - c.peso_inv) > 1e-9) falha(c, "peso inv", R.pesoInventario(c.inv), c.peso_inv);
+  const esc = R.efeitosEscolhas(c.slots, c.escolhas);
+  if (!igual(esc, c.esc)) falha(c, "escolhas", esc, c.esc);
+  const desc = R.descontoMatricula(esc, c.escola, c.mana, c.esp);
+  if (!igual(desc, c.desconto)) falha(c, "matrícula", desc, c.desconto);
 }
 console.log(`regras novas: ${casos.length} casos, ${erros} diferenças`);
 process.exit(erros ? 1 : 0);

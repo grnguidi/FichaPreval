@@ -281,6 +281,33 @@
     return t;
   }
 
+  // ---------------- Talentos com escolha (tabela vem de regras.py pelo build) ----------------
+  const { ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2 } = LIVRO;
+  function efeitosEscolhas(slots, escolhas) {
+    const out = { maestria: [], dominio: {}, escolas: [], mana: 0, espaco: 0, todas_escolas: false, cond_extra: {}, pericia_mestre: [], pendentes: [] };
+    const nomes = new Set(Object.values(slots).filter(Boolean));
+    const ordem = Object.keys(slots).sort((a, b) => ((a === "extra") - (b === "extra")) || ((/^\d+$/.test(a) ? +a : 99) - (/^\d+$/.test(b) ? +b : 99)));
+    for (const slot of ordem) {
+      const nome = slots[slot], tipo = ESCOLHA_TALENTO[nome];
+      if (!tipo) continue;
+      const v = String(escolhas[slot] || "").trim();
+      if (!v) { out.pendentes.push(nome); continue; }
+      if (nome === "Maestria" || nome === "Maestria dupla") { if (!out.maestria.includes(v)) out.maestria.push(v); }
+      else if (nome === "Domínio") out.dominio[v] = (out.dominio[v] || 0) + 1 + (nomes.has("Arma de família") ? 1 : 0);
+      else if (nome === "Matrícula") { if (!out.escolas.includes(v)) out.escolas.push(v); out.mana = Math.max(out.mana, 1); out.espaco = 1; }
+      else if (nome === "Matrícula avançada") { if (v === MATRICULA_MANA2) out.mana = 2; else if (!out.escolas.includes(v)) out.escolas.push(v); }
+      else if (nome === "Condição Endurecida") out.cond_extra[v] = (out.cond_extra[v] || 0) + 20;
+      else if (nome === "Mestre das Perícias") { if (!out.pericia_mestre.includes(v)) out.pericia_mestre.push(v); }
+    }
+    if (nomes.has("Matrícula Suprema") && out.escolas.length) { out.todas_escolas = true; out.mana = Math.min(3, Math.max(out.mana, 1)); }
+    return out;
+  }
+  function descontoMatricula(esc, escola, mana, espaco) {
+    if (!esc.mana || !(esc.todas_escolas || esc.escolas.includes(escola))) return [mana, espaco];
+    const m = mana == null ? null : (mana <= 0 ? mana : Math.max(1, mana - esc.mana));
+    return [m, Math.max(1, espaco - (esc.espaco || 0))];
+  }
+
   const R = {
     ATRIBUTOS, NOMES_ATR, ATR_POR_NOME, VALORES_INICIAIS, NIVEL_MAX, PERICIAS, PERICIAS_ATAQUE, PERICIAS_DEFESA, RESISTENCIAS,
     CONDICOES, LIMIARES_ACOES, ACERTO_ARMA, GRUPOS_ARMA, BONUS_SEM_ALMA,
@@ -290,6 +317,7 @@
     TIPOS_DANO, NOMES_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS,
     receberCondicao, defesasContraDano, rolarPericia, rolarDefesa, descanso, pocaoEspiritualDados, desgasteAposAtaque,
     condicoesDoEncantamento, escalarArcano, pesoPecasSet, cargaExtraItens, pesoInventario,
+    ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = R; else raiz.R = R;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -76,7 +76,7 @@ function novoEstado() {
     condicoes: Object.fromEntries(R.CONDICOES.map((n) => [n, { max: "100", atual: "", notas: "" }])),
     portao: { Sucessos: [false, false, false, false, false], Falhas: [false, false, false, false, false] }, cicatrizes: "",
     vinculos: { grupo: "", mundo: "", metas: "" }, receitas: "",
-    manual: {}, talentos_ativos: [], desgaste: {}, descansos_curtos: 0,
+    manual: {}, talentos_ativos: [], talentos_escolha: {}, desgaste: {}, descansos_curtos: 0,
   };
 }
 function normalizar(s) {
@@ -96,6 +96,7 @@ function normalizar(s) {
   out.inventario = (Array.isArray(out.inventario) ? out.inventario : []).filter((i) => i && (String(i.item || "").trim() || String(i.carga || "").trim()));
   out.set = Object.assign({}, out.set || {});
   out.desgaste = Object.assign({}, out.desgaste || {});
+  out.talentos_escolha = Object.assign({}, out.talentos_escolha || {});
   out.descansos_curtos = int(out.descansos_curtos);
   return out;
 }
@@ -124,6 +125,8 @@ function protecao(tipo) {
   const lista = tipo === "armadura" ? D.armaduras : D.escudos;
   return lista.find((x) => x.nome === S.equip[tipo]) || null;
 }
+const custoEnc = (e, v, escolha) => R.descontoMatricula(escolha || C.escolha, e.categoria, v ? R.custoMana(v) : null, e.espaco);
+const condMax = (n) => int((S.condicoes[n] || {}).max, 100) + ((C && C.escolha && C.escolha.cond_extra[n]) || 0);
 function calcular() {
   const nv = nivel(), tal = talentos();
   const tb = bonusTalismas(nv, tal);
@@ -155,18 +158,20 @@ function calcular() {
   const gastos = R.ATRIBUTOS.reduce((s, k) => s + int(S.atributos[k].niveis), 0);
   const ini = R.ATRIBUTOS.map((k) => int(S.atributos[k].inicial)).filter(Boolean);
   const treinadas = new Set(S.pericias);
-  const C = { nv, tal, a, tb, d, ef, ativos, nVida, soma, arm, esc, carga, lentidao, exaustao, mov: lentidao ? Math.min(6, d.movimento) : d.movimento, disp, gastos, resto: disp - gastos, treinadas, avisos: [] };
+  const escolha = R.efeitosEscolhas(S.talentos, S.talentos_escolha || {});
+  const C = { escolha, nv, tal, a, tb, d, ef, ativos, nVida, soma, arm, esc, carga, lentidao, exaustao, mov: lentidao ? Math.min(6, d.movimento) : d.movimento, disp, gastos, resto: disp - gastos, treinadas, avisos: [] };
   // avisos
   const av = C.avisos;
   for (const k of Object.keys(S.manual)) av.push(["info", `${R.NOMES_ATR[k] || (k === "vida" ? "Vida máx." : "Mana máx.")} com valor manual (${S.manual[k]}).`]);
   if (C.resto > 0) av.push(["erro", `Faltam ${C.resto} pontos de atributo para distribuir.`]);
+  for (const n of escolha.pendentes) av.push(["erro", `Talento ${n}: escolha ${R.ROTULO_ESCOLHA[R.ESCOLHA_TALENTO[n]].toLowerCase()} (aba Talentos).`]);
   if (C.resto < 0) av.push(["erro", `Você gastou ${-C.resto} pontos de atributo a mais.`]);
   const faltIni = R.VALORES_INICIAIS.filter((x) => !ini.includes(x));
   if (faltIni.length) av.push(["erro", `Distribuição inicial incompleta (faltam ${faltIni.join(", ")}).`]);
   if (S.vida.modo === "rolar" && (S.vida.rolagens || []).length < nVida) av.push(["erro", `Role ${nVida - S.vida.rolagens.length} dado(s) de vida novo(s).`]);
   if (treinadas.size > d.pericias_treinadas_max) av.push(["erro", `Perícias treinadas: ${treinadas.size} de ${d.pericias_treinadas_max}.`]);
   else if (treinadas.size < d.pericias_treinadas_max) av.push(["info", `Pode treinar mais ${d.pericias_treinadas_max - treinadas.size} perícia(s).`]);
-  const usados = S.encantamentos.filter((x) => x.equipado && ENC[x.familia]).reduce((s, x) => s + ENC[x.familia].espaco, 0);
+  const usados = S.encantamentos.filter((x) => x.equipado && ENC[x.familia]).reduce((s, x) => s + custoEnc(ENC[x.familia], null, escolha)[1], 0);
   C.espUsados = usados;
   if (usados > d.espacos_encant) av.push(["erro", `Encantamentos equipados ocupam ${usados} de ${d.espacos_encant} espaços.`]);
   if (lentidao) av.push(["erro", `Carga ${carga} de ${d.carga}: Lentidão (movimento 6 m).`]);
@@ -339,13 +344,14 @@ function linhaArma(i) {
     ${ar ? `<button class="sel" style="width:96px" data-a="esc-nivel-arma" data-i="${i}">Nv ${int(w.nivel, 1)}</button>` : ""}</div>`;
   if (!ar) return h + "</div>";
   const nv = int(w.nivel, 1), l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0], k = ar.ataque;
-  const extra = Math.floor(R.cap(C.a[k]) / 30), acerto = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto;
+  const extra = Math.floor(R.cap(C.a[k]) / 30), acerto = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + (C.escolha.maestria.includes(w.grupo) ? 1 : 0);
+  const dom = C.escolha.dominio[w.grupo] || 0;
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : "—";
   const falta = statusArma(C, w.grupo, nv);
   h += `<dl><div><dt>Dano</dt><dd>${esc(R.danoComDados(l.dano, extra))}</dd></div><div><dt>Ataque</dt><dd>1d20 +${acerto}${R.vantagem(C.a[k]) ? " (vant.)" : ""}</dd></div>
     <div><dt>Crítico</dt><dd>${esc(l.critico)}</dd></div><div><dt>Tipo</dt><dd>${esc(l.tipo)}</dd></div><div><dt>DT</dt><dd>${10 + C.d.bc[k] + C.d.n3}</dd></div>
     <div><dt>Vigor/atk</dt><dd>${vig}</dd></div></dl>
-    <div class="sub">${k} · ${l.propriedades} propriedade(s) · peso ${l.espaco}${extra ? ` · +${extra} dado de dano por ${k}` : ""}</div>
+    <div class="sub">${k} · ${l.propriedades}${dom ? ` +${dom} (Domínio)` : ""} propriedade(s) · peso ${l.espaco}${C.escolha.maestria.includes(w.grupo) ? " · Maestria +1" : ""}${extra ? ` · +${extra} dado de dano por ${k}` : ""}</div>
     ${falta.length ? `<div class="erro" style="font-size:13.5px;margin-top:4px">${NO} falta: ${esc(falta.join(", "))}</div>` : ""}
     ${(() => { const dg = S.desgaste[i] || {}; return dg.desgastada
       ? `<div class="erro" style="font-size:13.5px;margin-top:4px">Desgastada: sem uso por um turno. <a href="#" data-a="reafiar" data-i="${i}">Já passou</a></div>`
@@ -364,6 +370,12 @@ function textoEfeitos() {
       .filter(([k]) => e[k]).map(([k, r]) => `+${e[k]} ${r}`).concat(Object.entries(e.pericia || {}).map(([p, v]) => `+${v} ${p}`));
     partes.push(`<b>${esc(nome)}</b>${e.tipo === "sit" ? " (ativo)" : ""}: ${bits.join(", ")}`);
   }
+  const x = C.escolha;
+  if (x.maestria.length) partes.push(`<b>Maestria</b>: ${esc(x.maestria.join(", "))} (+1 acerto)`);
+  if (Object.keys(x.dominio).length) partes.push(`<b>Domínio</b>: ${Object.entries(x.dominio).map(([g, n]) => `${esc(g)} +${n} propriedade${n > 1 ? "s" : ""}`).join(", ")}`);
+  if (x.mana) partes.push(`<b>Matrícula</b>: ${x.todas_escolas ? "todas as escolas" : esc(x.escolas.join(", "))} (−${x.mana} Mana${x.espaco ? ", −1 espaço" : ""})`);
+  if (x.pericia_mestre.length) partes.push(`<b>Mestre das Perícias</b>: ${esc(x.pericia_mestre.join(", "))} (+2 e 1 vantagem)`);
+  for (const [n, v] of Object.entries(x.cond_extra)) partes.push(`<b>Condição Endurecida</b>: ${n} +${v}`);
   return partes;
 }
 function pCombate() {
@@ -407,7 +419,7 @@ function pCombate() {
     + `<p class="sub">d20 no início do turno: 11+ é sucesso. 5 sucessos: volta com 1 de Vida e 1 cicatriz. 5 falhas: morte.</p>`;
   h += secao("Condições") + `<div class="lista">${R.CONDICOES.map((n) => {
     const c = S.condicoes[n] || { atual: "", max: "100" };
-    return `<div class="item" data-a="editar-cond" data-n="${n}"><div class="tx"><b>${n}</b><small>${c.notas ? esc(c.notas) + " · " : ""}enche com pontos; ao chegar no máximo, ativa</small></div><span class="num">${int(c.atual)} <span class="sub">/ ${int(c.max, 100)}</span></span></div>`;
+    return `<div class="item" data-a="editar-cond" data-n="${n}"><div class="tx"><b>${n}</b><small>${c.notas ? esc(c.notas) + " · " : ""}enche com pontos; ao chegar no máximo, ativa</small></div><span class="num">${int(c.atual)} <span class="sub">/ ${condMax(n)}</span></span></div>`;
   }).join("")}</div><p class="sub">Descanso curto tira 25 de cada; o longo zera.</p>`;
   return h;
 }
@@ -418,9 +430,10 @@ function pPericias() {
     + `<div class="lista">${R.PERICIAS.map(([nome, atrs, req]) => {
       const tr = C.treinadas.has(nome), at = atrs || [S.prevalencia_attr || "ARC"];
       const [melhor, bonus0, dados] = R.periciaFora(C.a, C.nv, at, tr);
-      const bonus = bonus0 + (C.ef.pericia[nome] || 0);
-      return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
-        <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados}d20</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
+      const mestre = C.escolha.pericia_mestre.includes(nome);
+      const bonus = bonus0 + (C.ef.pericia[nome] || 0) + (mestre ? 2 : 0);
+      return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados + (mestre ? 1 : 0)}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
+        <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados + (mestre ? 1 : 0)}d20${mestre ? " · Mestre" : ""}</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
     }).join("")}</div><p class="sub">Toque na perícia para rolar (${"1d20 a mais a cada 20 pontos do atributo, fica o maior"}). A caixa marca o treino (Modo Edição). • exige treino.</p>`;
   h += secao("Perícia de ataque treinada") + `<div>${R.PERICIAS_ATAQUE.map(([nn]) => `<span class="chip ${S.pericia_ataque === nn ? "on" : ""}" data-a="per-atk" data-n="${nn}">${nn}</span>`).join("")}</div>`;
   h += secao("Atributo da Prevalência") + `<div>${R.ATRIBUTOS.map((k) => `<span class="chip ${S.prevalencia_attr === k ? "on" : ""}" data-a="prev-attr" data-k="${k}">${k}</span>`).join("")}</div>`;
@@ -439,7 +452,7 @@ function pGrimorio() {
     const vs = e.versoes.filter((v) => x.versoes.includes(v.nivel)), top = vs[vs.length - 1] || e.versoes[0];
     const ni = impl(e.dominio), conj = ni >= top.nivel;
     return `<div class="item" data-a="ver-enc" data-i="${i}"><span class="check ${x.equipado ? "on" : ""}" data-a="equipar" data-i="${i}"></span>
-      <div class="tx"><b>${esc(e.nome)}</b><small>${e.dominio} · nv ${x.versoes.join(", ")} · ${esc(top.mana)} · esp ${e.espaco}${conj ? "" : ` · ${NO} sem ${e.dominio === "Magia" ? "cajado" : "selo"} nv ${top.nivel}`}</small></div>
+      <div class="tx"><b>${esc(e.nome)}</b><small>${e.dominio} · nv ${x.versoes.join(", ")} · ${esc(top.mana)}${custoEnc(e, top)[0] != null && custoEnc(e, top)[0] !== R.custoMana(top) ? ` (Matrícula: ${custoEnc(e, top)[0]})` : ""} · esp ${custoEnc(e)[1]}${conj ? "" : ` · ${NO} sem ${e.dominio === "Magia" ? "cajado" : "selo"} nv ${top.nivel}`}</small></div>
       <button class="passos" style="border:0;background:none;padding:0" data-a="conjurar" data-f="${esc(e.nome)}" data-v="${top.nivel}"><span class="botao prim" style="min-height:38px;padding:6px 12px">🎲</span></button></div>`;
   }).join("")}</div><p class="sub">Marque a caixa para equipar. Toque no nome para ver a descrição.</p>`;
   return h;
@@ -462,9 +475,12 @@ function pTalentos() {
     const nome = S.talentos[sl], t = TAL[nome], m = t ? statusTal(C, t, sl) : [];
     const eft = R.EFEITOS_TALENTOS[nome];
     const sw = eft && eft.tipo === "sit" ? `<span class="chip ${C.ativos.has(nome) ? "on" : ""}" style="margin:0" data-a="tal-ativo" data-n="${esc(nome)}">${C.ativos.has(nome) ? "ativo" : "inativo"}</span>` : "";
-    const tag = eft ? (eft.tipo === "perm" ? "✓ aplicado · " : `situacional${eft.nota ? " (" + eft.nota + ")" : ""} · `) : "";
+    const tipoE = R.ESCOLHA_TALENTO[nome], valE = S.talentos_escolha[sl] || "";
+    const tag = tipoE ? (valE ? `✓ ${R.ROTULO_ESCOLHA[tipoE]}: ${valE} · ` : `escolha ${R.ROTULO_ESCOLHA[tipoE].toLowerCase()} · `)
+      : eft ? (eft.tipo === "perm" ? "✓ aplicado · " : `situacional${eft.nota ? " (" + eft.nota + ")" : ""} · `) : "";
+    const chipE = tipoE ? `<span class="chip ${valE ? "on" : ""}" style="margin:0;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" data-a="tal-escolha" data-s="${sl}">${esc(valE || "escolher")}</span>` : "";
     return `<div class="item ${ativo ? "" : "bloq"}" data-a="esc-talento" data-s="${sl}"><span class="marca" style="font-family:var(--tit);color:var(--vinho);width:34px">${sl === "extra" ? "✦" : sl}</span>
-      <div class="tx"><b class="${m.length ? "erro" : ""}">${esc(nome || (ativo ? "Escolher talento" : "—"))}</b><small>${esc(t ? (m.length ? NO + " " + m.join(", ") : tag + t.descricao) : ativo ? "toque para escolher" : `liberado no nível ${sl}`)}</small></div>${sw || `<span class="sub">›</span>`}</div>`;
+      <div class="tx"><b class="${m.length ? "erro" : ""}">${esc(nome || (ativo ? "Escolher talento" : "—"))}</b><small>${esc(t ? (m.length ? NO + " " + m.join(", ") : tag + t.descricao) : ativo ? "toque para escolher" : `liberado no nível ${sl}`)}</small></div>${chipE || sw || `<span class="sub">›</span>`}</div>`;
   }).join("")}</div>`;
   h += secao("Vínculos") + `<div class="lista">${[["grupo", "Com o grupo"], ["mundo", "Com o mundo"], ["metas", "Metas de vida"]].map(([k, r]) =>
     `<div class="item" data-a="editar-vinc" data-k="${k}"><div class="tx"><b>${r}</b><small>${esc(S.vinculos[k] || "toque para escrever")}</small></div></div>`).join("")}</div>`;
@@ -574,7 +590,7 @@ A["peca"] = (el) => {
 A["peca-ok"] = (el) => { const p = el.dataset.p, st = $("#pc-s").value, n = $("#pc-n").value.trim(); fecharFolha(); mudar((s) => { s.set[p] = { set: st, nome: n }; }); };
 
 // ------------------------------------------------------------------ modo jogo / edição
-const SO_EDICAO = new Set(["nivel", "pts", "manual", "modo-vida", "rolar-vida", "esc-arma", "esc-nivel-arma", "esc-protecao", "esc-talisma",
+const SO_EDICAO = new Set(["tal-escolha", "nivel", "pts", "manual", "modo-vida", "rolar-vida", "esc-arma", "esc-nivel-arma", "esc-protecao", "esc-talisma",
   "esc-talento", "treinar", "per-atk", "prev-attr", "aprender", "prox-versao", "rem-enc", "ident", "peca", "editar-vinc"]);
 A["modo"] = () => {
   banco.modo = banco.modo === "edicao" ? "jogo" : "edicao"; gravarLocal(); fecharFolha(); render();
@@ -626,6 +642,25 @@ A["manual-ok"] = (el) => {
   fecharFolha(); mudar((s) => { s.manual[el.dataset.k] = int(v); });
 };
 A["manual-auto"] = (el) => { fecharFolha(); mudar((s) => { delete s.manual[el.dataset.k]; }); };
+function opcoesEscolha(sl) {
+  const tipo = R.ESCOLHA_TALENTO[S.talentos[sl]];
+  if (tipo === "arma") { const eq = armasEq(); return eq.concat(D.armas.map((a) => a.nome).filter((n) => !eq.includes(n))); }
+  if (tipo === "escola" || tipo === "escola_ou_mana") {
+    const con = [...new Set(S.encantamentos.filter((x) => ENC[x.familia]).map((x) => ENC[x.familia].categoria))];
+    const todas = [...new Set(D.encantamentos.map((e) => e.categoria))].sort();
+    return (tipo === "escola_ou_mana" ? [R.MATRICULA_MANA2] : []).concat(con, todas.filter((c) => !con.includes(c)));
+  }
+  if (tipo === "condicao") return R.CONDICOES.slice();
+  if (tipo === "pericia") return S.pericias.length ? S.pericias.slice().sort() : R.PERICIAS.map((p) => p[0]);
+  return [];
+}
+A["tal-escolha"] = (el, ev) => {
+  if (ev) ev.stopPropagation();
+  const sl = el.dataset.s, nome = S.talentos[sl], atual = S.talentos_escolha[sl] || "";
+  folha(`${nome}: ${R.ROTULO_ESCOLHA[R.ESCOLHA_TALENTO[nome]].toLowerCase()}`, `<p class="sub">${esc((TAL[nome] || {}).descricao || "")}</p><div class="lista">${opcoesEscolha(sl).map((o) =>
+    `<div class="item" data-a="tal-escolha-ok" data-s="${sl}" data-v="${esc(o)}"><span class="check ${o === atual ? "on" : ""}"></span><div class="tx"><b>${esc(o)}</b></div></div>`).join("")}</div>`);
+};
+A["tal-escolha-ok"] = (el) => { const sl = el.dataset.s, v = el.dataset.v; fecharFolha(); mudar((s) => { s.talentos_escolha[sl] = v; }); };
 A["tal-ativo"] = (el, ev) => { ev.stopPropagation(); const n = el.dataset.n; mudar((s) => { s.talentos_ativos = s.talentos_ativos.includes(n) ? s.talentos_ativos.filter((x) => x !== n) : s.talentos_ativos.concat([n]); }); };
 
 // ----- rolagens
@@ -669,7 +704,8 @@ A["rolar-arma"] = (el) => {
   const i = int(el.dataset.i), w = S.armas[i], ar = ARMAS[w.grupo]; if (!ar) return;
   const nv = int(w.nivel, 1), k = ar.ataque, nvD = Math.min(10, nv + C.ef.dano_nivel);
   const l = ar.tabela.find((x) => x.nivel === nv), lD = ar.tabela.find((x) => x.nivel === nvD) || l;
-  const bonus = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto;
+  const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0;
+  const bonus = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + maestria;
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : 0;
   const dg = S.desgaste[i] = Object.assign({ usados: 0, desgastada: false, em: 0, contado: -1 }, S.desgaste[i] || {});
   if (dg.desgastada) {
@@ -693,6 +729,7 @@ A["rolar-arma"] = (el) => {
     }
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
     if (C.ef.acerto) linhas.push(`<span class="sub">Inclui +${C.ef.acerto} de acerto de talento situacional.</span>`);
+    if (maestria) linhas.push(`<span class="sub">Inclui +1 de Maestria nesta arma.</span>`);
     linhas.push(`<span class="sub">${at.critico ? `Desgaste: o crítico reafiou a arma.` : dg.desgastada ? `<b class="erro">A arma desgastou</b>: sem uso no próximo turno.` : `Desgaste: restam ${R.DESGASTE_TURNOS - dg.usados} turno(s) afiado(s).`}</span>`);
     render();
     mostrarRolagem(`⚔ ${ar.nome} nv ${nv}`, linhas);
@@ -753,7 +790,8 @@ A["conjurar"] = (el, ev) => {
   const k = e.dominio === "Magia" ? "INT" : "FE", per = k === "INT" ? "Feitiçaria" : "Desejo";
   const x = S.encantamentos.find((y) => y.familia === e.nome) || {};
   const impl = Math.max(0, ...S.armas.filter((w) => w.grupo === (k === "INT" ? "Cajado" : "Selo")).map((w) => int(w.nivel, 1)));
-  pagar("mana_atual", C.d.mana, R.custoMana(v), "Mana", (custo) => {
+  const manaC = custoEnc(e, v)[0], desc = manaC != null && manaC !== R.custoMana(v);
+  pagar("mana_atual", C.d.mana, manaC, "Mana", (custo) => {
     const at = R.rolarAtaque(C.d.bc[k] + C.d.n3, R.vantagem(C.a[k]), 20, rng);
     const linhas = [txtAtaque(at, per), `DT para o alvo resistir: <b>${k === "INT" ? C.d.dt_feiticaria : C.d.dt_desejo}</b>`];
     let expr = R.danoDoEncantamento(v.descricao);
@@ -769,6 +807,7 @@ A["conjurar"] = (el, ev) => {
       linhas.push(txtDano(tot, partes, "Dados do encantamento") + (extra ? ` · +${extra} dado por ${k}` : ""));
     } else if (!expr && !conds.length) linhas.push(`<span class="sub">Este encantamento não tem dados na descrição.</span>`);
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
+    if (desc) linhas.push(`<span class="sub">Matrícula: custa ${manaC} de Mana em vez de ${R.custoMana(v)}.</span>`);
     if (!x.equipado) linhas.push(`<span class="erro">Atenção: não está equipado.</span>`);
     if (impl < v.nivel) linhas.push(`<span class="erro">Atenção: precisa de ${k === "INT" ? "cajado" : "selo"} nv ${v.nivel}+ equipado.</span>`);
     mostrarRolagem(`✧ ${e.nome} (${v.tier} nv ${v.nivel})`, linhas);
@@ -886,7 +925,7 @@ A["ver-enc"] = (el, ev) => {
 };
 A["equipar"] = (el) => {
   const x = S.encantamentos[int(el.dataset.i)];
-  if (!x.equipado && C.espUsados + ENC[x.familia].espaco > C.d.espacos_encant) { toast(`Sem espaço: ${C.espUsados}/${C.d.espacos_encant} usados.`); return; }
+  if (!x.equipado && C.espUsados + custoEnc(ENC[x.familia])[1] > C.d.espacos_encant) { toast(`Sem espaço: ${C.espUsados}/${C.d.espacos_encant} usados.`); return; }
   mudar(() => { x.equipado = !x.equipado; });
 };
 A["prox-versao"] = (el) => { const x = S.encantamentos[int(el.dataset.i)], e = ENC[x.familia]; const p = e.versoes.find((v) => !x.versoes.includes(v.nivel)); fecharFolha(); mudar(() => { x.versoes.push(p.nivel); x.versoes.sort((a, b) => a - b); }); };
@@ -1036,7 +1075,7 @@ function resumoSessao() {
     vida: at("atual", d.vida), vida_max: d.vida, mana: at("mana_atual", d.mana), mana_max: d.mana, vigor: at("vigor_atual", d.vigor), vigor_max: d.vigor,
     ca: d.ca, movimento: c.mov, iniciativa: d.iniciativa_bonus,
     portao: [S.portao.Sucessos.filter(Boolean).length, S.portao.Falhas.filter(Boolean).length],
-    condicoes: R.CONDICOES.map((n) => [n, int((S.condicoes[n] || {}).atual), int((S.condicoes[n] || {}).max, 100)]),
+    condicoes: R.CONDICOES.map((n) => [n, int((S.condicoes[n] || {}).atual), condMax(n)]),
     iniciativa_dados: d.iniciativa_dados, rd: d.rd, resistencias: d.resistencias,
     defesas: Object.fromEntries(R.PERICIAS_DEFESA.map(([n, k, tn]) => [n, [d.bc[k] + d.n3 + (c.tal.has(tn) ? 2 : 0), R.vantagem(c.a[k])]])),
     inventario: S.inventario.map((i) => ({ item: i.item || "", carga: String(i.carga || ""), qtd: Math.max(1, int(i.qtd, 1)) })),
@@ -1112,7 +1151,7 @@ function condicaoDoMestre(ev, hora) {
   const bonus = C2.d.bc[k] + C2.d.n3 + (C2.tal.has(tn) ? 2 : 0);
   const autoFalha = defesa === "Vontade" && sessao.efeitos.some((e) => e.nome === "Loucura");
   const t = R.rolarDefesa(bonus, R.vantagem(C2.a[k]), rng), suc = !autoFalha && t.total >= int(ev.dt);
-  const mx = int(c.max, 100), antes = int(c.atual), [rec, novo, ativou] = R.receberCondicao(antes, mx, int(ev.pontos), suc);
+  const mx = condMax(cond), antes = int(c.atual), [rec, novo, ativou] = R.receberCondicao(antes, mx, int(ev.pontos), suc);
   c.atual = novo ? String(novo) : "";
   const teste = `${defesa} ${t.total} [d20 ${t.d20.join(", ")} +${bonus}] contra DT ${int(ev.dt)}: ${autoFalha ? "falha automática (Loucura)" : suc ? "SUCESSO, metade" : "falhou"}`;
   const linhas = [`${int(ev.pontos)} de ${esc(cond)}${ev.desc ? " — " + esc(ev.desc) : ""}`, teste, `${cond}: ${antes} → ${Math.min(antes + rec, mx)}/${mx} (+${rec})`];

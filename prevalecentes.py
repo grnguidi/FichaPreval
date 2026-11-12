@@ -233,6 +233,7 @@ class App(tk.Tk):
         self._receitas_salvas = ""
         self.encantamentos = []
         self.d = {}
+        self.esc = R.efeitos_escolhas({}, {})
         self.caixas = {}
         self.so_edicao = []
         self.modo = "jogo"
@@ -779,6 +780,8 @@ class App(tk.Tk):
             ttk.Entry(c, textvariable=cv["atual"], width=5).grid(row=r, column=2, padx=2, pady=1)
             ttk.Entry(c, textvariable=cv["notas"]).grid(row=r, column=3, padx=2, pady=1, sticky="we")
             self.cond[n] = cv
+        self.l_cond_extra = Rot(c, size=9, bold=False, fg=VERDE, wraplength=520, justify="left")
+        self.l_cond_extra.grid(row=len(R.CONDICOES) + 1, column=0, columnspan=4, sticky="w", pady=(4, 0))
 
         c = self.secao(p, "Portão da Morte", row=3, column=1)
         ttk.Label(c, text="Vida 0 = Incapaz. d20 no início do turno: 11+ é sucesso.\n5 sucessos: volta com 1 de Vida e 1 cicatriz. 5 falhas: morte.",
@@ -1096,7 +1099,7 @@ class App(tk.Tk):
         p = self._pagina("VI · Talentos")
         p.columnconfigure(0, weight=1)
         c = self.secao(p, "Talentos  ·  um a cada nível par", row=0, column=0)
-        self.cabecalho(c, ["Nv", "Categoria", "Talento", "Efeito", "", "Situacional"], C_ATR)
+        self.cabecalho(c, ["Nv", "Categoria", "Talento", "Efeito", "", "Situacional / escolha"], C_ATR)
         c.columnconfigure(3, weight=1)
         self.tal_ui = {}
         slots = [str(n) for n in range(2, 31, 2)] + ["extra"]
@@ -1117,6 +1120,12 @@ class App(tk.Tk):
             sw = ttk.Checkbutton(c, text="ativo agora", variable=ui["ativo"])
             sw.grid(row=2 * r - 1, column=5, sticky="nw", padx=(6, 0), pady=3)
             sw.grid_remove()
+            ui["escolha"] = self.var()
+            ce = ttk.Combobox(c, textvariable=ui["escolha"], width=22, state="readonly")
+            ce.configure(postcommand=lambda cb=ce, sl=s: cb.configure(values=self._opcoes_escolha(sl)))
+            ce.grid(row=2 * r - 1, column=5, sticky="nw", padx=(6, 0), pady=3)
+            ce.grid_remove()
+            ui["ce"] = ce
             self.linha(c, 2 * r, 6)
             ui.update(lbl=lab, cb_cat=cc, cb=ct, efeito=le, sw=sw)
             self.tal_ui[s] = ui
@@ -1394,6 +1403,7 @@ class App(tk.Tk):
         self.aplicar_efeitos(d, ef)
         d["carga"] += R.carga_extra_itens(self._inventario(), self.itens_livro)   # Mochila: +5
         self.d, self.a, self.ef = d, a, ef
+        self.esc = self.escolhas_talentos()
         avisos = []
 
         # subida de nível
@@ -1556,7 +1566,9 @@ class App(tk.Tk):
             atrs = pinfo["attrs"] or [self.v_prev_attr.get() or "ARC"]
             _, bonus, dados = R.pericia_fora(a, nivel, atrs, nome in treinadas)
             bonus += ef["pericia"].get(nome, 0)
-            pinfo["bonus"].configure(text=f"+{bonus}" + ("*" if nome in ef["pericia"] else ""))
+            if nome in self.esc["pericia_mestre"]:
+                bonus, dados = bonus + 2, dados + 1   # Mestre das Perícias: +2 e 1 vantagem
+            pinfo["bonus"].configure(text=f"+{bonus}" + ("*" if nome in ef["pericia"] or nome in self.esc["pericia_mestre"] else ""))
             pinfo["dados"].configure(text=f"🎲 {dados}d20")
             pinfo["calc"] = (bonus, dados)
         self.l_per_cont.configure(text=f"Treinadas fora de combate: {len(treinadas)}/{d['pericias_treinadas_max']}",
@@ -1605,6 +1617,18 @@ class App(tk.Tk):
             if self.efeitos_mestre else "")
         self.l_descanso.configure(text=f"Descansos curtos desde o longo: {self.descansos_curtos}/{R.DESCANSOS_CURTOS_MAX}  ·  "
                                        f"Poção Espiritual: {R.pocao_espiritual_dados(nivel, d['curva']['VIT'])}d10")
+        esc = self.esc
+        if esc["maestria"]:
+            partes.append(f"Maestria: {', '.join(esc['maestria'])} (+1 acerto)")
+        if esc["dominio"]:
+            partes.append("Domínio: " + ", ".join(f"{g} (+{n} propriedade{"s" if n > 1 else ""})" for g, n in esc["dominio"].items()))
+        if esc["mana"]:
+            partes.append("Matrícula: " + ("todas as escolas" if esc["todas_escolas"] else ", ".join(esc["escolas"]))
+                          + f" (−{esc['mana']} Mana" + (", −1 espaço)" if esc["espaco"] else ")"))
+        if esc["pericia_mestre"]:
+            partes.append(f"Mestre das Perícias: {', '.join(esc['pericia_mestre'])} (+2 e 1 vantagem)")
+        self.l_cond_extra.configure(text=("Condição Endurecida: " + ", ".join(f"{n} +{v} (máx. {self.cond_max(n)})" for n, v in esc["cond_extra"].items()))
+                                    if esc["cond_extra"] else "")
         self.l_ef_ativos.configure(text=("Efeitos de talento em uso — " + "  ·  ".join(partes)) if partes else
                                    "Nenhum efeito de talento em uso. Talentos situacionais são ligados na aba Talentos (\"ativo agora\").")
 
@@ -1773,10 +1797,11 @@ class App(tk.Tk):
             extra = R.cap(a[k]) // 30
             ui["l_dano"].configure(text=R.dano_com_dados(l["dano"], extra) + (f"  (+{extra} dado por {k})" if extra else ""))
             ui["l_tipo"].configure(text=l["tipo"])
-            acerto = d["bc"][k] + nivel // 3 + R.ACERTO_ARMA.get(nv, 0) + self.ef["acerto"]
+            acerto = d["bc"][k] + nivel // 3 + R.ACERTO_ARMA.get(nv, 0) + self.ef["acerto"] + (1 if g in self.esc["maestria"] else 0)
             ui["l_acerto"].configure(text=f"1d20 +{acerto}" + (" (2d20, maior)" if R.vantagem(a[k]) else "") + f"  [{k}]")
             ui["l_crit"].configure(text=str(l["critico"]))
-            ui["l_props_max"].configure(text=str(l["propriedades"]))
+            extra_p = self.esc["dominio"].get(g, 0)
+            ui["l_props_max"].configure(text=str(l["propriedades"]) + (f" +{extra_p} (Domínio)" if extra_p else ""))
             ui["l_peso"].configure(text=str(l["espaco"]))
             vig = 10 if nv >= 8 else 8 if nv >= 4 else 5
             ui["l_vigor"].configure(text=str(vig) if arma.get("vigor") else "—")
@@ -1988,8 +2013,8 @@ class App(tk.Tk):
             return
         if not x["equipado"]:
             e = self.enc_por_nome[x["familia"]]
-            usados = sum(self.enc_por_nome[y["familia"]]["espaco"] for y in self.encantamentos if y["equipado"])
-            if usados + e["espaco"] > self.d["espacos_encant"]:
+            usados = sum(self.custo_enc(self.enc_por_nome[y["familia"]])[1] for y in self.encantamentos if y["equipado"])
+            if usados + self.custo_enc(e)[1] > self.d["espacos_encant"]:
                 messagebox.showinfo(APP_NOME, f"Sem espaço: {usados}/{self.d['espacos_encant']} usados, {x['familia']} ocupa {e['espaco']}.")
                 return
         x["equipado"] = not x["equipado"]
@@ -2041,13 +2066,13 @@ class App(tk.Tk):
             efeito = top["descricao"][:70] + ("…" if len(top["descricao"]) > 70 else "")
             iid = self.tree_enc.insert("", "end", text=x["familia"],
                                        values=(", ".join(map(str, x["versoes"])), top["mana"].replace(" Mana", ""), "✓" if x["equipado"] else "",
-                                               e["espaco"], " ".join(conj) + ("" if nimpl else f" (sem {impl})")))
+                                               self.custo_enc(e)[1], " ".join(conj) + ("" if nimpl else f" (sem {impl})")))
             if x["familia"] == selecionar:
                 self.tree_enc.selection_set(iid)
 
     def _recalc_enc(self, a, nivel, avisos):
         d = self.d
-        usados = sum(self.enc_por_nome[x["familia"]]["espaco"] for x in self.encantamentos if x["equipado"] and x["familia"] in self.enc_por_nome)
+        usados = sum(self.custo_enc(self.enc_por_nome[x["familia"]])[1] for x in self.encantamentos if x["equipado"] and x["familia"] in self.enc_por_nome)
         self.l_enc_esp.configure(text=f"{usados}/{d['espacos_encant']}", style="Erro.TLabel" if usados > d["espacos_encant"] else "Valor.TLabel")
         self.l_enc_dt.configure(text=f"Feitiçaria {d['dt_feiticaria']} • Desejo {d['dt_desejo']}")
         self.l_enc_dados.configure(text=f"Magias +{d['dados_extra_magia']} • Feitiços +{d['dados_extra_feitico']}")
@@ -2110,12 +2135,44 @@ class App(tk.Tk):
             messagebox.showinfo(APP_NOME, f"Você não pode escolher {nome} neste slot:\n\n{txt.split('—', 1)[-1].strip()}")
             ui["disp"].set(ui["nome"].get())
             return
+        if ui["nome"].get() != nome:
+            ui["escolha"].set("")
         ui["nome"].set(nome)
         ui["disp"].set(nome)
 
     def _limpar_talento(self, slot):
         self.tal_ui[slot]["nome"].set("")
         self.tal_ui[slot]["disp"].set("")
+        self.tal_ui[slot]["escolha"].set("")
+
+    def _opcoes_escolha(self, slot):
+        """Opções do talento com escolha neste slot: armas, escolas de encantamento, condições ou perícias treinadas."""
+        tipo = R.ESCOLHA_TALENTO.get(self.tal_ui[slot]["nome"].get())
+        if tipo == "arma":
+            eq = self.armas_equipadas()
+            return eq + [a["nome"] for a in self.dados["armas"] if a["nome"] not in eq]
+        if tipo in ("escola", "escola_ou_mana"):
+            conhecidas = [self.enc_por_nome[x["familia"]]["categoria"] for x in self.encantamentos if x["familia"] in self.enc_por_nome]
+            todas = sorted({e["categoria"] for e in self.dados["encantamentos"]})
+            ops = list(dict.fromkeys(conhecidas)) + [e for e in todas if e not in conhecidas]
+            return ([R.MATRICULA_MANA2] if tipo == "escola_ou_mana" else []) + ops
+        if tipo == "condicao":
+            return list(R.CONDICOES)
+        if tipo == "pericia":
+            return sorted(self.pericias_treinadas()) or [n for n, _, _ in R.PERICIAS]
+        return []
+
+    def escolhas_talentos(self):
+        return R.efeitos_escolhas({s: ui["nome"].get() for s, ui in self.tal_ui.items()},
+                                  {s: ui["escolha"].get() for s, ui in self.tal_ui.items()})
+
+    def cond_max(self, n):
+        """Máximo da barra de condição, com +20 por Condição Endurecida escolhida nela."""
+        return to_int(self.cond[n]["max"].get(), 100) + self.esc["cond_extra"].get(n, 0)
+
+    def custo_enc(self, e, v=None):
+        """(mana, espaço) do encantamento depois da Matrícula."""
+        return R.desconto_matricula(self.esc, e["categoria"], R.custo_mana(v) if v else None, e["espaco"])
 
     def _recalc_talentos(self, a, nivel, avisos):
         tal = self.talentos_escolhidos()
@@ -2128,6 +2185,11 @@ class App(tk.Tk):
                 ui_["sw"].grid_remove()
                 if ui_["ativo"].get():
                     ui_["ativo"].set(False)
+            if ui_["nome"].get() in R.ESCOLHA_TALENTO:
+                ui_["ce"].grid()
+                ui_["ce"].state(["!disabled", "readonly"] if self.modo == "edicao" else ["disabled"])
+            else:
+                ui_["ce"].grid_remove()
         for s, ui in self.tal_ui.items():
             if s == "extra":
                 ativo = "Versátil" in tal
@@ -2144,6 +2206,12 @@ class App(tk.Tk):
                 marca = ""
                 if ef_t:
                     marca = "[aplicado na ficha] " if ef_t["tipo"] == "perm" else ("[ATIVO] " if ui["ativo"].get() else "[situacional] ")
+                tipo_e = R.ESCOLHA_TALENTO.get(nome)
+                if tipo_e:
+                    marca = (f"[{R.ROTULO_ESCOLHA[tipo_e]}: {ui['escolha'].get()} — aplicado] " if ui["escolha"].get()
+                             else f"[escolha a {R.ROTULO_ESCOLHA[tipo_e].lower()} ao lado] ")
+                    if not ui["escolha"].get():
+                        avisos.append(("erro", f"Talento {nome}: escolha {R.ROTULO_ESCOLHA[tipo_e].lower()} (aba Talentos)."))
                 ui["efeito"].configure(text=(f"{NO} {', '.join(m)} — " if m else "") + marca + t["descricao"],
                                        style="Erro.TLabel" if m else "TLabel")
                 if m:
@@ -2202,7 +2270,8 @@ class App(tk.Tk):
         nv_dano = min(10, nv + ef["dano_nivel"])
         linha = self._linha_arma(arma["nome"], nv)
         linha_dano = self._linha_arma(arma["nome"], nv_dano) or linha
-        bonus = self.d["bc"][k] + self.nivel() // 3 + R.ACERTO_ARMA.get(nv, 0) + ef["acerto"]
+        maestria = 1 if arma["nome"] in self.esc["maestria"] else 0
+        bonus = self.d["bc"][k] + self.nivel() // 3 + R.ACERTO_ARMA.get(nv, 0) + ef["acerto"] + maestria
         dg = self.desgaste.setdefault(i, {"usados": 0, "desgastada": False, "em": 0, "contado": -1})
         if dg["desgastada"]:
             if not messagebox.askyesno(APP_NOME, f"{arma['nome']} está desgastada: não pode ser usada por um turno.\n\n"
@@ -2230,6 +2299,8 @@ class App(tk.Tk):
             linhas.append(txt_custo)
         if ef["acerto"]:
             linhas.append(f"Inclui +{ef['acerto']} de acerto de talento situacional.")
+        if maestria:
+            linhas.append("Inclui +1 de Maestria nesta arma.")
         if at["critico"]:
             linhas.append(f"Desgaste: o crítico reafiou a arma ({R.DESGASTE_TURNOS}/{R.DESGASTE_TURNOS}).")
         elif dg["desgastada"]:
@@ -2284,7 +2355,10 @@ class App(tk.Tk):
             avisos.append("Atenção: este encantamento não está equipado.")
         if self._nivel_impl(e["dominio"]) < v["nivel"]:
             avisos.append(f"Atenção: precisa de {'cajado' if k == 'INT' else 'selo'} de nível {v['nivel']} ou maior equipado.")
-        ok, txt_custo = self._pagar(self.v_mana_atual, self.d["mana"], R.custo_mana(v), "Mana")
+        custo, _ = self.custo_enc(e, v)
+        if custo is not None and custo != R.custo_mana(v):
+            avisos.append(f"Matrícula: custa {custo} de Mana em vez de {R.custo_mana(v)}.")
+        ok, txt_custo = self._pagar(self.v_mana_atual, self.d["mana"], custo, "Mana")
         if not ok:
             return
         bonus = self.d["bc"][k] + self.nivel() // 3
@@ -2680,8 +2754,10 @@ class App(tk.Tk):
         out["Armas"]["Armadura"] = eq.get("armadura", "")
         out["Armas"]["Escudo"] = eq.get("escudo", "")
         encs = s.get("encantamentos", [])
+        esc_s = R.efeitos_escolhas(s.get("talentos", {}), s.get("talentos_escolha") or {})
         out["Encantamentos"] = {"Espaços máx.": d["espacos_encant"],
-                                "Espaços usados": sum(self.enc_por_nome[x["familia"]]["espaco"] for x in encs
+                                "Espaços usados": sum(R.desconto_matricula(esc_s, self.enc_por_nome[x["familia"]]["categoria"], None,
+                                                                           self.enc_por_nome[x["familia"]]["espaco"])[1] for x in encs
                                                       if x.get("equipado") and x.get("familia") in self.enc_por_nome),
                                 "Aprendidos": len(encs)}
         for x in encs:
@@ -2897,6 +2973,7 @@ class App(tk.Tk):
             "sem_alma": getattr(self, "sem_alma", False),
             "manual": dict(self.manual),
             "talentos_ativos": sorted(self.talentos_ativos()),
+            "talentos_escolha": {sl: ui["escolha"].get() for sl, ui in self.tal_ui.items() if ui["escolha"].get()},
             "especie_notas": self.v_esp_notas.get(),
         }
 
@@ -2934,6 +3011,7 @@ class App(tk.Tk):
                 n = s.get("talentos", {}).get(sl, "")
                 ui["nome"].set(n); ui["disp"].set(n); ui["cat"].set("Todas")
                 ui["ativo"].set(n in set(s.get("talentos_ativos", [])))
+                ui["escolha"].set((s.get("talentos_escolha") or {}).get(sl, "") if n in R.ESCOLHA_TALENTO else "")
             al = s.get("alma", {})
             self.alma["nome"].set(al.get("nome", "")); self.alma["atr"].set(al.get("atr", "INT")); self.alma["restantes"].set(al.get("restantes", ""))
             self.txt_alma.delete("1.0", "end"); self.txt_alma.insert("1.0", al.get("historia", ""))
@@ -3154,7 +3232,7 @@ class PonteSessao:
                 "iniciativa_dados": d["iniciativa_dados"], "rd": d["rd"], "resistencias": list(d["resistencias"]),
                 "defesas": defesas,
                 "portao": [sum(v.get() for v in a.portao["Sucessos"]), sum(v.get() for v in a.portao["Falhas"])],
-                "condicoes": [[n, to_int(c["atual"].get()), to_int(c["max"].get(), 100)] for n, c in a.cond.items()],
+                "condicoes": [[n, to_int(c["atual"].get()), a.cond_max(n)] for n, c in a.cond.items()],
                 "inventario": [{"item": i["item"], "carga": i["carga"], "qtd": to_int(i["qtd"], 1) or 1} for i in a._inventario()],
                 "dinheiro": a.v_dinheiro.get().strip(), "carga": [round(a._carga_atual(), 1), d["carga"]],
                 "sem_alma": a.sem_alma}
@@ -3202,7 +3280,7 @@ class PonteSessao:
         t = R.rolar_defesa(bonus, R.vantagem(a.a[k]), a._rng)
         sucesso = not auto_falha and t["total"] >= dt
         c = a.cond[cond]
-        mx = to_int(c["max"].get(), 100)
+        mx = a.cond_max(cond)
         antes = to_int(c["atual"].get())
         rec, novo, ativou = R.receber_condicao(antes, mx, pontos, sucesso)
         c["atual"].set(str(novo) if novo else "")
@@ -3318,6 +3396,10 @@ Condições: barra de 100 por condição. Pontos de inimigo: teste de Fortitude 
 ou Vontade (Sono, Loucura, Morte) contra a DT; sucesso recebe metade. Ao encher, o efeito ativa e a barra volta a zero.
 Dano recebido: rola a RD (1d4 a cada 20 TEN) e depois a resistência corta pela metade. Magia Pura e Relâmpago ignoram RD.
 Carga: Capacete, Manopla, Calça e Bota de set pesam 1 cada; a Mochila aumenta a Carga em 5.
+Talentos com escolha: Maestria/Maestria dupla +1 de ataque só na arma escolhida; Domínio +1 propriedade na arma escolhida
+(+1 com Arma de família); Matrícula −1 Mana e −1 espaço na escola escolhida (mínimo 1), Matrícula avançada −2 de Mana
+ou uma segunda escola, Matrícula Suprema vale para todas (até −3); Condição Endurecida +20 na barra escolhida;
+Mestre das Perícias +2 e 1 vantagem na perícia escolhida.
 Talismãs: 1 espaço + 1 a cada 6 níveis (máx. 5).
 
 Talentos aplicados automaticamente: Vida Dura, Fôlego de Guerreiro, Mochileiro, Mula de Carga, Cabeça Cheia, Mente Expandida,

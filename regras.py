@@ -253,7 +253,7 @@ EFEITOS_TALENTOS = {
     "Pares Afinados": {"tipo": "sit", "acerto": 2, "nota": "ataque bônus com duas armas do mesmo grupo"},
     "Mão de Falcão": {"tipo": "sit", "acerto": 2, "nota": "Mirar em Ponto Cego"},
     "Caçador de Fraquezas": {"tipo": "sit", "acerto": 2, "dano_nivel": 1, "nota": "atacando um Ponto Chave"},
-    "Maestria": {"tipo": "sit", "acerto": 1, "nota": "com a arma escolhida"},
+    
     "Extasiado": {"tipo": "sit", "iniciativa": 5, "nota": "não ser o primeiro na iniciativa"},
     "Navegante Nato": {"tipo": "sit", "pericia": {"Navegação": 3}, "nota": "em viagens"},
     "Voz Encantadora": {"tipo": "sit", "pericia": {"Artes": 2}, "nota": "ao se apresentar em público"},
@@ -524,3 +524,63 @@ def peso_inventario(inventario):
             q = 1
         tot += c * q
     return tot
+
+
+
+# ---------------- Talentos com escolha (arma, escola, condição, perícia) ----------------
+ESCOLHA_TALENTO = {
+    "Maestria": "arma", "Maestria dupla": "arma", "Domínio": "arma",
+    "Matrícula": "escola", "Matrícula avançada": "escola_ou_mana",
+    "Condição Endurecida": "condicao", "Mestre das Perícias": "pericia",
+}
+ROTULO_ESCOLHA = {"arma": "Arma", "escola": "Escola", "escola_ou_mana": "Escola ou −2 de mana",
+                  "condicao": "Condição", "pericia": "Perícia"}
+MATRICULA_MANA2 = "−2 de mana"
+
+
+def efeitos_escolhas(talentos_slots, escolhas):
+    """talentos_slots: {slot: nome do talento}; escolhas: {slot: valor escolhido}.
+    Devolve o que cada talento de escolha faz, só para o que foi escolhido, e os que ainda faltam escolher."""
+    out = {"maestria": [], "dominio": {}, "escolas": [], "mana": 0, "espaco": 0, "todas_escolas": False,
+           "cond_extra": {}, "pericia_mestre": [], "pendentes": []}
+    nomes = {n for n in talentos_slots.values() if n}
+    for slot in sorted(talentos_slots, key=lambda x: (x == "extra", int(x) if x.isdigit() else 99)):
+        nome = talentos_slots[slot]
+        tipo = ESCOLHA_TALENTO.get(nome)
+        if not tipo:
+            continue
+        v = str(escolhas.get(slot) or "").strip()
+        if not v:
+            out["pendentes"].append(nome)
+            continue
+        if nome in ("Maestria", "Maestria dupla"):
+            if v not in out["maestria"]:
+                out["maestria"].append(v)
+        elif nome == "Domínio":
+            out["dominio"][v] = out["dominio"].get(v, 0) + 1 + (1 if "Arma de família" in nomes else 0)
+        elif nome == "Matrícula":
+            if v not in out["escolas"]:
+                out["escolas"].append(v)
+            out["mana"], out["espaco"] = max(out["mana"], 1), 1
+        elif nome == "Matrícula avançada":
+            if v == MATRICULA_MANA2:
+                out["mana"] = 2
+            elif v not in out["escolas"]:
+                out["escolas"].append(v)
+        elif nome == "Condição Endurecida":
+            out["cond_extra"][v] = out["cond_extra"].get(v, 0) + 20
+        elif nome == "Mestre das Perícias":
+            if v not in out["pericia_mestre"]:
+                out["pericia_mestre"].append(v)
+    if "Matrícula Suprema" in nomes and out["escolas"]:
+        out["todas_escolas"] = True
+        out["mana"] = min(3, max(out["mana"], 1))
+    return out
+
+
+def desconto_matricula(esc, escola, mana, espaco):
+    """Custo de Mana e espaço de um encantamento depois da Matrícula (mínimo 1). mana pode ser None."""
+    if not esc.get("mana") or not (esc.get("todas_escolas") or escola in esc.get("escolas", [])):
+        return mana, espaco
+    m = None if mana is None else (mana if mana <= 0 else max(1, mana - esc["mana"]))
+    return m, max(1, espaco - esc.get("espaco", 0))
