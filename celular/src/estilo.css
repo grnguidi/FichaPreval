@@ -109,7 +109,7 @@ details.acoes summary:before{content:"📖 "}
 .avisos li.info{color:var(--tinta2)} .avisos li.info:before{content:"ℹ"}
 .avisos li.tudo{color:var(--verde)} .avisos li.tudo:before{content:"✓"}
 /* barra inferior */
-.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--fundo);border-top:1px solid var(--ouro);display:grid;grid-template-columns:repeat(5,1fr);
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--fundo);border-top:1px solid var(--ouro);display:grid;grid-template-columns:repeat(6,1fr);
   padding-bottom:env(safe-area-inset-bottom)}
 .nav button{border:0;background:transparent;color:#9fae9f;padding:8px 0 7px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--serif)}
 .nav button i{font-style:normal;font-size:20px;line-height:1}
@@ -138,7 +138,7 @@ details.acoes summary:before{content:"📖 "}
 .meta{color:var(--tinta2);font-size:13.5px;margin:2px 0 6px}
 .toast{position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:60;background:var(--fundo2);color:var(--faixa);
   border:1px solid var(--ouro);border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.45;transform:translateY(20px);opacity:0;transition:.25s;pointer-events:none}
-.toast.on{opacity:1;transform:none}
+.toast.on{opacity:1;transform:none;pointer-events:auto}
 .campo{display:block;margin:10px 0}
 .campo span{display:block;font-size:12.5px;color:var(--tinta2);margin-bottom:3px}
 .campo input,.campo select,.campo textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--ouro);background:var(--campo)}
@@ -153,3 +153,25 @@ details.acoes summary:before{content:"📖 "}
 .bolinha.on.f{background:var(--c-vida);border-color:var(--c-vida)}
 input[type=number]{-moz-appearance:textfield}
 @media (min-width:700px){ .pagina{max-width:760px;margin:8px auto 0} .g4m{grid-template-columns:repeat(4,1fr)!important} }
+/* modo jogo / edição */
+.jogo .so-ed{display:none!important}
+.faixa-modo{display:flex;align-items:center;gap:8px;margin:-4px 0 10px;padding:6px 8px 6px 12px;border-radius:10px;background:var(--agua);border:1px solid var(--linha);font-size:13px}
+.faixa-modo.ed{background:var(--rosa)}
+.faixa-modo span{flex:1;line-height:1.3}
+.faixa-modo button{border:1px solid var(--ouro);background:var(--campo);color:var(--tinta);border-radius:16px;padding:6px 12px;font-family:var(--serif);font-size:13.5px;font-weight:700;white-space:nowrap}
+/* bolsa */
+.barra.grossa{height:12px;border-radius:6px;background:var(--perg2);overflow:hidden}
+.barra.grossa i{display:block;height:100%}
+.cartao.dinheiro{display:flex;align-items:baseline;gap:10px;padding:12px 14px;margin-top:10px;border-left:6px solid var(--c-per)}
+.cartao.dinheiro span{font-family:var(--tit);font-size:13px;color:var(--c-per)}
+.cartao.dinheiro b{flex:1;font-size:19px}
+.cartao.dinheiro small{color:var(--tinta2);font-style:italic;font-size:12px}
+/* sessão do mestre */
+.mesa{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom));z-index:29;display:flex;gap:6px;padding:6px 8px;background:var(--fundo2);border-top:1px solid var(--ouro)}
+.mesa .info{flex:1;min-width:0;text-align:left;border:0;background:transparent;color:var(--faixa);font-family:var(--serif);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mesa .mao{border:1px solid var(--ouro);background:var(--ouro2);color:#2d2015;border-radius:18px;padding:6px 14px;font-weight:700;font-family:var(--serif);font-size:14px}
+.mesa .mao.on{background:var(--vinho);color:#fff}
+body.com-mesa{padding-bottom:calc(108px + env(safe-area-inset-bottom))}
+body.com-mesa .toast{bottom:calc(124px + env(safe-area-inset-bottom))}
+.lista.mestre .item{background:var(--rosa)}
+.toast hr{border:0;border-top:1px solid var(--ouro);opacity:.5;margin:6px 0}

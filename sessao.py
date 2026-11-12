@@ -18,6 +18,41 @@ try:
     import segno   # QR code (pip install segno); sem ele o app funciona, só não mostra o QR
 except ImportError:
     segno = None
+try:
+    from pagina_celular import HTML as PAGINA_FICHA   # ficha completa do celular (gerada por celular/build.py)
+except ImportError:
+    PAGINA_FICHA = None
+
+TIPOS_DANO = ["Cortante", "Impacto", "Perfurante", "Fogo", "Gelo", "Raio", "Veneno", "Sangramento", "Magia",
+              "Magia Pura", "Sagrado", "Verdadeiro", "Outro"]
+CONDICOES_SUGERIDAS = ["Atordoado", "Caído", "Cego", "Surdo", "Envenenado", "Sangrando", "Queimando", "Congelado",
+                       "Lento", "Amedrontado", "Encantado", "Agarrado", "Paralisado", "Invisível", "Abençoado", "Inspirado"]
+CAMPOS_FICHA = {"personagem": str, "especie": str, "nivel": int, "vida": int, "vida_max": int, "mana": int,
+                "mana_max": int, "vigor": int, "vigor_max": int, "ca": int, "movimento": int, "iniciativa": int,
+                "portao": list, "condicoes": list, "sem_alma": bool}
+
+
+def limpar_ficha(dados):
+    """Aceita só os campos conhecidos do resumo da ficha (dados vindos da rede não são confiáveis)."""
+    out = {}
+    if not isinstance(dados, dict):
+        return out
+    for k, tipo in CAMPOS_FICHA.items():
+        v = dados.get(k)
+        try:
+            if tipo is str:
+                out[k] = str(v or "")[:40]
+            elif tipo is int:
+                out[k] = int(v or 0)
+            elif tipo is bool:
+                out[k] = bool(v)
+            elif k == "portao" and isinstance(v, list):
+                out[k] = [int(x) for x in v[:2]]
+            elif k == "condicoes" and isinstance(v, list):
+                out[k] = [[str(c[0])[:20], int(c[1]), int(c[2])] for c in v[:10] if isinstance(c, list) and len(c) == 3]
+        except (TypeError, ValueError):
+            continue
+    return out
 
 PORTA = 5757
 PORTA_ANUNCIO = 5758   # UDP: o mestre anuncia a sessão e os jogadores a encontram sozinhos
@@ -119,7 +154,11 @@ class _Pagina(BaseHTTPRequestHandler):
         try:
             if u.path == "/api/estado":
                 self._json(self.srv.web_estado(parse_qs(u.query).get("id", [""])[0]))
+            elif u.path == "/api/sessao":
+                self._json({"sessao": True, "rodada": self.srv.rodada})
             elif u.path in ("/", "/index.html"):
+                self._resp((PAGINA_FICHA or PAGINA_WEB).encode("utf-8"), "text/html; charset=utf-8")
+            elif u.path == "/mao":
                 self._resp(PAGINA_WEB.encode("utf-8"), "text/html; charset=utf-8")
             else:
                 self.send_error(404)
@@ -128,7 +167,7 @@ class _Pagina(BaseHTTPRequestHandler):
 
     def do_POST(self):
         try:
-            n = min(int(self.headers.get("Content-Length") or 0), 2000)
+            n = min(int(self.headers.get("Content-Length") or 0), 20000)
             corpo = json.loads(self.rfile.read(n) or b"{}")
             if not isinstance(corpo, dict):
                 corpo = {}
@@ -142,6 +181,8 @@ class _Pagina(BaseHTTPRequestHandler):
                 self._json({"ok": self.srv.web_mao(ident, True)})
             elif self.path == "/api/abaixar":
                 self._json({"ok": self.srv.web_mao(ident, False)})
+            elif self.path == "/api/ficha":
+                self._json({"ok": self.srv.receber_ficha(ident, corpo.get("dados"), web=True)})
             else:
                 self.send_error(404)
         except OSError:
@@ -259,6 +300,12 @@ class Servidor:
         self.httpd = None
         self.sock = None
         self.ativo = False
+        self.fichas = {}       # nome -> resumo da ficha (Vida, Mana, Vigor, CA...)
+        self.efeitos = {}      # nome -> [{"id", "nome", "desc", "rodadas"}] aplicados pelo mestre
+        self.pendentes = {}    # celulares: nome -> eventos ainda não entregues
+        self.rodada = 1
+        self.registro = []     # (hora, texto) para o painel do mestre
+        self._seq = 0
 
     def iniciar(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -312,7 +359,9 @@ class Servidor:
                 return {"ok": False}
             w["visto"] = time.time()
             palavra, w["palavra"] = w["palavra"], False
-            return {"ok": True, "mao": ident in self.maos, "palavra": palavra}
+            eventos, self.pendentes[ident] = self.pendentes.get(ident, []), []
+            return {"ok": True, "mao": ident in self.maos, "palavra": palavra, "eventos": eventos,
+                    "efeitos": list(self.efeitos.get(ident, [])), "rodada": self.rodada}
 
     def _varrer(self):
         """Tira da mesa os celulares que sumiram há muito tempo (fecharam a página ou saíram da rede).
@@ -371,6 +420,7 @@ class Servidor:
                         continue
                     nome = self._registrar(c, str(msg.get("nome", "")).strip()[:30] or "Jogador")
                     _enviar(c, {"t": "ok", "nome": nome})
+                    self._sincronizar(nome)
                     self.fila.put(("mudou",))
                 elif t == "mao":
                     with self.lock:
@@ -386,6 +436,8 @@ class Servidor:
                             self.maos.remove(nome)
                     self.fila.put(("mudou",))
                     self._avisar(nome)
+                elif t == "ficha":
+                    self.receber_ficha(nome, msg.get("dados"))
         finally:
             if nome is not None:
                 with self.lock:
@@ -415,6 +467,113 @@ class Servidor:
             lev = nome in self.maos
         if c:
             _enviar(c, {"t": "estado", "mao": lev})
+
+    # --- fichas, dano, condições e rodadas
+    def receber_ficha(self, nome, dados, web=False):
+        with self.lock:
+            if web:
+                w = self.web.get(nome)
+                if w is None:
+                    return False
+                w["visto"] = time.time()
+            novo = limpar_ficha(dados)
+            if self.fichas.get(nome) == novo:
+                return True
+            self.fichas[nome] = novo
+        self.fila.put(("mudou",))
+        return True
+
+    def _anotar(self, texto):
+        with self.lock:
+            self.registro.insert(0, (time.strftime("%H:%M"), texto))
+            del self.registro[200:]
+        self.fila.put(("registro",))
+
+    def _evento(self, nome, ev):
+        """Entrega um evento ao jogador: na hora (PC) ou na próxima consulta (celular)."""
+        with self.lock:
+            c = self.clientes.get(nome)
+            if c is None and nome in self.web:
+                self.pendentes.setdefault(nome, []).append(ev)
+        if c:
+            _enviar(c, {"t": "evento", "ev": ev})
+
+    def _sincronizar(self, nome):
+        """Manda ao jogador do PC a lista atual de efeitos (o celular recebe na consulta)."""
+        with self.lock:
+            c = self.clientes.get(nome)
+            lista, rod = list(self.efeitos.get(nome, [])), self.rodada
+        if c:
+            _enviar(c, {"t": "efeitos", "lista": lista, "rodada": rod})
+
+    def jogadores(self):
+        with self.lock:
+            return list(self.clientes) + list(self.web)
+
+    def enviar_dano(self, alvos, valor, tipo, desc):
+        """valor > 0: dano; valor < 0: cura. A ficha do jogador aplica e devolve a Vida nova."""
+        for n in alvos:
+            self._evento(n, {"tipo": "dano", "valor": int(valor), "dano_tipo": tipo, "desc": desc})
+        oque = f"{abs(valor)} de cura" if valor < 0 else f"{valor} de dano" + (f" ({tipo})" if tipo else "")
+        self._anotar(f"{oque} → {', '.join(alvos)}" + (f": {desc}" if desc else ""))
+
+    def adicionar_condicao(self, alvos, nome_cond, rodadas, desc):
+        for n in alvos:
+            with self.lock:
+                self._seq += 1
+                self.efeitos.setdefault(n, []).append({"id": self._seq, "nome": nome_cond, "desc": desc, "rodadas": int(rodadas)})
+            self._evento(n, {"tipo": "condicao", "nome": nome_cond, "rodadas": int(rodadas), "desc": desc})
+            self._sincronizar(n)
+        dur = f"{rodadas} rodada(s)" if rodadas else "até o mestre remover"
+        self._anotar(f"{nome_cond} ({dur}) → {', '.join(alvos)}" + (f": {desc}" if desc else ""))
+        self.fila.put(("mudou",))
+
+    def remover_condicao(self, nome, cid):
+        with self.lock:
+            lista = self.efeitos.get(nome, [])
+            fim = [e for e in lista if e["id"] == cid]
+            self.efeitos[nome] = [e for e in lista if e["id"] != cid]
+        for e in fim:
+            self._evento(nome, {"tipo": "fim", "nome": e["nome"]})
+            self._anotar(f"{e['nome']} removido de {nome}")
+        self._sincronizar(nome)
+        self.fila.put(("mudou",))
+
+    def proxima_rodada(self):
+        """Avança a rodada: cada condição com duração perde 1; ao chegar a 0, termina e todos são avisados."""
+        acabaram = []
+        with self.lock:
+            self.rodada += 1
+            for nome, lista in self.efeitos.items():
+                restam = []
+                for e in lista:
+                    if e["rodadas"] > 0:
+                        e["rodadas"] -= 1
+                        if e["rodadas"] == 0:
+                            acabaram.append((nome, e["nome"]))
+                            continue
+                    restam.append(e)
+                self.efeitos[nome] = restam
+            rod = self.rodada
+        for nome in self.jogadores():
+            self._evento(nome, {"tipo": "rodada", "rodada": rod})
+            self._sincronizar(nome)
+        for nome, cond in acabaram:
+            self._evento(nome, {"tipo": "fim", "nome": cond})
+        self._anotar(f"Rodada {rod}" + (" — terminou: " + ", ".join(f"{c} ({n})" for n, c in acabaram) if acabaram else ""))
+        self.fila.put(("mudou",))
+
+    def painel(self):
+        """Tudo que o painel do mestre desenha, numa leitura só."""
+        with self.lock:
+            agora = time.time()
+            jog = []
+            for n in list(self.clientes) + list(self.web):
+                w = self.web.get(n)
+                jog.append({"nome": n, "celular": w is not None, "sem_sinal": bool(w and agora - w["visto"] > SEM_SINAL),
+                            "mao": n in self.maos, "ficha": dict(self.fichas.get(n, {})),
+                            "efeitos": [dict(e) for e in self.efeitos.get(n, [])]})
+            return {"jogadores": jog, "maos": list(self.maos), "rodada": self.rodada, "registro": list(self.registro[:60])}
 
     # --- ações do mestre
     def dar_palavra(self, nome):
@@ -484,6 +643,10 @@ class Cliente:
                 self.fila.put(("estado", bool(msg.get("mao"))))
             elif t == "palavra":
                 self.fila.put(("palavra",))
+            elif t == "evento" and isinstance(msg.get("ev"), dict):
+                self.fila.put(("evento", msg["ev"]))
+            elif t == "efeitos":
+                self.fila.put(("efeitos", msg.get("lista") or [], int(msg.get("rodada") or 1)))
         self.fila.put(("caiu",))
 
     def enviar(self, msg):
@@ -494,19 +657,27 @@ class Cliente:
 
 
 # ======================================================================= interface
+CORES_PADRAO = dict(FUNDO="#1b2520", CAMPO="#fbf7ea", PERG="#f2e9d3", PERG2="#e6d7b4", TINTA="#2d2015", TINTA2="#7d6a54",
+                    VINHO="#7c2626", OURO="#b39552", OURO2="#dcc387", VERDE="#4a6d33", ALERTA="#f0a08c",
+                    TINTA2_FUNDO="#9fae9f", FAIXA="#f6efdc", LINHA="#ddcda6", C_VIDA="#9a3d33", C_MANA="#3f6283",
+                    C_VIGOR="#567a3b", FONTE="Georgia")
+
+
 class JanelaSessao(tk.Toplevel):
     """Janela única com as três telas: escolha, painel do mestre e painel do jogador."""
 
-    def __init__(self, app, cores, nome_padrao, ao_fechar):
+    def __init__(self, app, cores, nome_padrao, ao_fechar, ponte=None):
         super().__init__(app)
-        self.c = cores
+        self.c = dict(CORES_PADRAO, **cores)
+        self._avisos = []          # últimos avisos do mestre (jogador)
+        self.ponte = ponte         # liga a sessão à ficha aberta (resumo, aplicar dano, mostrar efeitos)
         self.ao_fechar = ao_fechar
         self.nome_padrao = nome_padrao
         self.fonte = cores.get("FONTE", "Georgia")
         self.title("Sessão — Levantar a mão")
         self.geometry("460x560")
         self.minsize(400, 480)
-        self.configure(background=cores["FUNDO"])
+        self.configure(background=self.c["FUNDO"])
         self.fila = queue.Queue()
         self.servidor = None
         self.cliente = None
@@ -514,6 +685,10 @@ class JanelaSessao(tk.Toplevel):
         self.ultimo_ip = None      # IP do mestre da última conexão (salvo nas preferências ao fechar)
         self._maos_tela = []       # fila como está desenhada na tela do mestre
         self._btn_voltar = None
+        self.selecionados = set()  # jogadores marcados no painel do mestre
+        self._painel_agendado = False
+        self._ultima_ficha = None
+        self.efeitos = []          # efeitos recebidos do mestre (lado do jogador)
         self.protocol("WM_DELETE_WINDOW", self.fechar)
         self.tela = None
         self._escolha()
@@ -590,40 +765,111 @@ class JanelaSessao(tk.Toplevel):
             messagebox.showerror("Sessão", f"Não foi possível abrir a sessão na porta {self.v_porta.get()}.\n{e}",
                                  parent=self)
             return
-        t = self._trocar()
-        self._rot(t, "✋ Mesa do mestre", 18, self.c["OURO2"], bold=True).pack()
+        self.title("Mesa do mestre")
+        self.geometry("1180x760")
+        self.minsize(980, 620)
+        if self.tela is not None:
+            self.tela.destroy()
+        c = self.c
+        self.tela = tk.Frame(self, bg=c["FUNDO"])
+        self.tela.pack(fill="both", expand=True)
+
+        # barra do topo
+        topo = tk.Frame(self.tela, bg=c["FUNDO"], padx=18, pady=10)
+        topo.pack(fill="x")
+        self._rot(topo, "⚜ Mesa do mestre", 18, c["OURO2"], bold=True).pack(side="left")
         ip = ip_local()
-        self._rot(t, f"Jogadores no app: entram sozinhos (IP {ip})", 10, self.c["TINTA2_FUNDO"]).pack(pady=(2, 0))
-        if self.servidor.web_ok:
-            url = f"http://{ip}:{PORTA_WEB}"
-            self._rot(t, f"Celulares: apontem a câmera para o QR\nou abram  {url}", 11, self.c["OURO2"],
-                      bold=True, justify="center").pack(pady=(2, 6))
-            if segno:
-                try:
-                    desenhar_qr(t, url).pack(pady=(0, 10))
-                except Exception:   # o QR é um extra: nunca derruba a mesa do mestre
-                    pass
-            self.geometry("460x760")
-        else:
-            self._rot(t, f"Celulares indisponíveis (porta {PORTA_WEB} ocupada)", 10, self.c["ALERTA"]).pack(pady=(2, 12))
+        self.url_celular = f"http://{ip}:{PORTA_WEB}" if self.servidor.web_ok else ""
+        info = f"PC: entram sozinhos (IP {ip})" + (f"   ·   Celular: {self.url_celular}" if self.url_celular else
+                                                    f"   ·   celulares indisponíveis (porta {PORTA_WEB} ocupada)")
+        self._rot(topo, info, 10, c["TINTA2_FUNDO"]).pack(side="left", padx=(18, 0))
+        ttk.Button(topo, text="Próxima rodada ▶", command=self._proxima_rodada).pack(side="right")
+        self.lbl_rodada = self._rot(topo, "Rodada 1", 16, c["OURO2"], bold=True)
+        self.lbl_rodada.pack(side="right", padx=14)
+        if self.url_celular:
+            ttk.Button(topo, text="QR code", command=self._mostrar_qr).pack(side="right", padx=(0, 6))
+        tk.Frame(self.tela, height=1, bg=c["OURO"]).pack(fill="x")
 
-        self._rot(t, "MÃOS LEVANTADAS (na ordem)", 9, bold=True).pack(anchor="w")
-        self.lst_maos = tk.Listbox(t, height=8, font=(self.fonte, 14, "bold"), bg=self.c["CAMPO"],
-                                   fg=self.c["VINHO"], selectbackground=self.c["OURO"], activestyle="none",
-                                   exportselection=False)
-        self.lst_maos.pack(fill="both", expand=True, pady=(2, 6))
+        corpo = tk.Frame(self.tela, bg=c["PERG"])
+        corpo.pack(fill="both", expand=True)
+        corpo.columnconfigure(0, weight=1)
+        corpo.rowconfigure(0, weight=1)
+
+        # jogadores (rolagem)
+        esq = tk.Frame(corpo, bg=c["PERG"])
+        esq.grid(row=0, column=0, sticky="nsew", padx=(14, 6), pady=12)
+        cab = tk.Frame(esq, bg=c["PERG"])
+        cab.pack(fill="x")
+        tk.Label(cab, text="JOGADORES", bg=c["PERG"], fg=c["VINHO"], font=(self.fonte, 10, "bold")).pack(side="left")
+        self.lbl_sel = tk.Label(cab, text="", bg=c["PERG"], fg=c["TINTA2"], font=(self.fonte, 10, "italic"))
+        self.lbl_sel.pack(side="left", padx=10)
+        ttk.Button(cab, text="Condição aos marcados", command=lambda: self._dialogo_condicao(sorted(self.selecionados))).pack(side="right")
+        ttk.Button(cab, text="Dano/Cura aos marcados", command=lambda: self._dialogo_dano(sorted(self.selecionados))).pack(side="right", padx=6)
+        ttk.Button(cab, text="Marcar todos", command=self._marcar_todos).pack(side="right")
+        area = tk.Frame(esq, bg=c["PERG"])
+        area.pack(fill="both", expand=True, pady=(8, 0))
+        self.cv_jog = tk.Canvas(area, bg=c["PERG"], highlightthickness=0)
+        sb = ttk.Scrollbar(area, orient="vertical", command=self.cv_jog.yview)
+        self.cv_jog.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        self.cv_jog.pack(side="left", fill="both", expand=True)
+        self.grade_jog = tk.Frame(self.cv_jog, bg=c["PERG"])
+        self._win_jog = self.cv_jog.create_window((0, 0), window=self.grade_jog, anchor="nw")
+        self.grade_jog.bind("<Configure>", lambda e: self.cv_jog.configure(scrollregion=self.cv_jog.bbox("all")))
+        self.cv_jog.bind("<Configure>", lambda e: (self.cv_jog.itemconfigure(self._win_jog, width=e.width), self._agendar_painel()))
+
+        # coluna da direita: mãos e registro
+        dir_ = tk.Frame(corpo, bg=c["PERG"], width=330)
+        dir_.grid(row=0, column=1, sticky="ns", padx=(6, 14), pady=12)
+        dir_.grid_propagate(False)
+        dir_.columnconfigure(0, weight=1)
+        dir_.rowconfigure(4, weight=1)
+        tk.Label(dir_, text="MÃOS LEVANTADAS (na ordem)", bg=c["PERG"], fg=c["VINHO"], font=(self.fonte, 10, "bold")).grid(row=0, column=0, sticky="w")
+        self.lst_maos = tk.Listbox(dir_, height=7, font=(self.fonte, 13, "bold"), bg=c["CAMPO"], fg=c["VINHO"],
+                                   selectbackground=c["OURO"], activestyle="none", exportselection=False,
+                                   highlightthickness=1, highlightbackground=c["OURO"], relief="flat")
+        self.lst_maos.grid(row=1, column=0, sticky="we", pady=(4, 4))
         self.lst_maos.bind("<Double-Button-1>", lambda e: self._dar_palavra())
-        bt = tk.Frame(t, bg=self.c["FUNDO"])
-        bt.pack(fill="x")
+        bt = tk.Frame(dir_, bg=c["PERG"])
+        bt.grid(row=2, column=0, sticky="we")
         ttk.Button(bt, text="🎤 Dar a palavra", command=self._dar_palavra).pack(side="left")
-        ttk.Button(bt, text="Baixar mão", command=self._baixar).pack(side="left", padx=6)
+        ttk.Button(bt, text="Baixar", command=self._baixar).pack(side="left", padx=4)
         ttk.Button(bt, text="Baixar todas", command=lambda: self.servidor.baixar_todas()).pack(side="right")
+        self.lbl_aviso = tk.Label(dir_, text="", bg=c["PERG"], fg=c["VINHO"], font=(self.fonte, 11, "bold"), anchor="w")
+        self.lbl_aviso.grid(row=3, column=0, sticky="we", pady=(6, 6))
+        reg = tk.Frame(dir_, bg=c["PERG"])
+        reg.grid(row=4, column=0, sticky="nsew")
+        tk.Label(reg, text="REGISTRO", bg=c["PERG"], fg=c["VINHO"], font=(self.fonte, 10, "bold")).pack(anchor="w")
+        self.txt_reg = tk.Text(reg, wrap="word", bg=c["CAMPO"], fg=c["TINTA"], font=(self.fonte, 10), relief="flat",
+                               highlightthickness=1, highlightbackground=c["OURO"], padx=8, pady=6)
+        self.txt_reg.pack(fill="both", expand=True, pady=(4, 0))
+        self.txt_reg.configure(state="disabled")
+        self._atualizar_mestre()
 
-        self._rot(t, "CONECTADOS", 9, bold=True).pack(anchor="w", pady=(14, 0))
-        self.lbl_conectados = self._rot(t, "ninguém ainda", 10, justify="left", wraplength=400)
-        self.lbl_conectados.pack(anchor="w")
-        self.lbl_aviso = self._rot(t, "", 11, self.c["ALERTA"], bold=True)
-        self.lbl_aviso.pack(anchor="w", pady=(10, 0))
+    def _mostrar_qr(self):
+        w = tk.Toplevel(self)
+        w.title("Celulares")
+        w.configure(background="white")
+        tk.Label(w, text="Aponte a câmera ou abra:\n" + self.url_celular, bg="white", fg="#222",
+                 font=(self.fonte, 12, "bold")).pack(padx=16, pady=(14, 6))
+        if segno:
+            try:
+                desenhar_qr(w, self.url_celular, 260).pack(padx=16, pady=(0, 16))
+            except Exception:   # o QR é um extra: nunca derruba a mesa do mestre
+                pass
+        else:
+            tk.Label(w, text="(instale o pacote segno para ver o QR code)", bg="white").pack(pady=(0, 14))
+
+    def _proxima_rodada(self):
+        self.servidor.proxima_rodada()
+
+    def _marcar_todos(self):
+        todos = set(self.servidor.jogadores())
+        self.selecionados = set() if self.selecionados >= todos and todos else todos
+        self._atualizar_mestre()
+
+    def _alternar_sel(self, nome):
+        self.selecionados ^= {nome}
         self._atualizar_mestre()
 
     def _nome_selecionado(self):
@@ -645,19 +891,214 @@ class JanelaSessao(tk.Toplevel):
             self.servidor.baixar(n)
             self.fila.put(("mudou",))
 
+    def _agendar_painel(self):
+        if not self._painel_agendado:
+            self._painel_agendado = True
+            self.after(250, self._atualizar_mestre)
+
+    def _barra(self, master, rot, atual, maximo, cor):
+        c = self.c
+        f = tk.Frame(master, bg=c["CAMPO"])
+        f.pack(fill="x", pady=1)
+        tk.Label(f, text=rot, width=6, anchor="w", bg=c["CAMPO"], fg=c["TINTA2"], font=(self.fonte, 9, "bold")).pack(side="left")
+        cv = tk.Canvas(f, height=16, bg=c["PERG2"], highlightthickness=0)
+        cv.pack(side="left", fill="x", expand=True)
+        frac = max(0.0, min(1.0, atual / maximo)) if maximo else 0.0
+
+        def desenhar(e=None, cv=cv):
+            cv.delete("all")
+            w = cv.winfo_width() or 200
+            cv.create_rectangle(0, 0, int(w * frac), 16, fill=cor, outline="")
+            cv.create_text(w // 2, 8, text=f"{atual} / {maximo}", fill=c["TINTA"] if frac < .5 else c["FAIXA"],
+                           font=(self.fonte, 9, "bold"))
+        cv.bind("<Configure>", desenhar)
+        desenhar()
+
+    def _cartao(self, master, j):
+        c = self.c
+        fi, nome = j["ficha"], j["nome"]
+        marcado = nome in self.selecionados
+        card = tk.Frame(master, bg=c["CAMPO"], highlightthickness=2 if marcado else 1,
+                        highlightbackground=c["VINHO"] if marcado else c["OURO"], padx=10, pady=8)
+        cab = tk.Frame(card, bg=c["CAMPO"])
+        cab.pack(fill="x")
+        v = tk.BooleanVar(value=marcado)
+        tk.Checkbutton(cab, variable=v, bg=c["CAMPO"], activebackground=c["CAMPO"],
+                       command=lambda n=nome: self._alternar_sel(n)).pack(side="left")
+        tk.Label(cab, text=fi.get("personagem") or nome, bg=c["CAMPO"], fg=c["VINHO"], font=(self.fonte, 13, "bold")).pack(side="left")
+        extra = nome if fi.get("personagem") and fi.get("personagem") != nome else ""
+        extra += (" · " if extra else "") + ("celular" if j["celular"] else "PC")
+        tk.Label(cab, text=extra, bg=c["CAMPO"], fg=c["TINTA2"], font=(self.fonte, 9, "italic")).pack(side="left", padx=6)
+        if j["mao"]:
+            tk.Label(cab, text="✋", bg=c["CAMPO"], fg=c["VINHO"], font=(self.fonte, 14, "bold")).pack(side="right")
+        if j["sem_sinal"]:
+            tk.Label(cab, text="sem sinal", bg=c["CAMPO"], fg=c["TINTA2"], font=(self.fonte, 9, "italic")).pack(side="right", padx=4)
+        if not fi:
+            tk.Label(card, text="Aguardando a ficha… (o jogador entrou só para levantar a mão)", bg=c["CAMPO"], fg=c["TINTA2"],
+                     font=(self.fonte, 9, "italic"), wraplength=320, justify="left").pack(anchor="w", pady=(4, 0))
+        else:
+            self._barra(card, "Vida", fi.get("vida", 0), fi.get("vida_max", 0), c["C_VIDA"])
+            self._barra(card, "Mana", fi.get("mana", 0), fi.get("mana_max", 0), c["C_MANA"])
+            self._barra(card, "Vigor", fi.get("vigor", 0), fi.get("vigor_max", 0), c["C_VIGOR"])
+            linha = f"Nv {fi.get('nivel', 1)}  ·  CA {fi.get('ca', 10)}  ·  Mov {fi.get('movimento', 9)} m  ·  Ini +{fi.get('iniciativa', 0)}"
+            tk.Label(card, text=linha, bg=c["CAMPO"], fg=c["TINTA"], font=(self.fonte, 10)).pack(anchor="w", pady=(4, 0))
+            if fi.get("vida", 1) <= 0:
+                p = fi.get("portao") or [0, 0]
+                tk.Label(card, text=f"☠ Incapaz — Portão da Morte: {p[0]} sucesso(s), {p[1]} falha(s)", bg=c["CAMPO"],
+                         fg=c["VINHO"], font=(self.fonte, 10, "bold")).pack(anchor="w")
+            if fi.get("condicoes"):
+                tk.Label(card, text="Acúmulos: " + ", ".join(f"{n} {a}/{m}" for n, a, m in fi["condicoes"]), bg=c["CAMPO"],
+                         fg=c["TINTA2"], font=(self.fonte, 9), wraplength=320, justify="left").pack(anchor="w")
+        for e in j["efeitos"]:
+            ln = tk.Frame(card, bg=c["PERG2"], padx=6, pady=2)
+            ln.pack(fill="x", pady=(4, 0))
+            dur = f"{e['rodadas']} rodada(s)" if e["rodadas"] else "sem fim"
+            tk.Label(ln, text=f"⏳ {e['nome']} — {dur}", bg=c["PERG2"], fg=c["TINTA"], font=(self.fonte, 9, "bold")).pack(side="left")
+            tk.Button(ln, text="✕", bg=c["PERG2"], fg=c["VINHO"], relief="flat", bd=0, cursor="hand2",
+                      command=lambda n=nome, i=e["id"]: self.servidor.remover_condicao(n, i)).pack(side="right")
+            if e.get("desc"):
+                tk.Label(ln, text=e["desc"], bg=c["PERG2"], fg=c["TINTA2"], font=(self.fonte, 8, "italic"),
+                         wraplength=300, justify="left").pack(side="bottom", anchor="w")
+        bts = tk.Frame(card, bg=c["CAMPO"])
+        bts.pack(fill="x", pady=(8, 0))
+        ttk.Button(bts, text="Dano/Cura", command=lambda n=nome: self._dialogo_dano([n])).pack(side="left")
+        ttk.Button(bts, text="Condição", command=lambda n=nome: self._dialogo_condicao([n])).pack(side="left", padx=6)
+        return card
+
     def _atualizar_mestre(self):
-        conectados, maos = self.servidor.estado()
-        sem = self.servidor.sem_sinal()
+        self._painel_agendado = False
+        if not self.servidor:
+            return
+        p = self.servidor.painel()
+        nomes = {j["nome"] for j in p["jogadores"]}
+        self.selecionados &= nomes
+        # fila de mãos
+        sem = {j["nome"] for j in p["jogadores"] if j["sem_sinal"]}
         sel = self._nome_selecionado() if self._maos_tela else None
-        self._maos_tela = list(maos)
+        self._maos_tela = list(p["maos"])
         self.lst_maos.delete(0, "end")
-        for i, n in enumerate(maos, 1):
+        for i, n in enumerate(p["maos"], 1):
             self.lst_maos.insert("end", f"  {i}.  ✋ {n}" + ("  (sem sinal)" if n in sem else ""))
-        if maos:
-            self.lst_maos.selection_set(maos.index(sel) if sel in maos else 0)
-        self.lbl_conectados.config(text=", ".join(n + (" (sem sinal)" if n in sem else "") for n in conectados)
-                                   if conectados else "ninguém ainda")
-        self.title(f"✋ {len(maos)} — Sessão" if maos else "Sessão — Mesa do mestre")
+        if p["maos"]:
+            self.lst_maos.selection_set(p["maos"].index(sel) if sel in p["maos"] else 0)
+        self.lbl_rodada.config(text=f"Rodada {p['rodada']}")
+        self.lbl_sel.config(text=f"{len(self.selecionados)} marcado(s)" if self.selecionados else "marque cartões para agir em grupo")
+        # cartões
+        for w in self.grade_jog.winfo_children():
+            w.destroy()
+        largura = self.cv_jog.winfo_width() or 760
+        cols = max(1, min(3, largura // 360))
+        for i in range(3):
+            self.grade_jog.columnconfigure(i, weight=1 if i < cols else 0, uniform="c" if i < cols else "")
+        if not p["jogadores"]:
+            tk.Label(self.grade_jog, text="Ninguém conectado ainda.\nNo PC: Sessão → Entrar como jogador.  No celular: abra o endereço ou o QR code.",
+                     bg=self.c["PERG"], fg=self.c["TINTA2"], font=(self.fonte, 11, "italic"), justify="left").grid(row=0, column=0, sticky="w", pady=20)
+        for i, j in enumerate(p["jogadores"]):
+            self._cartao(self.grade_jog, j).grid(row=i // cols, column=i % cols, sticky="nsew", padx=5, pady=5)
+        # registro
+        self.txt_reg.configure(state="normal")
+        self.txt_reg.delete("1.0", "end")
+        for hora, texto in p["registro"]:
+            self.txt_reg.insert("end", f"{hora}  {texto}\n")
+        self.txt_reg.configure(state="disabled")
+        self.title(f"✋ {len(p['maos'])} — Mesa do mestre" if p["maos"] else "Mesa do mestre")
+
+    def _janela_acao(self, titulo, alvos):
+        if not alvos:
+            messagebox.showinfo("Sessão", "Marque pelo menos um jogador (caixinha no cartão).", parent=self)
+            return None, None
+        c = self.c
+        w = tk.Toplevel(self)
+        w.title(titulo)
+        w.configure(background=c["PERG"])
+        w.transient(self)
+        w.resizable(False, False)
+        f = tk.Frame(w, bg=c["PERG"], padx=20, pady=14)
+        f.pack(fill="both", expand=True)
+        tk.Label(f, text=titulo, bg=c["PERG"], fg=c["VINHO"], font=(self.fonte, 14, "bold")).grid(row=0, column=0, columnspan=2, sticky="w")
+        tk.Label(f, text="Para: " + ", ".join(alvos), bg=c["PERG"], fg=c["TINTA2"], font=(self.fonte, 10, "italic"),
+                 wraplength=360, justify="left").grid(row=1, column=0, columnspan=2, sticky="w", pady=(0, 10))
+        return w, f
+
+    def _dialogo_dano(self, alvos):
+        w, f = self._janela_acao("Dano ou cura", alvos)
+        if not w:
+            return
+        c = self.c
+        modo, valor, tipo = tk.StringVar(value="dano"), tk.StringVar(), tk.StringVar(value="")
+        lin = tk.Frame(f, bg=c["PERG"])
+        lin.grid(row=2, column=0, columnspan=2, sticky="w")
+        ttk.Radiobutton(lin, text="Dano", value="dano", variable=modo).pack(side="left")
+        ttk.Radiobutton(lin, text="Cura", value="cura", variable=modo).pack(side="left", padx=10)
+        tk.Label(f, text="Valor", bg=c["PERG"], fg=c["TINTA"], font=(self.fonte, 11)).grid(row=3, column=0, sticky="w", pady=4)
+        e = ttk.Entry(f, textvariable=valor, width=8, font=(self.fonte, 13))
+        e.grid(row=3, column=1, sticky="w")
+        e.focus_set()
+        tk.Label(f, text="Tipo", bg=c["PERG"], fg=c["TINTA"], font=(self.fonte, 11)).grid(row=4, column=0, sticky="w", pady=4)
+        ttk.Combobox(f, values=[""] + TIPOS_DANO, textvariable=tipo, width=16).grid(row=4, column=1, sticky="w")
+        tk.Label(f, text="Descrição", bg=c["PERG"], fg=c["TINTA"], font=(self.fonte, 11)).grid(row=5, column=0, sticky="nw", pady=4)
+        desc = tk.Text(f, width=36, height=3, wrap="word", font=(self.fonte, 10))
+        desc.grid(row=5, column=1, sticky="w", pady=4)
+        msg = tk.Label(f, text="O valor é aplicado direto na Vida (o mestre já desconta defesas).", bg=c["PERG"],
+                       fg=c["TINTA2"], font=(self.fonte, 9, "italic"))
+        msg.grid(row=6, column=0, columnspan=2, sticky="w")
+
+        def ok(*_):
+            try:
+                n = int(valor.get().strip())
+                if n <= 0:
+                    raise ValueError
+            except ValueError:
+                msg.config(text="Digite um número inteiro maior que zero.", fg=c["VINHO"])
+                return
+            n = -n if modo.get() == "cura" else n
+            self.servidor.enviar_dano(alvos, n, tipo.get().strip() if n > 0 else "", desc.get("1.0", "end").strip())
+            w.destroy()
+        e.bind("<Return>", ok)
+        bt = tk.Frame(f, bg=c["PERG"])
+        bt.grid(row=7, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        ttk.Button(bt, text="Cancelar", command=w.destroy).pack(side="right")
+        ttk.Button(bt, text="Enviar", command=ok).pack(side="right", padx=6)
+        w.grab_set()
+
+    def _dialogo_condicao(self, alvos):
+        w, f = self._janela_acao("Condição", alvos)
+        if not w:
+            return
+        c = self.c
+        nome, rod = tk.StringVar(), tk.StringVar(value="2")
+        tk.Label(f, text="Condição", bg=c["PERG"], fg=c["TINTA"], font=(self.fonte, 11)).grid(row=2, column=0, sticky="w", pady=4)
+        cb = ttk.Combobox(f, values=CONDICOES_SUGERIDAS, textvariable=nome, width=20)
+        cb.grid(row=2, column=1, sticky="w")
+        cb.focus_set()
+        tk.Label(f, text="Rodadas", bg=c["PERG"], fg=c["TINTA"], font=(self.fonte, 11)).grid(row=3, column=0, sticky="w", pady=4)
+        ttk.Spinbox(f, from_=0, to=99, textvariable=rod, width=5).grid(row=3, column=1, sticky="w")
+        tk.Label(f, text="0 = dura até você remover", bg=c["PERG"], fg=c["TINTA2"], font=(self.fonte, 9, "italic")).grid(row=4, column=1, sticky="w")
+        tk.Label(f, text="Descrição", bg=c["PERG"], fg=c["TINTA"], font=(self.fonte, 11)).grid(row=5, column=0, sticky="nw", pady=4)
+        desc = tk.Text(f, width=36, height=3, wrap="word", font=(self.fonte, 10))
+        desc.grid(row=5, column=1, sticky="w", pady=4)
+        msg = tk.Label(f, text="", bg=c["PERG"], fg=c["VINHO"], font=(self.fonte, 9, "bold"))
+        msg.grid(row=6, column=0, columnspan=2, sticky="w")
+
+        def ok(*_):
+            n = nome.get().strip()
+            try:
+                r = int(rod.get())
+                if r < 0:
+                    raise ValueError
+            except ValueError:
+                msg.config(text="Rodadas: número inteiro (0 ou mais).")
+                return
+            if not n:
+                msg.config(text="Dê um nome à condição.")
+                return
+            self.servidor.adicionar_condicao(alvos, n[:30], r, desc.get("1.0", "end").strip())
+            w.destroy()
+        bt = tk.Frame(f, bg=c["PERG"])
+        bt.grid(row=7, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        ttk.Button(bt, text="Cancelar", command=w.destroy).pack(side="right")
+        ttk.Button(bt, text="Aplicar", command=ok).pack(side="right", padx=6)
+        w.grab_set()
 
     # --- tela 3: jogador
     def _ser_jogador(self):
@@ -693,7 +1134,59 @@ class JanelaSessao(tk.Toplevel):
                                  command=self._alternar_mao)
         self.btn_mao.pack(fill="x", pady=10)
         self.lbl_palavra = self._rot(t, "", 14, self.c["OURO2"], bold=True)
-        self.lbl_palavra.pack(pady=18)
+        self.lbl_palavra.pack(pady=(12, 6))
+        self.lbl_evento = self._rot(t, "", 11, self.c["ALERTA"], bold=True, wraplength=400, justify="center")
+        self.lbl_evento.pack(pady=(0, 8))
+        self.lbl_rodada_j = self._rot(t, "", 10, self.c["TINTA2_FUNDO"], italic=True)
+        self.lbl_rodada_j.pack()
+        self.lbl_efeitos = self._rot(t, "", 10, self.c["OURO2"], wraplength=400, justify="left")
+        self.lbl_efeitos.pack(anchor="w", pady=(6, 0))
+        if self.ponte:
+            self._rot(t, "Sua Vida, Mana e Vigor aparecem para o mestre enquanto esta janela estiver aberta.",
+                      9, italic=True, wraplength=400, justify="center").pack(side="bottom", pady=(10, 0))
+            self.after(300, self._enviar_ficha)
+
+    def _enviar_ficha(self):
+        """Manda o resumo da ficha ao mestre sempre que muda (verifica a cada segundo)."""
+        if not self.cliente or not self.ponte:
+            return
+        try:
+            dados = self.ponte.resumo()
+        except Exception:   # a ficha nunca derruba a sessão
+            dados = None
+        if dados and dados != self._ultima_ficha and self.cliente.enviar({"t": "ficha", "dados": dados}):
+            self._ultima_ficha = dados
+        self.after(1000, self._enviar_ficha)
+
+    def _receber_evento(self, ev):
+        tipo = ev.get("tipo")
+        if tipo == "dano":
+            valor, desc = int(ev.get("valor", 0)), str(ev.get("desc", ""))
+            res = self.ponte.aplicar_dano(valor, str(ev.get("dano_tipo", "")), desc) if self.ponte else ""
+            oque = f"Cura de {-valor}" if valor < 0 else f"{valor} de dano" + (f" ({ev.get('dano_tipo')})" if ev.get("dano_tipo") else "")
+            texto = oque + (f" — {desc}" if desc else "") + (f"\n{res}" if res else "")
+            self._ultima_ficha = None
+            self._aviso_sonoro()
+        elif tipo == "condicao":
+            dur = f"{ev.get('rodadas')} rodada(s)" if ev.get("rodadas") else "até o mestre remover"
+            texto = f"Condição: {ev.get('nome')} ({dur})" + (f" — {ev.get('desc')}" if ev.get("desc") else "")
+            self._aviso_sonoro()
+        elif tipo == "fim":
+            texto = f"Terminou: {ev.get('nome')}"
+        else:
+            return
+        self._avisos = ([texto] + self._avisos)[:3]   # os três mais recentes, o novo em cima
+        self.lbl_evento.config(text="\n".join(self._avisos))
+        if self.ponte:
+            self.ponte.aviso(texto)
+
+    def _mostrar_efeitos(self, lista, rodada):
+        self.efeitos = lista
+        self.lbl_rodada_j.config(text=f"Rodada {rodada}")
+        self.lbl_efeitos.config(text="\n".join(f"⏳ {e['nome']} — {e['rodadas'] if e['rodadas'] else '∞'} rodada(s)"
+                                               + (f": {e['desc']}" if e.get("desc") else "") for e in lista) or "Nenhuma condição ativa.")
+        if self.ponte:
+            self.ponte.efeitos(lista, rodada)
 
     def _voltar_escolha(self):
         if self.cliente:
@@ -744,14 +1237,18 @@ class JanelaSessao(tk.Toplevel):
                 elif ev[0] == "palavra" and self.cliente:
                     self.lbl_palavra.config(text="🎤 O mestre te deu a palavra!")
                     self._aviso_sonoro()
+                elif ev[0] == "evento" and self.cliente:
+                    self._receber_evento(ev[1])
+                elif ev[0] == "efeitos" and self.cliente:
+                    self._mostrar_efeitos(ev[1], ev[2])
                 elif ev[0] == "caiu" and self.cliente:
                     self.lbl_status.config(text="Conexão perdida com o mestre.")
                     self.btn_mao.config(state="disabled")
                     if not self._btn_voltar:
                         self._btn_voltar = ttk.Button(self.tela, text="Conectar de novo", command=self._voltar_escolha)
                         self._btn_voltar.pack(pady=(4, 0))
-                if self.servidor and ev[0] in ("mudou", "mao"):
-                    self._atualizar_mestre()
+                if self.servidor and ev[0] in ("mudou", "mao", "registro"):
+                    self._agendar_painel()
         except queue.Empty:
             pass
         except tk.TclError:
@@ -759,6 +1256,11 @@ class JanelaSessao(tk.Toplevel):
         self.after(150, self._bombear)
 
     def fechar(self):
+        if self.ponte:
+            try:
+                self.ponte.efeitos([], 0)
+            except Exception:
+                pass
         for x in (self.servidor, self.cliente):
             if x:
                 x.parar()

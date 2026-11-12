@@ -1,5 +1,5 @@
 // Guarda o app no aparelho para funcionar sem internet.
-const VERSAO = "prevalecentes-mesa-v2";
+const VERSAO = "prevalecentes-mesa-v3";
 const ARQUIVOS = ["./", "./index.html", "./manifest.webmanifest", "./icone-192.png", "./icone-512.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(VERSAO).then((c) => c.addAll(ARQUIVOS)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {
