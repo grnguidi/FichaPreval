@@ -48,6 +48,8 @@ Observações:
 - Redes que isolam dispositivos entre si (Wi-Fi de visitantes, hotéis, escolas) impedem a conexão.
 - Portas utilizadas: 5757 (TCP), 5758 (UDP) e 5760 (HTTP).
 - A sessão troca apenas o sinal de mão levantada. Nenhum dado da ficha é transmitido.
+- Celular com a tela bloqueada continua na mesa: o mestre vê "(sem sinal)" ao lado do nome depois de 20 segundos e a mão continua na fila. O jogador só sai da mesa depois de 10 minutos sem contato.
+- Se a conexão cair, o jogador no computador vê "Conexão perdida" e um botão para conectar de novo. Quando o mestre não é encontrado na rede, o programa sugere o último IP usado.
 
 ## Dados do livro
 

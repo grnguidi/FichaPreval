@@ -22,6 +22,11 @@ except ImportError:
 PORTA = 5757
 PORTA_ANUNCIO = 5758   # UDP: o mestre anuncia a sessão e os jogadores a encontram sozinhos
 PORTA_WEB = 5760       # HTTP: página para o celular (navegador) levantar a mão
+# Celulares: o navegador pausa a página quando a tela bloqueia ou o app vai para segundo plano.
+# Por isso o jogador só é marcado "sem sinal" depois de SEM_SINAL s e só sai da mesa (com a mão)
+# depois de SAI_DA_MESA s sem nenhum contato.
+SEM_SINAL = 20
+SAI_DA_MESA = 600
 
 PAGINA_WEB = """<!doctype html>
 <html lang="pt-br"><head><meta charset="utf-8">
@@ -201,6 +206,21 @@ def desenhar_qr(master, texto, tam=170):
     return cv
 
 
+def _fechar(sock):
+    """Fecha de verdade: sem o shutdown, o makefile() de quem está lendo mantém a conexão aberta
+    e o outro lado nunca percebe que a sessão acabou."""
+    if sock is None:
+        return
+    try:
+        sock.shutdown(socket.SHUT_RDWR)
+    except OSError:
+        pass
+    try:
+        sock.close()
+    except OSError:
+        pass
+
+
 def _enviar(sock, msg):
     try:
         sock.sendall((json.dumps(msg, ensure_ascii=False) + "\n").encode("utf-8"))
@@ -295,16 +315,25 @@ class Servidor:
             return {"ok": True, "mao": ident in self.maos, "palavra": palavra}
 
     def _varrer(self):
-        """Tira da mesa os celulares que sumiram (fecharam a página ou saíram da rede)."""
+        """Tira da mesa os celulares que sumiram há muito tempo (fecharam a página ou saíram da rede).
+        Tela bloqueada não conta: o jogador só fica "sem sinal" e a mão continua na fila."""
         agora = time.time()
         with self.lock:
-            sumidos = [n for n, w in self.web.items() if agora - w["visto"] > 8]
+            sumidos = [n for n, w in self.web.items() if agora - w["visto"] > SAI_DA_MESA]
+            mudou_sinal = any((agora - w["visto"] > SEM_SINAL) != w.get("sem_sinal", False) for w in self.web.values())
+            for w in self.web.values():
+                w["sem_sinal"] = agora - w["visto"] > SEM_SINAL
             for n in sumidos:
                 del self.web[n]
                 if n in self.maos:
                     self.maos.remove(n)
-        if sumidos:
+        if sumidos or mudou_sinal:
             self.fila.put(("mudou",))
+
+    def sem_sinal(self):
+        """Celulares que não respondem há mais de SEM_SINAL segundos (provavelmente com a tela bloqueada)."""
+        with self.lock:
+            return {n for n, w in self.web.items() if w.get("sem_sinal")}
 
     def _anunciar(self):
         """Avisa a rede, a cada 1,5 s, que há uma sessão aberta (os jogadores a encontram sozinhos)."""
@@ -423,12 +452,13 @@ class Servidor:
             self.httpd.server_close()
         with self.lock:
             socks = list(self.clientes.values())
-        for c in socks + [self.sock]:
-            try:
-                if c:
-                    c.close()
-            except OSError:
-                pass
+        for c in socks:
+            _fechar(c)
+        try:
+            if self.sock:
+                self.sock.close()
+        except OSError:
+            pass
 
 
 class Cliente:
@@ -460,11 +490,7 @@ class Cliente:
         return bool(self.sock) and _enviar(self.sock, msg)
 
     def parar(self):
-        try:
-            if self.sock:
-                self.sock.close()
-        except OSError:
-            pass
+        _fechar(self.sock)
 
 
 # ======================================================================= interface
@@ -485,6 +511,9 @@ class JanelaSessao(tk.Toplevel):
         self.servidor = None
         self.cliente = None
         self.mao_levantada = False
+        self.ultimo_ip = None      # IP do mestre da última conexão (salvo nas preferências ao fechar)
+        self._maos_tela = []       # fila como está desenhada na tela do mestre
+        self._btn_voltar = None
         self.protocol("WM_DELETE_WINDOW", self.fechar)
         self.tela = None
         self._escolha()
@@ -598,9 +627,10 @@ class JanelaSessao(tk.Toplevel):
         self._atualizar_mestre()
 
     def _nome_selecionado(self):
+        """Nome na linha selecionada, conforme a lista que está NA TELA (a fila pode ter mudado desde então)."""
         sel = self.lst_maos.curselection()
         idx = sel[0] if sel else 0
-        _, maos = self.servidor.estado()
+        maos = self._maos_tela
         return maos[idx] if idx < len(maos) else None
 
     def _dar_palavra(self):
@@ -617,12 +647,16 @@ class JanelaSessao(tk.Toplevel):
 
     def _atualizar_mestre(self):
         conectados, maos = self.servidor.estado()
+        sem = self.servidor.sem_sinal()
+        sel = self._nome_selecionado() if self._maos_tela else None
+        self._maos_tela = list(maos)
         self.lst_maos.delete(0, "end")
         for i, n in enumerate(maos, 1):
-            self.lst_maos.insert("end", f"  {i}.  ✋ {n}")
+            self.lst_maos.insert("end", f"  {i}.  ✋ {n}" + ("  (sem sinal)" if n in sem else ""))
         if maos:
-            self.lst_maos.selection_set(0)
-        self.lbl_conectados.config(text=", ".join(conectados) if conectados else "ninguém ainda")
+            self.lst_maos.selection_set(maos.index(sel) if sel in maos else 0)
+        self.lbl_conectados.config(text=", ".join(n + (" (sem sinal)" if n in sem else "") for n in conectados)
+                                   if conectados else "ninguém ainda")
         self.title(f"✋ {len(maos)} — Sessão" if maos else "Sessão — Mesa do mestre")
 
     # --- tela 3: jogador
@@ -649,6 +683,7 @@ class JanelaSessao(tk.Toplevel):
             messagebox.showerror("Sessão", f"Não consegui conectar em {ip}.\n"
                                            f"Confira se o mestre já entrou como mestre.\n{e}", parent=self)
             return
+        self.ultimo_ip = ip
         t = self._trocar()
         self._rot(t, "✋ Sessão", 18, self.c["OURO2"], bold=True).pack()
         self.lbl_status = self._rot(t, "Conectado.", 10, italic=True)
@@ -659,6 +694,14 @@ class JanelaSessao(tk.Toplevel):
         self.btn_mao.pack(fill="x", pady=10)
         self.lbl_palavra = self._rot(t, "", 14, self.c["OURO2"], bold=True)
         self.lbl_palavra.pack(pady=18)
+
+    def _voltar_escolha(self):
+        if self.cliente:
+            self.cliente.parar()
+        self.cliente = None
+        self._btn_voltar = None
+        self.mao_levantada = False
+        self._escolha()
 
     def _alternar_mao(self):
         if not self.cliente or not self.cliente.enviar({"t": "abaixar" if self.mao_levantada else "mao"}):
@@ -679,8 +722,14 @@ class JanelaSessao(tk.Toplevel):
                     self._conectar(ev[1], ev[2], self.v_nome.get().strip())
                 elif ev[0] == "nao_achou" and self.cliente is None and hasattr(self, "btn_entrar"):
                     self.btn_entrar.config(state="normal")
-                    self.lbl_busca.config(text="Não encontrei o mestre. Ele já entrou como mestre? "
-                                               "Se sim, digite o IP dele abaixo.")
+                    ultimo = self.c.get("ULTIMO_IP", "")
+                    if ultimo and not self.v_ip.get().strip():
+                        self.v_ip.set(ultimo)
+                        self.lbl_busca.config(text="Não encontrei o mestre. Preenchi o último IP usado; "
+                                                   "confira e toque em Entrar de novo.")
+                    else:
+                        self.lbl_busca.config(text="Não encontrei o mestre. Ele já entrou como mestre? "
+                                                   "Se sim, digite o IP dele abaixo.")
                 elif ev[0] == "mao":
                     self._aviso_sonoro()
                     if hasattr(self, "lbl_aviso"):
@@ -698,6 +747,9 @@ class JanelaSessao(tk.Toplevel):
                 elif ev[0] == "caiu" and self.cliente:
                     self.lbl_status.config(text="Conexão perdida com o mestre.")
                     self.btn_mao.config(state="disabled")
+                    if not self._btn_voltar:
+                        self._btn_voltar = ttk.Button(self.tela, text="Conectar de novo", command=self._voltar_escolha)
+                        self._btn_voltar.pack(pady=(4, 0))
                 if self.servidor and ev[0] in ("mudou", "mao"):
                     self._atualizar_mestre()
         except queue.Empty:
@@ -710,5 +762,5 @@ class JanelaSessao(tk.Toplevel):
         for x in (self.servidor, self.cliente):
             if x:
                 x.parar()
-        self.ao_fechar(getattr(self, "ultimo_ip", None))
+        self.ao_fechar(self.ultimo_ip)
         self.destroy()
