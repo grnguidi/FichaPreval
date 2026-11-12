@@ -326,3 +326,201 @@ def dano_do_encantamento(descricao):
     """Primeira expressão de dados da descrição (ex.: '4d6 + 2'), ou None."""
     m = _DANO_ENC.search(descricao or "")
     return re.sub(r"\s+", " ", m.group(0)) if m else None
+
+
+# ---------------- Livro: tipos de dano, efeitos e condições ----------------
+TIPOS_DANO = [  # (nome, grupo, nota)
+    ("Impacto", "Físico", ""), ("Cortante", "Físico", ""), ("Perfurante", "Físico", ""),
+    ("Fogo", "Elemental", ""), ("Veneno", "Elemental", ""), ("Magia", "Elemental", ""),
+    ("Magia Pura", "Elemental", "ignora RD"), ("Sagrado", "Elemental", ""), ("Relâmpago", "Elemental", "não tem RD"),
+    ("Elétrico", "Elemental", ""), ("Necrótico", "Elemental", ""), ("Glacial", "Elemental", ""),
+    ("Psíquico", "Mental", ""), ("Êxtase", "Mental", ""), ("Melódico", "Mental", ""), ("Radiante", "Mental", ""),
+    ("Direto", "Outro", "ignora RD e resistências (perda de Vida de condição, quedas…)"),
+]
+NOMES_DANO = [t[0] for t in TIPOS_DANO]
+DANO_SEM_RD = {"Magia Pura", "Relâmpago", "Direto"}
+DANO_MENTAL = {t[0] for t in TIPOS_DANO if t[1] == "Mental"}
+
+EFEITOS_LIVRO = [  # (nome, gravidade, descrição) — capítulo "Efeitos"
+    ("Abalado", "Fraco", "−2 em jogadas de ataque e testes de perícia."),
+    ("Caído", "Fraco", "−2 em ataques corpo a corpo; move 4,5 m rastejando ou usa ação de movimento para levantar. −2 de CA contra corpo a corpo, +2 contra à distância."),
+    ("Amedrontado", "Médio", "Desvantagem em jogadas de ataque e testes de perícia."),
+    ("Confuso", "Médio", "Move-se ao acaso (1d4 de direção a cada 1,5 m); −2 em Fortitude e Atletismo para ficar de pé."),
+    ("Agarrado", "Médio", "Desprevenido (−2 de CA) e imóvel; ataques à distância contra o agarrão podem acertar o alvo errado (1–5 em 1d10)."),
+    ("Enredado", "Médio", "Deslocamento pela metade; −2 de CA e em jogadas de ataque."),
+    ("Lento", "Médio", "Toda forma de movimento reduzida à metade."),
+    ("Condenado", "Forte", "Custos de Mana e de Vigor aumentam em 50%."),
+    ("Aterrorizado", "Forte", "Não pode se aproximar da criatura que causou o efeito."),
+    ("Exposto", "Forte", "Ataques contra a criatura têm +2 e, se acertarem, +1 dado de dano do maior dado."),
+    ("Fragilizado", "Forte", "Redução de Dano zerada e resistências anuladas (imunidades não)."),
+    ("Atordoado", "Extremo", "Não pode realizar ações."),
+    ("Inconsciente", "Extremo", "Não age, fica caído, larga o que segura, não fala; falha em todos os testes e é acertado sem jogada de ataque."),
+    ("Paralisado", "Extremo", "Não age; ataques contra ele têm vantagem e todo acerto corpo a corpo é crítico."),
+]
+NOTA_EFEITOS = ("Salvo indicação contrária, um efeito dura 1 turno. Se durar mais, o afetado faz um teste de resistência "
+                "no fim de cada turno (Fortitude para físicos, Vontade para mentais) contra a DT de quem causou.")
+
+# Condições (barras de 100 nos jogadores). Teste para receber metade e o que acontece ao encher a barra.
+CONDICAO_TESTE = {"Veneno": "Fortitude", "Podridão": "Fortitude", "Sangramento": "Fortitude", "Congelamento": "Fortitude",
+                  "Sono": "Vontade", "Loucura": "Vontade", "Morte": "Vontade"}
+CONDICAO_ATIVA = {
+    # turnos: 0 = até o fim do combate; pct_turno: % da Vida máx. por turno; pct_ja: % perdido na hora
+    "Veneno": {"turnos": 5, "pct_turno": 5, "desc": "Sofre 5% da Vida máxima por turno, por 5 turnos."},
+    "Podridão": {"turnos": 0, "pct_turno": 3, "desc": "Sofre 3% da Vida máxima por turno até o fim do combate."},
+    "Sangramento": {"pct_ja": 25, "desc": "Perde 25% da Vida máxima na hora, ignorando resistências e RD."},
+    "Congelamento": {"turnos": 2, "pct_ja": 10, "desc": "Perde 10% da Vida máxima na hora e fica com a CA pela metade por 2 turnos."},
+    "Sono": {"turnos": 1, "desc": "Fica Inconsciente por 1 turno; nada remove esse efeito."},
+    "Loucura": {"turnos": 0, "desc": "Recebe o dobro de dano mental e falha em todo teste de Vontade até o fim do combate."},
+    "Morte": {"desc": "Morre na hora, consumido pelas raízes da Intérprete."},
+}
+CONDICAO_DESCANSO_CURTO = 25   # pontos que um descanso curto tira de cada barra
+
+
+def receber_condicao(acumulado, maximo, pontos, sucesso_teste):
+    """Pontos de condição vindos de um inimigo. Sucesso no teste: metade (para baixo).
+    Devolve (recebidos, novo_acumulado, ativou). Ao encher a barra o efeito ativa e ela volta a zero."""
+    recebidos = pontos // 2 if sucesso_teste else pontos
+    novo = max(0, acumulado + recebidos)
+    if maximo > 0 and novo >= maximo:
+        return recebidos, 0, True
+    return recebidos, novo, False
+
+
+def defesas_contra_dano(valor, tipo, d, rng, fragilizado=False, loucura=False):
+    """Dano recebido pela ficha: rola a RD (1d4 a cada 20 de TEN, contra qualquer golpe) e depois aplica
+    resistência (metade, para baixo). Magia Pura e Relâmpago ignoram RD; 'Direto' ignora tudo.
+    Devolve (dano_final, [notas])."""
+    notas = []
+    if valor <= 0:
+        return valor, notas
+    total = valor
+    if tipo == "Direto":
+        return total, notas
+    if loucura and tipo in DANO_MENTAL:
+        total *= 2
+        notas.append("Loucura: dano mental em dobro")
+    rd = 0 if fragilizado or tipo in DANO_SEM_RD else int(d.get("rd", 0))
+    if rd:
+        rolos = [rng(4) for _ in range(rd)]
+        total = max(0, total - sum(rolos))
+        notas.append(f"RD {rd}d4 [{', '.join(map(str, rolos))}] −{sum(rolos)}")
+    elif fragilizado and d.get("rd"):
+        notas.append("Fragilizado: sem RD")
+    if tipo and tipo in d.get("resistencias", []) and not fragilizado:
+        total //= 2
+        notas.append(f"resistência a {tipo}: metade")
+    return total, notas
+
+
+# ---------------- Perícias, descanso, Poção Espiritual, desgaste ----------------
+def rolar_pericia(bonus, dados, rng):
+    """Teste fora de combate: rola `dados` d20 e fica com o maior (vantagem cumulativa) + bônus."""
+    d = [rng(20) for _ in range(max(1, dados))]
+    return {"d20": d, "natural": max(d), "bonus": bonus, "total": max(d) + bonus}
+
+
+def rolar_defesa(bonus, com_vantagem, rng):
+    d = [rng(20) for _ in range(2 if com_vantagem else 1)]
+    return {"d20": d, "natural": max(d), "bonus": bonus, "total": max(d) + bonus}
+
+
+DESCANSOS_CURTOS_MAX = 2
+
+
+def descanso(tipo, maximos, atuais, condicoes):
+    """tipo 'curto': recupera metade de Vida, Mana e Vigor e 25 pontos de cada condição.
+    'longo': recupera tudo e zera as condições. maximos/atuais: {'vida','mana','vigor'};
+    condicoes: {nome: acumulado}. Devolve (novos_atuais, novas_condicoes)."""
+    novos = {}
+    for k, mx in maximos.items():
+        at = atuais.get(k, mx)
+        novos[k] = mx if tipo == "longo" else min(mx, at + mx // 2)
+    cond = {n: (0 if tipo == "longo" else max(0, v - CONDICAO_DESCANSO_CURTO)) for n, v in condicoes.items()}
+    return novos, cond
+
+
+def pocao_espiritual_dados(nivel, curva_vit):
+    """(metade do nível + metade da Curva da Vitalidade) d10, mínimo 2 dados."""
+    return max(2, nivel // 2 + curva_vit // 2)
+
+
+DESGASTE_TURNOS = 3   # turnos afiados; o crítico reinicia; ao acabar a arma fica 1 turno sem uso
+
+
+def desgaste_apos_ataque(usados, critico):
+    """Devolve (usados, desgastou). O crítico reinicia a contagem."""
+    if critico:
+        return 0, False
+    usados += 1
+    return (usados, True) if usados >= DESGASTE_TURNOS else (usados, False)
+
+
+# ---------------- Arcano nos dados de condição dos encantamentos ----------------
+_COND_ENC = re.compile(r"(\d+d\d+(?:\s*\+\s*\d+d\d+)*(?:\s*\+\s*\d+(?!\d|\s*d\d))?)\s+(?:pontos\s+)?de\s+"
+                       r"(Veneno|Podridão|Sangramento|Congelamento|Sono|Loucura|Morte)", re.I)
+DADO_INFERIOR = {12: 10, 10: 8, 8: 6, 6: 4, 4: 4, 20: 12}
+
+
+def condicoes_do_encantamento(descricao):
+    """Lista de (expressão, condição) com os dados de condição da descrição."""
+    out = []
+    for m in _COND_ENC.finditer(descricao or ""):
+        nome = next(c for c in CONDICOES if c.lower() == m.group(2).lower())
+        out.append((re.sub(r"\s+", " ", m.group(1)), nome))
+    return out
+
+
+def escalar_arcano(expr, arcano, condicao):
+    """A cada 20 de ARC, uma cópia dos dados de condição; a cada 15, mais 1 dado um tamanho abaixo do
+    maior dado (d12→d10→…→d4). Morte só recebe os dados inferiores. Valores fixos não copiam."""
+    arc = cap(arcano)
+    dados = [(int(q), int(f)) for q, f in re.findall(r"(\d+)d(\d+)", expr)]
+    fixo = sum(int(x) for x in re.findall(r"\+\s*(\d+)(?!\d|d)", expr))
+    if not dados:
+        return expr
+    copias = 0 if condicao == "Morte" else arc // 20
+    inferiores = arc // 15
+    soma = {}
+    for q, f in dados:
+        soma[f] = soma.get(f, 0) + q * (1 + copias)
+    maior = max(f for _, f in dados)
+    if inferiores:
+        inf = DADO_INFERIOR.get(maior, 4)
+        soma[inf] = soma.get(inf, 0) + inferiores
+    partes = [f"{q}d{f}" for f, q in sorted(soma.items(), key=lambda x: -x[0])]
+    return " + ".join(partes) + (f" + {fixo}" if fixo else "")
+
+
+# ---------------- Carga extra ----------------
+PECAS_SET_PESO = ("Capacete", "Manopla", "Calça", "Bota")   # pesam 1 cada; o Peitoral pesa como a armadura
+
+
+def peso_pecas_set(pecas):
+    """pecas: {peça: {'set','nome'}}. Conta 1 por Capacete/Manopla/Calça/Bota equipado."""
+    return sum(1 for p in PECAS_SET_PESO if (pecas.get(p) or {}).get("set") or (pecas.get(p) or {}).get("nome"))
+
+
+def carga_extra_itens(inventario, itens_livro):
+    """Itens que aumentam a Carga (Mochila +5). Só conta uma Mochila."""
+    por_nome = {i["nome"].lower(): i for i in itens_livro}
+    extra = 0
+    for it in inventario:
+        u = (por_nome.get(str(it.get("item", "")).strip().lower()) or {}).get("uso", {})
+        extra = max(extra, int(u.get("carga", 0)))
+    return extra
+
+
+def peso_inventario(inventario):
+    """Soma carga × quantidade de cada linha."""
+    tot = 0.0
+    for it in inventario:
+        try:
+            c = float(str(it.get("carga", 0) or 0).replace(",", "."))
+        except ValueError:
+            c = 0.0
+        try:
+            q = max(1, int(str(it.get("qtd", 1) or 1)))
+        except ValueError:
+            q = 1
+        tot += c * q
+    return tot

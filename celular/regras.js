@@ -204,12 +204,92 @@
     return m ? m[0].replace(/\s+/g, " ") : null;
   }
 
+  // ---------------- Livro: tipos de dano, efeitos e condições (gerado de regras.py pelo build) ----------------
+  const LIVRO = {};
+  const { TIPOS_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, CONDICAO_DESCANSO_CURTO,
+    DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS, PECAS_SET_PESO, DADO_INFERIOR } = LIVRO;
+  const NOMES_DANO = (TIPOS_DANO || []).map((t) => t[0]);
+  const DANO_MENTAL = new Set((TIPOS_DANO || []).filter((t) => t[1] === "Mental").map((t) => t[0]));
+  function receberCondicao(acumulado, maximo, pontos, sucesso) {
+    const rec = sucesso ? Math.floor(pontos / 2) : pontos, novo = Math.max(0, acumulado + rec);
+    return maximo > 0 && novo >= maximo ? [rec, 0, true] : [rec, novo, false];
+  }
+  function defesasContraDano(valor, tipo, d, rng, fragilizado = false, loucura = false) {
+    const notas = [];
+    if (valor <= 0) return [valor, notas];
+    let total = valor;
+    if (tipo === "Direto") return [total, notas];
+    if (loucura && DANO_MENTAL.has(tipo)) { total *= 2; notas.push("Loucura: dano mental em dobro"); }
+    const rd = fragilizado || DANO_SEM_RD.includes(tipo) ? 0 : (d.rd | 0);
+    if (rd) {
+      const rolos = [...Array(rd)].map(() => rng(4)), s = rolos.reduce((a, b) => a + b, 0);
+      total = Math.max(0, total - s); notas.push(`RD ${rd}d4 [${rolos.join(", ")}] −${s}`);
+    } else if (fragilizado && d.rd) notas.push("Fragilizado: sem RD");
+    if (tipo && (d.resistencias || []).includes(tipo) && !fragilizado) { total = Math.floor(total / 2); notas.push(`resistência a ${tipo}: metade`); }
+    return [total, notas];
+  }
+  function rolarPericia(bonus, dados, rng) {
+    const d = [...Array(Math.max(1, dados))].map(() => rng(20)), nat = Math.max(...d);
+    return { d20: d, natural: nat, bonus, total: nat + bonus };
+  }
+  function rolarDefesa(bonus, comVantagem, rng) { return rolarPericia(bonus, comVantagem ? 2 : 1, rng); }
+  function descanso(tipo, maximos, atuais, condicoes) {
+    const novos = {}, cond = {};
+    for (const [k, mx] of Object.entries(maximos)) { const at = k in atuais ? atuais[k] : mx; novos[k] = tipo === "longo" ? mx : Math.min(mx, at + Math.floor(mx / 2)); }
+    for (const [n, v] of Object.entries(condicoes)) cond[n] = tipo === "longo" ? 0 : Math.max(0, v - CONDICAO_DESCANSO_CURTO);
+    return [novos, cond];
+  }
+  const pocaoEspiritualDados = (nivel, curvaVit) => Math.max(2, Math.floor(nivel / 2) + Math.floor(curvaVit / 2));
+  function desgasteAposAtaque(usados, critico) {
+    if (critico) return [0, false];
+    usados += 1;
+    return [usados, usados >= DESGASTE_TURNOS];
+  }
+  function condicoesDoEncantamento(desc) {
+    const out = [];
+    for (const m of String(desc || "").matchAll(/(\d+d\d+(?:\s*\+\s*\d+d\d+)*(?:\s*\+\s*\d+(?!\d|\s*d\d))?)\s+(?:pontos\s+)?de\s+(Veneno|Podridão|Sangramento|Congelamento|Sono|Loucura|Morte)/gi)) {
+      const nome = CONDICOES.find((c) => c.toLowerCase() === m[2].toLowerCase());
+      out.push([m[1].replace(/\s+/g, " "), nome]);
+    }
+    return out;
+  }
+  function escalarArcano(expr, arcano, condicao) {
+    const arc = cap(arcano), dados = [...String(expr).matchAll(/(\d+)d(\d+)/g)].map((m) => [+m[1], +m[2]]);
+    const fixo = [...String(expr).matchAll(/\+\s*(\d+)(?!\d|d)/g)].reduce((t, m) => t + +m[1], 0);
+    if (!dados.length) return expr;
+    const copias = condicao === "Morte" ? 0 : Math.floor(arc / 20), inferiores = Math.floor(arc / 15), soma = {};
+    for (const [q, f] of dados) soma[f] = (soma[f] || 0) + q * (1 + copias);
+    const maior = Math.max(...dados.map((x) => x[1]));
+    if (inferiores) { const inf = DADO_INFERIOR[maior] || 4; soma[inf] = (soma[inf] || 0) + inferiores; }
+    const partes = Object.entries(soma).sort((a, b) => b[0] - a[0]).map(([f, q]) => `${q}d${f}`);
+    return partes.join(" + ") + (fixo ? ` + ${fixo}` : "");
+  }
+  const pesoPecasSet = (pecas) => PECAS_SET_PESO.filter((p) => (pecas[p] || {}).set || (pecas[p] || {}).nome).length;
+  function cargaExtraItens(inv, itensLivro) {
+    const por = Object.fromEntries(itensLivro.map((i) => [i.nome.toLowerCase(), i]));
+    let extra = 0;
+    for (const it of inv) { const u = (por[String(it.item || "").trim().toLowerCase()] || {}).uso || {}; extra = Math.max(extra, u.carga | 0); }
+    return extra;
+  }
+  function pesoInventario(inv) {
+    let t = 0;
+    for (const it of inv) {
+      const c = parseFloat(String(it.carga || 0).replace(",", ".")) || 0;
+      const q = Math.max(1, parseInt(String(it.qtd || 1), 10) || 1);
+      t += c * q;
+    }
+    return t;
+  }
+
   const R = {
     ATRIBUTOS, NOMES_ATR, ATR_POR_NOME, VALORES_INICIAIS, NIVEL_MAX, PERICIAS, PERICIAS_ATAQUE, PERICIAS_DEFESA, RESISTENCIAS,
     CONDICOES, LIMIARES_ACOES, ACERTO_ARMA, GRUPOS_ARMA, BONUS_SEM_ALMA,
     cap, curva, bonusCombate, vantagem, pontosDeNivel, ganhoNoNivel, nivelAlma, maxNivelArma, slotsTalismas, derivadas,
     periciaFora, reqArma, reqFalta, reqUsoDuplo, danoComDados, statusVersao, statusTalento,
     EFEITOS_TALENTOS, ARMADURAS_PESADAS, efeitosTalentos, rolarExpr, rolarAtaque, custoMana, danoDoEncantamento,
+    TIPOS_DANO, NOMES_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS,
+    receberCondicao, defesasContraDano, rolarPericia, rolarDefesa, descanso, pocaoEspiritualDados, desgasteAposAtaque,
+    condicoesDoEncantamento, escalarArcano, pesoPecasSet, cargaExtraItens, pesoInventario,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = R; else raiz.R = R;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -11,6 +11,9 @@ const TAL = {}; D.talentos.forEach((t) => { if (!TAL[t.nome]) TAL[t.nome] = t; }
 const TALISMA = Object.fromEntries(D.talismas.map((t) => [t.nome, t]));
 const SETS = Object.fromEntries((D.sets || []).map((x) => [x.nome, x]));
 const PECAS = ["Capacete", "Peitoral", "Manopla", "Calça", "Bota", "Arma"];
+const ITENS = D.itens || [];
+const ITEM = Object.fromEntries(ITENS.map((i) => [i.nome.toLowerCase(), i]));
+const itemLivro = (nome) => ITEM[String(nome || "").trim().toLowerCase()];
 const SLOTS = [...Array(15)].map((_, i) => String(2 + 2 * i)).concat(["extra"]);
 const CATS_TAL = [...new Set(D.talentos.map((t) => t.categoria))].sort();
 const CATS_ENC = [...new Set(D.encantamentos.map((e) => e.categoria))];
@@ -73,7 +76,7 @@ function novoEstado() {
     condicoes: Object.fromEntries(R.CONDICOES.map((n) => [n, { max: "100", atual: "", notas: "" }])),
     portao: { Sucessos: [false, false, false, false, false], Falhas: [false, false, false, false, false] }, cicatrizes: "",
     vinculos: { grupo: "", mundo: "", metas: "" }, receitas: "",
-    manual: {}, talentos_ativos: [],
+    manual: {}, talentos_ativos: [], desgaste: {}, descansos_curtos: 0,
   };
 }
 function normalizar(s) {
@@ -92,6 +95,8 @@ function normalizar(s) {
   out.talentos_ativos = Array.isArray(out.talentos_ativos) ? out.talentos_ativos : [];
   out.inventario = (Array.isArray(out.inventario) ? out.inventario : []).filter((i) => i && (String(i.item || "").trim() || String(i.carga || "").trim()));
   out.set = Object.assign({}, out.set || {});
+  out.desgaste = Object.assign({}, out.desgaste || {});
+  out.descansos_curtos = int(out.descansos_curtos);
   return out;
 }
 function salvar() {
@@ -139,8 +144,8 @@ function calcular() {
   d.vida_auto = d.vida; d.mana_auto = d.mana;
   if (S.manual.vida != null) d.vida = int(S.manual.vida);
   if (S.manual.mana != null) d.mana = int(S.manual.mana);
-  let carga = 0;
-  for (const it of S.inventario || []) carga += parseFloat(String(it.carga || 0).replace(",", ".")) || 0;
+  d.carga += R.cargaExtraItens(S.inventario || [], ITENS);   // Mochila: +5
+  let carga = R.pesoInventario(S.inventario || []) + R.pesoPecasSet(S.set || {});
   carga += (arm ? arm.peso : 0) + (esc ? esc.peso : 0) - (tal.has("Veterano de Armadura") && arm ? 2 : 0);
   carga += S.talismas.filter((t) => t.nome).length;
   S.armas.forEach((w) => { const ar = ARMAS[w.grupo]; if (ar) { const l = ar.tabela.find((x) => x.nivel === int(w.nivel, 1)); if (l) carga += l.espaco; } });
@@ -342,6 +347,9 @@ function linhaArma(i) {
     <div><dt>Vigor/atk</dt><dd>${vig}</dd></div></dl>
     <div class="sub">${k} · ${l.propriedades} propriedade(s) · peso ${l.espaco}${extra ? ` · +${extra} dado de dano por ${k}` : ""}</div>
     ${falta.length ? `<div class="erro" style="font-size:13.5px;margin-top:4px">${NO} falta: ${esc(falta.join(", "))}</div>` : ""}
+    ${(() => { const dg = S.desgaste[i] || {}; return dg.desgastada
+      ? `<div class="erro" style="font-size:13.5px;margin-top:4px">Desgastada: sem uso por um turno. <a href="#" data-a="reafiar" data-i="${i}">Já passou</a></div>`
+      : `<div class="sub">Afiada: ${R.DESGASTE_TURNOS - int(dg.usados)}/${R.DESGASTE_TURNOS} turnos · o crítico reafia</div>`; })()}
     <div class="linhabts"><button class="botao prim" data-a="rolar-arma" data-i="${i}">🎲 Atacar</button></div>
     <details class="acoes"><summary>Ações da arma (${(ar.acoes || []).length})</summary>
     ${ar.descricao ? `<p class="sub">${esc(ar.descricao)}</p>` : ""}
@@ -363,7 +371,10 @@ function pCombate() {
   const ef = textoEfeitos();
   let h = secao("Rolar") + `<div class="linhabts" style="margin-top:0"><button class="botao prim" data-a="rolar-ini">🎲 Iniciativa</button>
     <button class="botao" data-a="conjurar-menu">✧ Conjurar</button><button class="botao leve" data-a="diario">📜 Diário</button></div>
-    ${sessao.efeitos.length ? `<div class="lista mestre">${sessao.efeitos.map((e) => `<div class="item"><span class="marca">⏳</span><div class="tx"><b>${esc(e.nome)}</b><small>${e.rodadas ? `${e.rodadas} rodada(s)` : "até o mestre remover"}${e.desc ? " · " + esc(e.desc) : ""}</small></div></div>`).join("")}</div>` : ""}
+    <div class="linhabts"><button class="botao" data-a="descanso" data-t="curto">☾ Descanso curto</button><button class="botao" data-a="descanso" data-t="longo">☀ Longo</button>
+    <button class="botao" data-a="pocao">⚗ Poção Espiritual</button></div>
+    <p class="sub">Descansos curtos desde o longo: ${S.descansos_curtos}/${R.DESCANSOS_CURTOS_MAX} · Poção Espiritual: ${R.pocaoEspiritualDados(C.nv, d.curva.VIT)}d10</p>
+    ${sessao.efeitos.length ? `<div class="lista mestre">${sessao.efeitos.map((e) => `<div class="item"><span class="marca">⏳</span><div class="tx"><b>${esc(e.nome)}</b><small>${durEfeito(e)}${e.desc ? " · " + esc(e.desc) : ""}</small></div></div>`).join("")}</div>` : ""}
     <p class="sub">${ef.length ? "Talentos em uso: " + ef.join(" · ") : "Nenhum efeito de talento em uso. Situacionais: aba Talentos → \"ativo agora\"."}</p>`;
   h += secao("Ataque") + `<div class="lista"><div class="cab" style="background:var(--c-atk)">Perícia<span style="flex:1"></span>Bônus</div>${R.PERICIAS_ATAQUE.map(([n, atrs]) =>
     `<div class="item"><div class="tx"><b>${n}</b><small>${atrs.join(" ou ")}</small></div><span class="num">${atrs.map((k) => `+${d.bc[k] + d.n3 + (n === "Luta" || n === "Pontaria" ? C.ef.acerto : 0)}${R.vantagem(C.a[k]) ? "ᵛ" : ""}`).join(" / ")}</span></div>`).join("")}</div>`;
@@ -396,8 +407,8 @@ function pCombate() {
     + `<p class="sub">d20 no início do turno: 11+ é sucesso. 5 sucessos: volta com 1 de Vida e 1 cicatriz. 5 falhas: morte.</p>`;
   h += secao("Condições") + `<div class="lista">${R.CONDICOES.map((n) => {
     const c = S.condicoes[n] || { atual: "", max: "100" };
-    return `<div class="item" data-a="editar-cond" data-n="${n}"><div class="tx"><b>${n}</b>${c.notas ? `<small>${esc(c.notas)}</small>` : ""}</div><span class="num">${int(c.atual)} <span class="sub">/ ${int(c.max, 100)}</span></span></div>`;
-  }).join("")}</div>`;
+    return `<div class="item" data-a="editar-cond" data-n="${n}"><div class="tx"><b>${n}</b><small>${c.notas ? esc(c.notas) + " · " : ""}enche com pontos; ao chegar no máximo, ativa</small></div><span class="num">${int(c.atual)} <span class="sub">/ ${int(c.max, 100)}</span></span></div>`;
+  }).join("")}</div><p class="sub">Descanso curto tira 25 de cada; o longo zera.</p>`;
   return h;
 }
 
@@ -408,9 +419,9 @@ function pPericias() {
       const tr = C.treinadas.has(nome), at = atrs || [S.prevalencia_attr || "ARC"];
       const [melhor, bonus0, dados] = R.periciaFora(C.a, C.nv, at, tr);
       const bonus = bonus0 + (C.ef.pericia[nome] || 0);
-      return `<div class="item" data-a="treinar" data-n="${esc(nome)}"><span class="check ${tr ? "on" : ""}"></span>
-        <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados}d20</small></div><span class="num">+${bonus}</span></div>`;
-    }).join("")}</div><p class="sub">• exige treino. Bônus = nível ÷ 2, mais a Curva do atributo se treinada.</p>`;
+      return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
+        <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados}d20</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
+    }).join("")}</div><p class="sub">Toque na perícia para rolar (${"1d20 a mais a cada 20 pontos do atributo, fica o maior"}). A caixa marca o treino (Modo Edição). • exige treino.</p>`;
   h += secao("Perícia de ataque treinada") + `<div>${R.PERICIAS_ATAQUE.map(([nn]) => `<span class="chip ${S.pericia_ataque === nn ? "on" : ""}" data-a="per-atk" data-n="${nn}">${nn}</span>`).join("")}</div>`;
   h += secao("Atributo da Prevalência") + `<div>${R.ATRIBUTOS.map((k) => `<span class="chip ${S.prevalencia_attr === k ? "on" : ""}" data-a="prev-attr" data-k="${k}">${k}</span>`).join("")}</div>`;
   return h;
@@ -470,7 +481,7 @@ function setsAtivos() {
 }
 function pBolsa() {
   const d = C.d, itens = S.inventario;
-  const pesoItens = itens.reduce((t, i) => t + (parseFloat(String(i.carga || 0).replace(",", ".")) || 0), 0);
+  const pesoItens = R.pesoInventario(itens), pesoSet = R.pesoPecasSet(S.set || {});
   const pesoArmas = S.armas.reduce((t, w) => { const ar = ARMAS[w.grupo]; const l = ar && ar.tabela.find((x) => x.nivel === int(w.nivel, 1)); return t + (l ? l.espaco : 0); }, 0);
   const pesoProt = (C.arm ? C.arm.peso : 0) + (C.esc ? C.esc.peso : 0) - (C.tal.has("Veterano de Armadura") && C.arm ? 2 : 0);
   const pesoTal = S.talismas.filter((t) => t.nome).length;
@@ -478,11 +489,13 @@ function pBolsa() {
   const cor = C.carga > d.carga || C.lentidao ? "var(--c-vida)" : C.exaustao ? "var(--c-per)" : "var(--c-vigor)";
   let h = secao("Carga", `${C.carga} / ${d.carga}`) + `<div class="cartao" style="padding:12px">
     <div class="barra grossa"><i style="width:${pct}%;background:${cor}"></i></div>
-    <p class="sub" style="margin:8px 0 0">Itens ${pesoItens} · armas ${pesoArmas} · proteção ${pesoProt} · talismãs ${pesoTal}
+    <p class="sub" style="margin:8px 0 0">Itens ${pesoItens} · armas ${pesoArmas} · proteção ${pesoProt} · talismãs ${pesoTal}${pesoSet ? ` · peças de set ${pesoSet}` : ""}${R.cargaExtraItens(itens, ITENS) ? ` · mochila +${R.cargaExtraItens(itens, ITENS)} de capacidade` : ""}
     ${C.lentidao ? `<br><b class="erro">Lentidão</b>: movimento preso em 6 m.` : C.exaustao ? `<br><b class="erro">Exaustão</b>: 10 ou menos de carga livre.` : ""}</p></div>`;
   h += `<div class="cartao dinheiro" data-a="dinheiro"><span>Dinheiro</span><b>${esc(S.dinheiro || "—")}</b><small>toque para mudar</small></div>`;
   h += secao("Itens", `${itens.length}/30`) + (itens.length ? `<div class="lista">${itens.map((it, i) =>
-    `<div class="item" data-a="item" data-i="${i}"><span class="marca" style="color:var(--ouro)">◆</span><div class="tx"><b>${esc(it.item || "Sem nome")}</b></div><span class="num">${esc(it.carga || "0")}</span></div>`).join("")}</div>`
+    { const info = itemLivro(it.item), q = Math.max(1, int(it.qtd, 1)), usa = info && info.uso && info.uso.consome;
+      return `<div class="item" data-a="item" data-i="${i}"><span class="marca" style="color:var(--ouro)">◆</span><div class="tx"><b>${q > 1 ? q + "× " : ""}${esc(it.item || "Sem nome")}</b>${info ? `<small>${esc(info.desc.slice(0, 70))}${info.desc.length > 70 ? "…" : ""}</small>` : ""}</div>
+        ${usa ? `<button class="botao prim mini" data-a="usar-item" data-i="${i}">Usar</button>` : ""}<span class="num">${(parseFloat(String(it.carga || 0).replace(",", ".")) || 0) * q}</span></div>`; }).join("")}</div>`
     : `<div class="vazio-msg">A bolsa está vazia.</div>`)
     + `<div class="linhabts"><button class="botao prim" data-a="item" data-i="-1" ${itens.length >= 30 ? "disabled" : ""}>＋ Adicionar item</button></div>`;
   const cont = setsAtivos();
@@ -501,16 +514,52 @@ A["dinheiro"] = () => folha("Dinheiro", `<input class="busca" id="dn" value="${e
   `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="dinheiro-ok">Salvar</button>`);
 A["dinheiro-ok"] = () => { const v = $("#dn").value.trim(); fecharFolha(); mudar((s) => { s.dinheiro = v; }); };
 A["item"] = (el) => {
-  const i = int(el.dataset.i, -1), it = S.inventario[i] || { item: "", carga: "" };
-  folha(i < 0 ? "Novo item" : "Item", `<label class="campo"><span>Item</span><input id="it-n" value="${esc(it.item)}"></label>
-    <label class="campo"><span>Carga</span><input id="it-c" type="number" inputmode="decimal" step="0.5" value="${esc(it.carga)}"></label>`,
-  `${i >= 0 ? `<button class="botao leve" data-a="item-rem" data-i="${i}">Remover</button>` : `<button class="botao leve" data-a="fechar">Cancelar</button>`}<button class="botao prim" data-a="item-ok" data-i="${i}">Salvar</button>`);
-  setTimeout(() => { const x = $("#it-n"); if (x && i < 0) x.focus(); }, 60);
+  const i = int(el.dataset.i, -1), it = S.inventario[i] || { item: "", carga: "", qtd: "1" };
+  const cats = [...new Set(ITENS.map((x) => x.categoria))];
+  const lista = `<label class="campo"><span>Do livro</span><select id="it-l"><option value="">— item personalizado —</option>${cats.map((c) =>
+    `<optgroup label="${esc(c)}">${ITENS.filter((x) => x.categoria === c).map((x) => `<option ${x.nome === it.item ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</optgroup>`).join("")}</select></label>`;
+  folha(i < 0 ? "Novo item" : "Item", lista + `<label class="campo"><span>Item</span><input id="it-n" value="${esc(it.item)}"></label>
+    <div style="display:flex;gap:10px"><label class="campo" style="flex:1"><span>Quantidade</span><input id="it-q" type="number" inputmode="numeric" min="1" value="${esc(it.qtd || "1")}"></label>
+    <label class="campo" style="flex:1"><span>Peso (cada)</span><input id="it-c" type="number" inputmode="decimal" step="0.5" value="${esc(it.carga)}"></label></div>
+    <p class="sub" id="it-d"></p>`,
+  `${i >= 0 ? `<button class="botao leve" data-a="item-rem" data-i="${i}">Remover</button>` : `<button class="botao leve" data-a="fechar">Cancelar</button>`}<button class="botao prim" data-a="item-ok" data-i="${i}">Salvar</button>`, (c) => {
+    const mostra = (preencher) => {
+      const x = itemLivro($("#it-l").value);
+      $("#it-d").innerHTML = x ? `${esc(x.desc)} <i>(${esc(x.preco)})</i>` : "";
+      if (x && preencher) { $("#it-n").value = x.nome; $("#it-c").value = String(x.peso); }
+    };
+    c.querySelector("#it-l").addEventListener("change", () => mostra(true)); mostra(false);
+  });
 };
 A["item-ok"] = (el) => {
-  const i = int(el.dataset.i, -1), n = $("#it-n").value.trim(), c = $("#it-c").value.trim();
+  const i = int(el.dataset.i, -1), n = $("#it-n").value.trim(), c = $("#it-c").value.trim(), q = String(Math.max(1, int($("#it-q").value, 1)));
   fecharFolha(); if (!n && !c) return;
-  mudar((s) => { if (i < 0) s.inventario.push({ item: n, carga: c }); else s.inventario[i] = { item: n, carga: c }; });
+  mudar((s) => { const x = { item: n, carga: c, qtd: q }; if (i < 0) s.inventario.push(x); else s.inventario[i] = x; });
+};
+function usarItem(i) {
+  const it = S.inventario[i], info = itemLivro(it && it.item); if (!info || !info.uso) return [];
+  const u = info.uso, linhas = [];
+  for (const k of ["mana", "vigor"]) if (u[k]) {
+    const ch = k + "_atual", mx = C.d[k], antes = S.vida[ch] === "" || S.vida[ch] == null ? mx : int(S.vida[ch], mx);
+    const ganho = u[k] === "tudo" ? mx - antes : R.rolarExpr(String(u[k]), rng)[0];
+    desfazer.push({ chave: ch, antigo: S.vida[ch], desc: info.nome });
+    S.vida[ch] = String(Math.min(mx, antes + ganho)); linhas.push(`${k === "mana" ? "Mana" : "Vigor"}: ${antes} → ${Math.min(mx, antes + ganho)}`);
+  }
+  if (u.condicao) {
+    const c = S.condicoes[u.condicao], antes = int(c.atual), depois = Math.max(0, antes - u.pontos);
+    c.atual = depois ? String(depois) : ""; linhas.push(`${u.condicao}: ${antes} → ${depois}`);
+  }
+  const q = Math.max(1, int(it.qtd, 1));
+  if (q > 1) it.qtd = String(q - 1); else S.inventario.splice(i, 1);
+  linhas.push(q > 1 ? `Restam ${q - 1}.` : "Era o último.");
+  salvar(); render();
+  return linhas;
+}
+A["usar-item"] = (el, ev) => {
+  if (ev) ev.stopPropagation();
+  const it = S.inventario[int(el.dataset.i)], nome = it ? it.item : "";
+  const linhas = usarItem(int(el.dataset.i));
+  if (linhas.length) mostrarRolagem(`⚗ ${esc(nome)}`, linhas.concat([`<span class="sub">${esc(D.itens_regras || "")}</span>`]));
 };
 A["item-rem"] = (el) => { const i = int(el.dataset.i); fecharFolha(); mudar((s) => { s.inventario.splice(i, 1); }); };
 A["peca"] = (el) => {
@@ -622,21 +671,73 @@ A["rolar-arma"] = (el) => {
   const l = ar.tabela.find((x) => x.nivel === nv), lD = ar.tabela.find((x) => x.nivel === nvD) || l;
   const bonus = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto;
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : 0;
+  const dg = S.desgaste[i] = Object.assign({ usados: 0, desgastada: false, em: 0, contado: -1 }, S.desgaste[i] || {});
+  if (dg.desgastada) {
+    folha(`${ar.nome} desgastada`, `<p>A arma não pode ser usada por um turno depois de desgastar.</p>`,
+      `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="reafiar" data-i="${i}" data-rolar="1">Já passou — atacar</button>`);
+    return;
+  }
   pagar("vigor_atual", C.d.vigor, vig, "Vigor", (custo) => {
     const at = R.rolarAtaque(bonus, R.vantagem(C.a[k]), int(l.critico, 20), rng);
     const linhas = [txtAtaque(at)];
+    const turno = sessao.ativa && sessao.meusTurnos ? sessao.meusTurnos : null;
+    if (at.critico || turno === null || dg.contado !== turno) {
+      const [u, gastou] = R.desgasteAposAtaque(int(dg.usados), at.critico);
+      dg.usados = u; dg.contado = turno === null ? -1 : turno;
+      if (gastou) { dg.desgastada = true; dg.em = sessao.meusTurnos || 0; }
+    }
+    salvar();
     if (!at.desastre) {
       const [tot, partes] = R.rolarExpr(R.danoComDados(lD.dano, Math.floor(R.cap(C.a[k]) / 30)), rng, at.critico);
       linhas.push(txtDano(tot, partes) + ` · ${esc(lD.tipo)}` + (nvD !== nv ? ` · dano de nível ${nvD} (talento)` : ""));
     }
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
     if (C.ef.acerto) linhas.push(`<span class="sub">Inclui +${C.ef.acerto} de acerto de talento situacional.</span>`);
+    linhas.push(`<span class="sub">${at.critico ? `Desgaste: o crítico reafiou a arma.` : dg.desgastada ? `<b class="erro">A arma desgastou</b>: sem uso no próximo turno.` : `Desgaste: restam ${R.DESGASTE_TURNOS - dg.usados} turno(s) afiado(s).`}</span>`);
+    render();
     mostrarRolagem(`⚔ ${ar.nome} nv ${nv}`, linhas);
   });
 };
 A["rolar-ini"] = () => {
   const d = [...Array(C.d.iniciativa_dados)].map(() => rng(20)), b = C.d.iniciativa_bonus;
   mostrarRolagem("⏳ Iniciativa", [`Iniciativa: <b style="font-size:20px">${Math.max(...d) + b}</b> <span class="sub">[d20 ${d.join(", ")} → ${Math.max(...d)} +${b}]</span>`]);
+};
+A["rolar-per"] = (el) => {
+  const r = R.rolarPericia(int(el.dataset.b), int(el.dataset.d, 1), rng);
+  mostrarRolagem(`🎲 ${esc(el.dataset.n)}`, [`${esc(el.dataset.n)}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${r.bonus}]</span>`,
+    `<span class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</span>`]);
+};
+A["reafiar"] = (el) => {
+  const i = int(el.dataset.i), rolar = el.dataset.rolar;
+  S.desgaste[i] = { usados: 0, desgastada: false, em: 0, contado: -1 }; salvar(); fecharFolha(); render();
+  if (rolar) A["rolar-arma"]({ dataset: { i: String(i) } });
+};
+A["descanso"] = (el) => {
+  const tipo = el.dataset.t;
+  if (tipo === "curto" && S.descansos_curtos >= R.DESCANSOS_CURTOS_MAX && !el.dataset.ok) {
+    folha("Descanso curto", `<p>Já foram ${S.descansos_curtos} descansos curtos desde o último longo (o livro permite ${R.DESCANSOS_CURTOS_MAX}).</p>`,
+      `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="descanso" data-t="curto" data-ok="1">Descansar mesmo assim</button>`);
+    return;
+  }
+  const d = C.d, maxs = { vida: d.vida, mana: d.mana, vigor: d.vigor }, ch = { vida: "atual", mana: "mana_atual", vigor: "vigor_atual" };
+  const ats = Object.fromEntries(Object.entries(ch).map(([k, c]) => [k, S.vida[c] === "" || S.vida[c] == null ? maxs[k] : int(S.vida[c], maxs[k])]));
+  const conds = Object.fromEntries(R.CONDICOES.map((n) => [n, int(S.condicoes[n].atual)]));
+  const [novos, nc] = R.descanso(tipo, maxs, ats, conds);
+  for (const [k, c] of Object.entries(ch)) S.vida[c] = String(novos[k]);
+  for (const n of R.CONDICOES) S.condicoes[n].atual = nc[n] ? String(nc[n]) : "";
+  S.descansos_curtos = tipo === "longo" ? 0 : S.descansos_curtos + 1;
+  if (tipo === "longo") S.desgaste = {};
+  fecharFolha(); salvar(); render();
+  const mud = R.CONDICOES.filter((n) => conds[n] !== nc[n]).map((n) => `${n} ${conds[n]} → ${nc[n]}`);
+  mostrarRolagem(tipo === "curto" ? "☾ Descanso curto" : "☀ Descanso longo", ["vida", "mana", "vigor"].map((k) => `${k[0].toUpperCase() + k.slice(1)}: ${ats[k]} → <b>${novos[k]}</b>`)
+    .concat(mud.length ? [`Condições: ${mud.join(", ")}`] : []).concat([`<span class="sub">${tipo === "curto" ? "Pode trocar o equipamento livremente." : "Efeitos temporários médios somem; armas reafiadas; a Poção Espiritual volta."}</span>`]));
+};
+A["pocao"] = () => {
+  const n = R.pocaoEspiritualDados(C.nv, C.d.curva.VIT), [tot, partes] = R.rolarExpr(`${n}d10`, rng);
+  const mx = C.d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? mx : int(S.vida.atual, mx);
+  desfazer.push({ chave: "atual", antigo: S.vida.atual, desc: "Poção Espiritual" });
+  S.vida.atual = String(Math.min(mx, antes + tot)); salvar(); render();
+  mostrarRolagem("⚗ Poção Espiritual", [txtDano(tot, partes, "Cura"), `Vida: ${antes} → <b>${Math.min(mx, antes + tot)}</b>`, `<span class="sub">Ação comum para beber; uma por jogador por descanso longo.</span>`]);
 };
 A["conjurar-menu"] = () => {
   const ops = [];
@@ -655,12 +756,18 @@ A["conjurar"] = (el, ev) => {
   pagar("mana_atual", C.d.mana, R.custoMana(v), "Mana", (custo) => {
     const at = R.rolarAtaque(C.d.bc[k] + C.d.n3, R.vantagem(C.a[k]), 20, rng);
     const linhas = [txtAtaque(at, per), `DT para o alvo resistir: <b>${k === "INT" ? C.d.dt_feiticaria : C.d.dt_desejo}</b>`];
-    const expr = R.danoDoEncantamento(v.descricao);
+    let expr = R.danoDoEncantamento(v.descricao);
+    const conds = R.condicoesDoEncantamento(v.descricao);
+    if (expr && conds.length && expr.replace(/\s+/g, " ") === conds[0][0]) expr = null;
+    if (!at.desastre) for (const [ce, cn] of conds) {
+      const escl = R.escalarArcano(ce, C.a.ARC, cn), [tot, partes] = R.rolarExpr(escl, rng, at.critico);
+      linhas.push(txtDano(tot, partes, cn) + " pontos" + (escl !== ce ? ` <span class="sub">· ${ce} → ${escl} por ${R.cap(C.a.ARC)} de Arcano</span>` : ""));
+    }
     if (expr && !at.desastre) {
       const extra = k === "INT" ? C.d.dados_extra_magia : C.d.dados_extra_feitico;
       const [tot, partes] = R.rolarExpr(R.danoComDados(expr, extra), rng, at.critico);
       linhas.push(txtDano(tot, partes, "Dados do encantamento") + (extra ? ` · +${extra} dado por ${k}` : ""));
-    } else if (!expr) linhas.push(`<span class="sub">Este encantamento não tem dados na descrição.</span>`);
+    } else if (!expr && !conds.length) linhas.push(`<span class="sub">Este encantamento não tem dados na descrição.</span>`);
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
     if (!x.equipado) linhas.push(`<span class="erro">Atenção: não está equipado.</span>`);
     if (impl < v.nivel) linhas.push(`<span class="erro">Atenção: precisa de ${k === "INT" ? "cajado" : "selo"} nv ${v.nivel}+ equipado.</span>`);
@@ -683,7 +790,7 @@ A["prev-attr"] = (el) => mudar((s) => { s.prevalencia_attr = el.dataset.k; });
 A["portao"] = (el) => mudar((s) => { const v = s.portao[el.dataset.n]; v[int(el.dataset.i)] = !v[int(el.dataset.i)]; });
 A["editar-cond"] = (el) => {
   const n = el.dataset.n, c = S.condicoes[n];
-  folha(n, `<label class="campo"><span>Atual</span><input id="c-at" type="number" inputmode="numeric" value="${int(c.atual)}"></label>
+  folha(n, `<p class="sub">${esc((R.CONDICAO_ATIVA[n] || {}).desc || "")} Teste: ${R.CONDICAO_TESTE[n] || ""} (sucesso recebe metade).</p><label class="campo"><span>Acumulado</span><input id="c-at" type="number" inputmode="numeric" value="${int(c.atual)}"></label>
     <label class="campo"><span>Máximo</span><input id="c-mx" type="number" inputmode="numeric" value="${int(c.max, 100)}"></label>
     <label class="campo"><span>Notas</span><input id="c-nt" value="${esc(c.notas)}"></label>`,
   `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="cond-ok" data-n="${n}">Salvar</button>`);
@@ -884,7 +991,8 @@ function importarArquivo(arq) {
 
 
 // ------------------------------------------------------------------ sessão do mestre (quando o PC do mestre serve esta página)
-const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0 };
+const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0 };
+const durEfeito = (e) => e.rodadas ? `${e.rodadas} turno(s)` : e.fim_combate ? "até o fim do combate" : "até o mestre remover";
 const CH_SESSAO = "prevalecentes.sessao.id";
 async function api(url, corpo) {
   const r = await fetch(url, corpo === undefined ? { cache: "no-store" } : { method: "POST", body: JSON.stringify(corpo) });
@@ -928,7 +1036,11 @@ function resumoSessao() {
     vida: at("atual", d.vida), vida_max: d.vida, mana: at("mana_atual", d.mana), mana_max: d.mana, vigor: at("vigor_atual", d.vigor), vigor_max: d.vigor,
     ca: d.ca, movimento: c.mov, iniciativa: d.iniciativa_bonus,
     portao: [S.portao.Sucessos.filter(Boolean).length, S.portao.Falhas.filter(Boolean).length],
-    condicoes: R.CONDICOES.filter((n) => int((S.condicoes[n] || {}).atual)).map((n) => [n, int(S.condicoes[n].atual), int(S.condicoes[n].max, 100)]),
+    condicoes: R.CONDICOES.map((n) => [n, int((S.condicoes[n] || {}).atual), int((S.condicoes[n] || {}).max, 100)]),
+    iniciativa_dados: d.iniciativa_dados, rd: d.rd, resistencias: d.resistencias,
+    defesas: Object.fromEntries(R.PERICIAS_DEFESA.map(([n, k, tn]) => [n, [d.bc[k] + d.n3 + (c.tal.has(tn) ? 2 : 0), R.vantagem(c.a[k])]])),
+    inventario: S.inventario.map((i) => ({ item: i.item || "", carga: String(i.carga || ""), qtd: Math.max(1, int(i.qtd, 1)) })),
+    dinheiro: S.dinheiro || "", carga: [Math.round(c.carga * 10) / 10, d.carga],
     sem_alma: !!S.sem_alma };
 }
 async function consultarSessao() {
@@ -937,8 +1049,8 @@ async function consultarSessao() {
   try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id)); }
   catch (e) { if (sessao.conectado) { sessao.conectado = false; pintarSessao(); } return; }
   if (!r.ok) { entrarSessao(sessao.id); return; }   // o mestre reiniciou: entra de novo com o mesmo nome
-  const mudou = !sessao.conectado || sessao.mao !== r.mao || sessao.rodada !== r.rodada || JSON.stringify(sessao.efeitos) !== JSON.stringify(r.efeitos || []);
-  sessao.conectado = true; sessao.mao = r.mao; sessao.rodada = r.rodada;
+  const mudou = !sessao.conectado || sessao.mao !== r.mao || sessao.rodada !== r.rodada || sessao.vez !== (r.vez || "") || JSON.stringify(sessao.efeitos) !== JSON.stringify(r.efeitos || []);
+  sessao.conectado = true; sessao.mao = r.mao; sessao.rodada = r.rodada; sessao.vez = r.vez || ""; sessao.turno = r.turno || 0;
   sessao.efeitos = r.efeitos || [];
   const avisos = (r.eventos || []).map(receberEvento).filter(Boolean);
   if (r.palavra) { avisos.push("🎤 <b>O mestre te deu a palavra!</b>"); vibrar([300, 120, 300]); }
@@ -957,16 +1069,30 @@ function receberEvento(ev) {
     const oque = valor < 0 ? `Cura de ${-valor}` : `${valor} de dano${ev.dano_tipo ? ` (${esc(ev.dano_tipo)})` : ""}`;
     let linha = "";
     if (S) {
-      const max = calcular().d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? max : int(S.vida.atual, max);
-      const depois = Math.max(0, Math.min(max, antes - valor));
+      const c = calcular(), max = c.d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? max : int(S.vida.atual, max);
+      const nomes = new Set(sessao.efeitos.map((e) => e.nome));
+      const [final, notas] = valor > 0 ? R.defesasContraDano(valor, ev.dano_tipo || "", c.d, rng, nomes.has("Fragilizado"), nomes.has("Loucura")) : [valor, []];
+      const depois = Math.max(0, Math.min(max, antes - final));
       S.vida.atual = String(depois); salvar(); render();
-      linha = `Vida: ${antes} → <b>${depois}</b>${depois === 0 && antes > 0 ? ` — <b class="erro">INCAPAZ</b>: role o Portão da Morte no início do turno.` : ""}`;
+      linha = (valor > 0 && notas.length ? `Recebeu <b>${final}</b> <span class="sub">(${esc(notas.join("; "))})</span><br>` : "")
+        + `Vida: ${antes} → <b>${depois}</b>${depois === 0 && antes > 0 ? ` — <b class="erro">INCAPAZ</b>: role o Portão da Morte no início do turno.${final > Math.floor(max / 2) ? " Dano maior que metade da Vida: 1 falha automática." : ""}` : ""}`;
+      relatar(valor > 0 && notas.length ? `recebeu ${final} de ${valor} (${notas.join("; ")}), Vida ${depois}/${max}` : `Vida ${depois}/${max}${depois === 0 && antes > 0 ? " — INCAPAZ" : ""}`);
     }
     diario.unshift({ titulo: "📣 Do mestre", linhas: [oque + (desc ? " — " + esc(desc) : ""), linha].filter(Boolean), hora });
     vibrar(valor < 0 ? 120 : [200, 80, 200]);
     return `📣 <b>${oque}</b>${desc ? " — " + esc(desc) : ""}${linha ? "<br>" + linha : ""}`;
+  } else if (ev.tipo === "cond_pontos" && S) {
+    return condicaoDoMestre(ev, hora);
+  } else if (ev.tipo === "item" && S) {
+    return itemDoMestre(ev, hora);
+  } else if (ev.tipo === "vez") {
+    sessao.meusTurnos += 1;
+    for (const dg of Object.values(S ? S.desgaste : {})) if (dg.desgastada && sessao.meusTurnos >= (dg.em || 0) + 2) Object.assign(dg, { usados: 0, desgastada: false, contado: -1 });
+    if (S) { salvar(); render(); }
+    vibrar([150, 80, 150, 80, 300]);
+    return "⚔ <b>É a sua vez!</b>";
   } else if (ev.tipo === "condicao") {
-    const dur = ev.rodadas ? `${ev.rodadas} rodada(s)` : "até o mestre remover";
+    const dur = durEfeito(ev);
     diario.unshift({ titulo: "📣 Condição", linhas: [`${esc(ev.nome)} (${dur})${ev.desc ? " — " + esc(ev.desc) : ""}`], hora });
     vibrar(200);
     return `⏳ <b>${esc(ev.nome)}</b> (${dur})${ev.desc ? " — " + esc(ev.desc) : ""}`;
@@ -975,14 +1101,64 @@ function receberEvento(ev) {
   }
   return "";
 }
+function relatar(texto, ativou) {
+  if (!sessao.id || !texto) return;
+  api("/api/relato", { id: sessao.id, texto, ativou: ativou || null }).catch(() => { /* o mestre vê a ficha de qualquer jeito */ });
+}
+function condicaoDoMestre(ev, hora) {
+  const cond = ev.condicao, c = S.condicoes[cond]; if (!c) return "";
+  const C2 = calcular(), defesa = R.CONDICAO_TESTE[cond] || "Fortitude";
+  const [, k, tn] = R.PERICIAS_DEFESA.find((x) => x[0] === defesa);
+  const bonus = C2.d.bc[k] + C2.d.n3 + (C2.tal.has(tn) ? 2 : 0);
+  const autoFalha = defesa === "Vontade" && sessao.efeitos.some((e) => e.nome === "Loucura");
+  const t = R.rolarDefesa(bonus, R.vantagem(C2.a[k]), rng), suc = !autoFalha && t.total >= int(ev.dt);
+  const mx = int(c.max, 100), antes = int(c.atual), [rec, novo, ativou] = R.receberCondicao(antes, mx, int(ev.pontos), suc);
+  c.atual = novo ? String(novo) : "";
+  const teste = `${defesa} ${t.total} [d20 ${t.d20.join(", ")} +${bonus}] contra DT ${int(ev.dt)}: ${autoFalha ? "falha automática (Loucura)" : suc ? "SUCESSO, metade" : "falhou"}`;
+  const linhas = [`${int(ev.pontos)} de ${esc(cond)}${ev.desc ? " — " + esc(ev.desc) : ""}`, teste, `${cond}: ${antes} → ${Math.min(antes + rec, mx)}/${mx} (+${rec})`];
+  let relato = `${teste}; ${cond} +${rec} → ${Math.min(antes + rec, mx)}/${mx}`;
+  if (ativou) {
+    const info = R.CONDICAO_ATIVA[cond];
+    linhas.push(`<b class="erro">⚠ ${cond.toUpperCase()} ATIVOU</b>: ${esc(info.desc)} A barra volta a zero.`);
+    relato += ` — ${cond.toUpperCase()} ATIVOU`;
+    if (info.pct_ja) {
+      const perda = Math.max(1, Math.floor(C2.d.vida * info.pct_ja / 100)), vida = S.vida.atual === "" || S.vida.atual == null ? C2.d.vida : int(S.vida.atual, C2.d.vida);
+      S.vida.atual = String(Math.max(0, vida - perda)); linhas.push(`Vida: ${vida} → ${Math.max(0, vida - perda)} (−${perda})`); relato += `, perdeu ${perda} de Vida`;
+    }
+    vibrar([300, 100, 300, 100, 300]);
+  } else vibrar(200);
+  salvar(); render();
+  diario.unshift({ titulo: `📣 ${cond}`, linhas, hora });
+  relatar(relato, ativou ? cond : null);
+  return `📣 ${linhas.join("<br>")}`;
+}
+function itemDoMestre(ev, hora) {
+  let txt;
+  if (ev.acao === "dar") {
+    const it = ev.item || {}, nome = String(it.item || "").slice(0, 40), q = Math.max(1, int(it.qtd, 1));
+    const ja = S.inventario.find((x) => String(x.item || "").trim().toLowerCase() === nome.toLowerCase());
+    if (ja) ja.qtd = String(Math.max(1, int(ja.qtd, 1)) + q); else S.inventario.push({ item: nome, carga: String(it.carga || ""), qtd: String(q) });
+    txt = `🎒 Recebeu <b>${q}× ${esc(nome)}</b>${ev.desc ? " — " + esc(ev.desc) : ""}`;
+  } else {
+    const nome = String(ev.nome || ""), q = Math.max(1, int(ev.qtd, 1));
+    const i = S.inventario.findIndex((x) => String(x.item || "").trim().toLowerCase() === nome.toLowerCase());
+    if (i < 0) return `O mestre tirou ${esc(nome)}, mas o item não está mais na bolsa.`;
+    const resto = Math.max(1, int(S.inventario[i].qtd, 1)) - q;
+    if (resto > 0) S.inventario[i].qtd = String(resto); else S.inventario.splice(i, 1);
+    txt = `🎒 O mestre tirou <b>${q}× ${esc(nome)}</b>${ev.desc ? " — " + esc(ev.desc) : ""}`;
+  }
+  salvar(); render(); vibrar(120);
+  diario.unshift({ titulo: "📣 Bolsa", linhas: [txt], hora });
+  return txt;
+}
 A["sessao-mao"] = async () => {
   if (!sessao.id) { pedirNomeSessao(); return; }
   try { await api(sessao.mao ? "/api/abaixar" : "/api/mao", { id: sessao.id }); sessao.mao = !sessao.mao; pintarSessao(); consultarSessao(); }
   catch (e) { toast("Sem conexão com o mestre…"); }
 };
 A["sessao-efeitos"] = () => folha(`Mesa · Rodada ${sessao.rodada}`, sessao.efeitos.length
-  ? `<div class="lista">${sessao.efeitos.map((e) => `<div class="item"><span class="marca">⏳</span><div class="tx"><b>${esc(e.nome)}</b><small>${e.rodadas ? `${e.rodadas} rodada(s)` : "até o mestre remover"}${e.desc ? " · " + esc(e.desc) : ""}</small></div></div>`).join("")}</div>`
-  : `<div class="vazio-msg">Nenhuma condição do mestre em você.</div>`, `<button class="botao leve" data-a="sessao-nome">Trocar nome</button><button class="botao prim" data-a="fechar">OK</button>`);
+  ? `<div class="lista">${sessao.efeitos.map((e) => `<div class="item"><span class="marca">⏳</span><div class="tx"><b>${esc(e.nome)}</b><small>${durEfeito(e)}${e.desc ? " · " + esc(e.desc) : ""}</small></div></div>`).join("")}</div>`
+  : `<div class="vazio-msg">Nenhum efeito do mestre em você.</div>`, `<button class="botao leve" data-a="sessao-nome">Trocar nome</button><button class="botao prim" data-a="fechar">OK</button>`);
 function pintarSessao() {
   const b = $("#mesa");
   if (!b) return;
@@ -990,7 +1166,9 @@ function pintarSessao() {
   document.body.classList.toggle("com-mesa", sessao.ativa);
   if (!sessao.ativa) return;
   const ef = sessao.efeitos.length ? ` · ⏳ ${sessao.efeitos.map((e) => esc(e.nome)).join(", ")}` : "";
-  b.innerHTML = `<button class="info" data-a="sessao-efeitos"><b>${sessao.conectado ? "🛡 Mesa" : "⚠ Sem sinal"}</b> · Rodada ${sessao.rodada}${ef}${S ? "" : " · abra uma ficha"}</button>
+  const minha = sessao.vez && sessao.vez === sessao.id;
+  b.classList.toggle("vez", !!minha);
+  b.innerHTML = `<button class="info" data-a="sessao-efeitos"><b>${sessao.conectado ? (minha ? "⚔ SUA VEZ" : "🛡 Mesa") : "⚠ Sem sinal"}</b> · Rodada ${sessao.rodada}${sessao.vez && !minha ? ` · vez de ${esc(sessao.vez)}` : ""}${ef}${S ? "" : " · abra uma ficha"}</button>
     <button class="mao ${sessao.mao ? "on" : ""}" data-a="sessao-mao">✋ ${sessao.mao ? "Abaixar" : "Mão"}</button>`;
 }
 

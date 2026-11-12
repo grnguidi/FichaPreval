@@ -27,6 +27,19 @@ def ler(*p):
         return f.read()
 
 
+def regras_js():
+    """regras.js com as tabelas que vêm de regras.py (efeitos de talento e listas do livro), para PC e celular ficarem iguais."""
+    efeitos = json.dumps(regras.EFEITOS_TALENTOS, ensure_ascii=False)
+    livro = json.dumps({k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in {
+        "TIPOS_DANO": regras.TIPOS_DANO, "DANO_SEM_RD": regras.DANO_SEM_RD, "EFEITOS_LIVRO": regras.EFEITOS_LIVRO,
+        "NOTA_EFEITOS": regras.NOTA_EFEITOS, "CONDICAO_TESTE": regras.CONDICAO_TESTE, "CONDICAO_ATIVA": regras.CONDICAO_ATIVA,
+        "CONDICAO_DESCANSO_CURTO": regras.CONDICAO_DESCANSO_CURTO, "DESCANSOS_CURTOS_MAX": regras.DESCANSOS_CURTOS_MAX,
+        "DESGASTE_TURNOS": regras.DESGASTE_TURNOS, "PECAS_SET_PESO": regras.PECAS_SET_PESO, "DADO_INFERIOR": regras.DADO_INFERIOR,
+    }.items()}, ensure_ascii=False)
+    js = re.sub(r"const EFEITOS_TALENTOS = \{.*?\};", lambda m: f"const EFEITOS_TALENTOS = {efeitos};", ler("regras.js"), count=1, flags=re.S)
+    return js.replace("const LIVRO = {};", f"const LIVRO = {livro};", 1)
+
+
 def main():
     dados = json.loads(json.dumps(DADOS))
     for e in dados["encantamentos"]:          # campos que o app de mesa não usa
@@ -34,8 +47,7 @@ def main():
             for k in ("base", "mana_num", "req_cajado", "req_selo"):
                 v.pop(k, None)
     dj = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    efeitos = json.dumps(regras.EFEITOS_TALENTOS, ensure_ascii=False)
-    js_regras = re.sub(r"const EFEITOS_TALENTOS = \{.*?\};", lambda m: f"const EFEITOS_TALENTOS = {efeitos};", ler("regras.js"), count=1, flags=re.S)
+    js_regras = regras_js()
     pwa = ('<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" href="icone-192.png">\n'
            '<link rel="apple-touch-icon" href="icone-192.png">')
     base = (ler("src", "index.tpl.html").replace("/*CSS*/", ler("src", "estilo.css"))

@@ -19608,5 +19608,510 @@
    "peso": 20,
    "req": 60
   }
- ]
+ ],
+ "itens": [
+  {
+   "nome": "Gota de Mana",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "3 Contos",
+   "desc": "Um dedal de líquido azulado, mal dá para sentir o gosto. Restaura 5 pontos de Mana. Consumir exige uma ação bônus.",
+   "uso": {
+    "mana": "5",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Poção de Mana Menor",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "8 Contos",
+   "desc": "Um vidro de líquido azulado e denso. Restaura 10 pontos de Mana. Consumir exige uma ação bônus.",
+   "uso": {
+    "mana": "10",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Poção de Mana Maior",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "15 Contos",
+   "desc": "Destilada por ocultistas a partir de cristais moídos. Restaura 25 pontos de Mana. Consumir exige uma ação comum.",
+   "uso": {
+    "mana": "25",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Poção de Mana Superior",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "4 Contos de prata",
+   "desc": "Cristais moídos e refinados três vezes, com brilho próprio. Restaura 50 pontos de Mana. Consumir exige uma ação comum.",
+   "uso": {
+    "mana": "50",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Poção de Mana Magna",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "12 Contos de prata",
+   "desc": "Mistura rara preparada em laboratório de ocultista. Restaura 100 pontos de Mana. Consumir exige uma ação comum.",
+   "uso": {
+    "mana": "100",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Elixir de Mana",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "2 Contos de ouro",
+   "desc": "Um frasco de luz líquida, feito com um cristal inteiro. Restaura toda a Mana de quem o bebe. Consumir exige uma ação completa.",
+   "uso": {
+    "mana": "tudo",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Gole de Vigor",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "3 Contos",
+   "desc": "Um trago de raízes mastigadas e sal. Restaura 5 pontos de Vigor. Consumir exige uma ação bônus.",
+   "uso": {
+    "vigor": "5",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Frasco de Vigor",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "12 Contos",
+   "desc": "Uma mistura amarga de raízes e sal. Restaura 2d10 pontos de Vigor. Consumir exige uma ação bônus.",
+   "uso": {
+    "vigor": "2d10",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Frasco de Vigor Maior",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "3 Contos de prata",
+   "desc": "Raízes e sal curados por semanas em óleo de cervo. Restaura 25 pontos de Vigor. Consumir exige uma ação bônus.",
+   "uso": {
+    "vigor": "25",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Frasco de Vigor Superior",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "8 Contos de prata",
+   "desc": "Concentrado de tônico de guerra, de sabor quase insuportável. Restaura 50 pontos de Vigor. Consumir exige uma ação comum.",
+   "uso": {
+    "vigor": "50",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Frasco de Vigor Magno",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "15 Contos de prata",
+   "desc": "Tônico fervido com carne de animal predador. Restaura 100 pontos de Vigor. Consumir exige uma ação comum.",
+   "uso": {
+    "vigor": "100",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Elixir de Vigor",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "2 Contos de ouro",
+   "desc": "Um líquido espesso e quente que devolve o fôlego de um dia inteiro. Restaura todo o Vigor de quem o bebe. Consumir exige uma ação completa.",
+   "uso": {
+    "vigor": "tudo",
+    "consome": true
+   }
+  },
+  {
+   "nome": "Antídoto Simples",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "15 Contos",
+   "desc": "Remove 30 pontos acumulados na barra de Veneno de quem o bebe.",
+   "uso": {
+    "condicao": "Veneno",
+    "pontos": 30,
+    "consome": true
+   }
+  },
+  {
+   "nome": "Unguento Estancante",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "15 Contos",
+   "desc": "Pasta espessa que fecha ferimentos. Remove 30 pontos acumulados de Sangramento. Aplicar exige uma ação comum.",
+   "uso": {
+    "condicao": "Sangramento",
+    "pontos": 30,
+    "consome": true
+   }
+  },
+  {
+   "nome": "Chá Térmico",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "12 Contos",
+   "desc": "Bebido quente, aquece por dentro. Remove 30 pontos de Congelamento e concede resistência ao frio por uma hora.",
+   "uso": {
+    "condicao": "Congelamento",
+    "pontos": 30,
+    "consome": true
+   }
+  },
+  {
+   "nome": "Sais de Vigília",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "18 Contos",
+   "desc": "Cheirados, arrancam qualquer um do torpor. Removem 40 pontos de Sono e impedem novo acúmulo até o fim do próximo turno.",
+   "uso": {
+    "condicao": "Sono",
+    "pontos": 40,
+    "consome": true
+   }
+  },
+  {
+   "nome": "Incenso Lúcido",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "2 Contos de prata",
+   "desc": "Queimado, assenta a mente. Remove 30 pontos de Loucura de todos a até 3 metros. Leva um turno inteiro para fazer efeito.",
+   "uso": {
+    "condicao": "Loucura",
+    "pontos": 30,
+    "consome": true
+   }
+  },
+  {
+   "nome": "Ração de Viagem",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "5 Contos",
+   "desc": "Carne seca, grão e fruta prensada. Alimenta um aventureiro por um dia.",
+   "uso": {
+    "consome": true
+   }
+  },
+  {
+   "nome": "Cantil",
+   "categoria": "Consumíveis e remédios",
+   "peso": 1.0,
+   "preco": "8 Contos",
+   "desc": "Recipiente de couro curtido. Guarda água para um dia de marcha.",
+   "uso": {
+    "consome": true
+   }
+  },
+  {
+   "nome": "Tocha",
+   "categoria": "Luz e fogo",
+   "peso": 1.0,
+   "preco": "1 Conto",
+   "desc": "Ilumina 6 metros por uma hora. Pode ser usada como arma improvisada, causando 1d4 de dano de fogo."
+  },
+  {
+   "nome": "Lanterna de Ferro",
+   "categoria": "Luz e fogo",
+   "peso": 2.0,
+   "preco": "5 Contos de prata",
+   "desc": "Projeta luz direcional por 12 metros. Consome um frasco de óleo a cada seis horas e não se apaga com vento."
+  },
+  {
+   "nome": "Frasco de Óleo",
+   "categoria": "Luz e fogo",
+   "peso": 1.0,
+   "preco": "10 Contos",
+   "desc": "Alimenta uma lanterna por seis horas. Arremessado, cobre 1,5 metro de área com líquido inflamável."
+  },
+  {
+   "nome": "Pederneira e Fuzil",
+   "categoria": "Luz e fogo",
+   "peso": 1.0,
+   "preco": "5 Contos",
+   "desc": "Faísca confiável para acender fogo, mesmo com lenha úmida."
+  },
+  {
+   "nome": "Vela Longa",
+   "categoria": "Luz e fogo",
+   "peso": 1.0,
+   "preco": "1 Conto",
+   "desc": "Ilumina 3 metros por quatro horas. Silenciosa e discreta, apaga com qualquer corrente de ar."
+  },
+  {
+   "nome": "Corda de Cânhamo",
+   "categoria": "Cordas, escalada e arrombamento",
+   "peso": 3.0,
+   "preco": "10 Contos",
+   "desc": "Quinze metros de corda resistente. Suporta o peso de duas pessoas com equipamento."
+  },
+  {
+   "nome": "Corda de Seda",
+   "categoria": "Cordas, escalada e arrombamento",
+   "peso": 1.0,
+   "preco": "8 Contos de prata",
+   "desc": "Dezoito metros, quase sem peso e difícil de cortar. Preferida por quem escala em silêncio."
+  },
+  {
+   "nome": "Gancho de Escalada",
+   "categoria": "Cordas, escalada e arrombamento",
+   "peso": 2.0,
+   "preco": "2 Contos de prata",
+   "desc": "Três pontas de aço forjado. Preso a uma corda, permite subir paredes sem apoio natural."
+  },
+  {
+   "nome": "Pitons de Ferro",
+   "categoria": "Cordas, escalada e arrombamento",
+   "peso": 1.0,
+   "preco": "5 Contos",
+   "desc": "Conjunto de dez cravos. Fincados na rocha, criam apoios permanentes em uma escalada."
+  },
+  {
+   "nome": "Pé de Cabra",
+   "categoria": "Cordas, escalada e arrombamento",
+   "peso": 3.0,
+   "preco": "2 Contos de prata",
+   "desc": "Barra de aço curvada. Concede vantagem em testes para forçar portas, tampas e grades."
+  },
+  {
+   "nome": "Gazuas",
+   "categoria": "Cordas, escalada e arrombamento",
+   "peso": 1.0,
+   "preco": "3 Contos de prata",
+   "desc": "Estojo de ganchos finos. Necessário para qualquer tentativa de abrir fechaduras sem a chave."
+  },
+  {
+   "nome": "Escada de Corda",
+   "categoria": "Cordas, escalada e arrombamento",
+   "peso": 4.0,
+   "preco": "1 Conto de prata",
+   "desc": "Seis metros de degraus de madeira presos a cordas. Permite que o grupo inteiro suba com segurança."
+  },
+  {
+   "nome": "Mochila",
+   "categoria": "Acampamento e descanso",
+   "peso": 2.0,
+   "preco": "2 Contos de prata",
+   "desc": "Armação de couro e madeira que distribui o peso nas costas. Aumenta sua Carga em 5 pontos.",
+   "uso": {
+    "carga": 5
+   }
+  },
+  {
+   "nome": "Saco de Dormir",
+   "categoria": "Acampamento e descanso",
+   "peso": 2.0,
+   "preco": "1 Conto de prata",
+   "desc": "Forro acolchoado. Sem ele, um descanso longo ao relento exige teste de Fortitude."
+  },
+  {
+   "nome": "Tenda para Dois",
+   "categoria": "Acampamento e descanso",
+   "peso": 6.0,
+   "preco": "8 Contos de prata",
+   "desc": "Lona e estacas para abrigar duas pessoas. Anula penalidades de chuva e vento durante o descanso."
+  },
+  {
+   "nome": "Panela de Ferro",
+   "categoria": "Acampamento e descanso",
+   "peso": 4.0,
+   "preco": "5 Contos",
+   "desc": "Pesada e indestrutível. Necessária para preparar qualquer refeição de cozinheiro em viagem."
+  },
+  {
+   "nome": "Cobertor de Lã",
+   "categoria": "Acampamento e descanso",
+   "peso": 2.0,
+   "preco": "5 Contos",
+   "desc": "Grosso e áspero. Concede resistência ao frio leve durante a noite."
+  },
+  {
+   "nome": "Lona Impermeável",
+   "categoria": "Acampamento e descanso",
+   "peso": 2.0,
+   "preco": "8 Contos",
+   "desc": "Cobre equipamento ou serve de abrigo improvisado. Mantém a carga seca sob chuva."
+  },
+  {
+   "nome": "Remo",
+   "categoria": "Navegação e água",
+   "peso": 4.0,
+   "preco": "2 Contos de prata",
+   "desc": "Pá de madeira reforçada. Um barco pequeno exige ao menos dois remos para navegar contra a corrente."
+  },
+  {
+   "nome": "Âncora Pequena",
+   "categoria": "Navegação e água",
+   "peso": 8.0,
+   "preco": "6 Contos de prata",
+   "desc": "Ferro fundido com argola. Mantém uma embarcação parada em águas rasas."
+  },
+  {
+   "nome": "Vela Sobressalente",
+   "categoria": "Navegação e água",
+   "peso": 6.0,
+   "preco": "1 Conto de ouro",
+   "desc": "Pano encerado de reposição. Substitui uma vela rasgada sem interromper a viagem."
+  },
+  {
+   "nome": "Bússola",
+   "categoria": "Navegação e água",
+   "peso": 1.0,
+   "preco": "9 Contos de prata",
+   "desc": "Agulha imantada em caixa de latão. Impede que o grupo se perca em neblina ou mar aberto."
+  },
+  {
+   "nome": "Mapa Regional",
+   "categoria": "Navegação e água",
+   "peso": 1.0,
+   "preco": "5 Contos de prata",
+   "desc": "Carta desenhada à mão de um andar ou região. Concede +6 em testes de Navegação por rotas registradas nele."
+  },
+  {
+   "nome": "Balde de Escoamento",
+   "categoria": "Navegação e água",
+   "peso": 2.0,
+   "preco": "6 Contos",
+   "desc": "Madeira e alça de corda. Retira água do casco de um barco alagado."
+  },
+  {
+   "nome": "Boia de Cortiça",
+   "categoria": "Navegação e água",
+   "peso": 2.0,
+   "preco": "1 Conto de prata",
+   "desc": "Anel leve amarrado a uma corda. Mantém à tona quem não sabe nadar."
+  },
+  {
+   "nome": "Marreta",
+   "categoria": "Expedição e escavação",
+   "peso": 5.0,
+   "preco": "2 Contos de prata",
+   "desc": "Cabeça pesada de ferro. Derruba paredes frágeis e crava estacas em solo duro."
+  },
+  {
+   "nome": "Pá Dobrável",
+   "categoria": "Expedição e escavação",
+   "peso": 3.0,
+   "preco": "1 Conto de prata",
+   "desc": "Cabo curto e lâmina articulada. Cava trincheiras, sepulturas e abrigos de neve."
+  },
+  {
+   "nome": "Picareta",
+   "categoria": "Expedição e escavação",
+   "peso": 5.0,
+   "preco": "3 Contos de prata",
+   "desc": "Ponta de aço temperado. Necessária para extrair minérios e cristais de veios rochosos."
+  },
+  {
+   "nome": "Rede de Caça",
+   "categoria": "Expedição e escavação",
+   "peso": 3.0,
+   "preco": "2 Contos de prata",
+   "desc": "Malha de fibra trançada. Arremessada com um ataque à distância, deixa uma criatura de tamanho médio ou menor Enredada até que ela passe em um teste de Atletismo (DT 15) ou gaste uma ação comum para cortá-la."
+  },
+  {
+   "nome": "Armadilha de Aço",
+   "categoria": "Expedição e escavação",
+   "peso": 4.0,
+   "preco": "4 Contos de prata",
+   "desc": "Mandíbula de mola escondida no chão. Causa 2d6 de dano perfurante e prende quem pisa nela até que passe em um teste de Atletismo (DT 15). Perceber a armadilha exige Percepção DT 15."
+  },
+  {
+   "nome": "Saco de Pó de Giz",
+   "categoria": "Expedição e escavação",
+   "peso": 1.0,
+   "preco": "3 Contos",
+   "desc": "Marca caminhos em cavernas e ruínas. Concede +3 em testes de Navegação em cavernas, masmorras e ruínas."
+  },
+  {
+   "nome": "Espelho de Bolso",
+   "categoria": "Expedição e escavação",
+   "peso": 1.0,
+   "preco": "2 Contos de prata",
+   "desc": "Aço polido. Permite olhar além de uma esquina sem expor o corpo."
+  },
+  {
+   "nome": "Kit de Costura",
+   "categoria": "Ofício e registro",
+   "peso": 1.0,
+   "preco": "8 Contos",
+   "desc": "Agulha, linha encerada e retalhos. Repara roupas, mochilas e lonas em um descanso curto."
+  },
+  {
+   "nome": "Bigorna Portátil",
+   "categoria": "Ofício e registro",
+   "peso": 8.0,
+   "preco": "2 Contos de ouro",
+   "desc": "Bigorna pequena e martelo resistente. Permite tentar elevar o nível de uma arma sem uma ferraria, com um teste de Tecnologia (DT 10 + 3 × o nível que a arma vai alcançar)."
+  },
+  {
+   "nome": "Bastidor de Campo",
+   "categoria": "Ofício e registro",
+   "peso": 6.0,
+   "preco": "2 Contos de ouro",
+   "desc": "Estrutura dobrável de madeira e cordas, usada junto com o Kit de Costura. Permite costurar peças de armadura de Animais em campo, com teste de Costura. Peças de Prevalecente e Deus exigem costureiro dedicado."
+  },
+  {
+   "nome": "Pergaminhos em Branco",
+   "categoria": "Ofício e registro",
+   "peso": 1.0,
+   "preco": "4 Contos de prata",
+   "desc": "Maço de cinco folhas tratadas. Permite criar um pergaminho de um Encantamento no qual você conhece."
+  },
+  {
+   "nome": "Tinta e Pena",
+   "categoria": "Ofício e registro",
+   "peso": 1.0,
+   "preco": "2 Contos de prata",
+   "desc": "Frasco de tinta escura e pena bem cortada. Necessários para registrar qualquer documento ou mapa."
+  },
+  {
+   "nome": "Lupa",
+   "categoria": "Ofício e registro",
+   "peso": 1.0,
+   "preco": "7 Contos de prata",
+   "desc": "Lente de cristal montada em aro. Revela detalhes invisíveis a olho nu em documentos e rastros."
+  },
+  {
+   "nome": "Balança de Mão",
+   "categoria": "Ofício e registro",
+   "peso": 1.0,
+   "preco": "5 Contos de prata",
+   "desc": "Pratos de latão e pesos calibrados. Impede que mercadores trapaceiem na pesagem de minérios."
+  },
+  {
+   "nome": "Sino de Alarme",
+   "categoria": "Utilidades diversas",
+   "peso": 1.0,
+   "preco": "1 Conto de prata",
+   "desc": "Preso a um fio esticado, soa quando alguém se aproxima. Impede que o grupo seja surpreendido durante o descanso."
+  },
+  {
+   "nome": "Corrente e Cadeado",
+   "categoria": "Utilidades diversas",
+   "peso": 3.0,
+   "preco": "3 Contos de prata",
+   "desc": "Dois metros de elos de ferro. Tranca uma porta, prende um prisioneiro ou ancora equipamento."
+  }
+ ],
+ "itens_regras": "Você só pode beber uma poção de Mana e uma de Vigor por combate. O Elixir de Mana e o Elixir de Vigor só podem ser usados uma vez por descanso longo."
 }

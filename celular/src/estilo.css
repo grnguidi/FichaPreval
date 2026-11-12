@@ -175,3 +175,6 @@ body.com-mesa{padding-bottom:calc(108px + env(safe-area-inset-bottom))}
 body.com-mesa .toast{bottom:calc(124px + env(safe-area-inset-bottom))}
 .lista.mestre .item{background:var(--rosa)}
 .toast hr{border:0;border-top:1px solid var(--ouro);opacity:.5;margin:6px 0}
+.botao.mini{min-height:32px;padding:4px 12px;font-size:13.5px;margin-right:8px}
+.mesa.vez{background:var(--vinho)}
+.mesa.vez .info{color:#fff}

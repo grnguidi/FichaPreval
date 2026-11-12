@@ -194,8 +194,8 @@ def gerar_pdf(caminho, app):
         e.append(Paragraph(L(f"<b>{n}</b> ({q} peças): {e2}" + (f" <br/>4 peças: {e4}" if e4 else "")).replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>").replace("&lt;br/&gt;", "<br/>"), s_txt))
 
     e.append(secao("Inventário"))
-    inv = [[x["item"], x["carga"]] for x in st["inventario"] if x.get("item")]
-    e.append(tabela(["Item", "Carga"], inv or [["—", ""]], [W - 25 * mm, 25 * mm], cor=PERG2))
+    inv = [[x["item"], x.get("qtd") or "1", x["carga"]] for x in st["inventario"] if x.get("item")]
+    e.append(tabela(["Item", "Qtd", "Peso"], inv or [["—", "", ""]], [W - 45 * mm, 20 * mm, 25 * mm], cor=PERG2))
     e.append(Paragraph(L(f"Carga atual {app._carga_atual():g} de {ch['Carga máx.']}  ·  Dinheiro: {st.get('dinheiro') or '—'}"), s_peq))
 
     e.append(secao("Encantamentos"))

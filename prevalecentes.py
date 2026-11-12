@@ -210,6 +210,8 @@ class App(tk.Tk):
         self.geometry("1240x860")
         self.minsize(1040, 680)
         self.dados = carregar_dados()
+        self.itens_livro = self.dados.get("itens") or _DADOS_EMBUTIDOS.get("itens", [])
+        self.item_por_nome = {i["nome"].lower(): i for i in self.itens_livro}
         self.armas_por_nome = {a["nome"]: a for a in self.dados["armas"]}
         self.enc_por_nome = {e["nome"]: e for e in self.dados["encantamentos"]}
         self.tal_por_nome = {t["nome"]: t for t in self.dados["talentos"]}
@@ -235,6 +237,9 @@ class App(tk.Tk):
         self.so_edicao = []
         self.modo = "jogo"
         self.efeitos_mestre = []
+        self.desgaste = {}         # arma (0/1) -> {"usados", "desgastada", "em", "contado"}: turnos afiados
+        self.meus_turnos = 0       # turnos que o mestre passou para este jogador (sessão)
+        self.descansos_curtos = 0  # desde o último descanso longo (máx. 2)
         self.janela_sessao = None
         aplicar_tema(ler_pref().get("tema", "diurno"))
         self._estilo()
@@ -680,8 +685,9 @@ class App(tk.Tk):
                 tk.Label(c, text="/".join(atrs), bg=PERG, fg=TINTA2, font=(FONTE, 9)).grid(row=r, column=col0 + 2, sticky="w", padx=6)
             lb = Rot(c, size=10)
             lb.grid(row=r, column=col0 + 3, sticky="w", padx=6)
-            ld = Rot(c, fg=TINTA2, size=9, bold=False)
+            ld = tk.Label(c, bg=PERG, fg=TINTA2, font=(FONTE, 9, "underline"), cursor="hand2")
             ld.grid(row=r, column=col0 + 4, sticky="w", padx=6)
+            ld.bind("<Button-1>", lambda e, n=nome: self.rolar_pericia(n))
             self.per[nome] = {"var": v, "bonus": lb, "dados": ld, "attrs": atrs}
         for j in (1, 7):
             c.columnconfigure(j, weight=1)
@@ -748,6 +754,13 @@ class App(tk.Tk):
         ttk.Button(c, text="🎲 Iniciativa", command=self.rolar_iniciativa).grid(row=0, column=2, padx=(0, 6), sticky="w")
         ttk.Button(c, text="✧ Conjurar…", command=self.conjurar_menu).grid(row=0, column=3, padx=(0, 6), sticky="w")
         ttk.Button(c, text="📜 Diário de rolagens", command=self.abrir_diario).grid(row=0, column=4, padx=(0, 6), sticky="w")
+        ds = ttk.Frame(c)
+        ds.grid(row=4, column=0, columnspan=6, sticky="w", pady=(8, 0))
+        ttk.Button(ds, text="☾ Descanso curto", command=lambda: self.descansar("curto")).pack(side="left")
+        ttk.Button(ds, text="☀ Descanso longo", command=lambda: self.descansar("longo")).pack(side="left", padx=6)
+        ttk.Button(ds, text="⚗ Poção Espiritual", command=self.pocao_espiritual).pack(side="left")
+        self.l_descanso = ttk.Label(ds, text="", style="Sub.TLabel")
+        self.l_descanso.pack(side="left", padx=10)
         self.l_ef_ativos = Rot(c, size=9, bold=False, wraplength=980, justify="left")
         self.l_ef_ativos.grid(row=1, column=0, columnspan=6, sticky="w", pady=(6, 0))
         self.l_ef_mestre = Rot(c, size=10, wraplength=980, justify="left", fg=VINHO)
@@ -756,7 +769,7 @@ class App(tk.Tk):
                   style="Sub.TLabel").grid(row=2, column=0, columnspan=6, sticky="w")
 
         c = self.secao(p, "Condições", row=3, column=0)
-        self.cabecalho(c, ["Condição", "Máx.", "Atual", "Notas"], PERG2)
+        self.cabecalho(c, ["Condição", "Máx.", "Acumulado", "Notas"], PERG2)
         c.columnconfigure(3, weight=1)
         self.cond = {}
         for r, n in enumerate(R.CONDICOES, start=1):
@@ -933,21 +946,29 @@ class App(tk.Tk):
         c = self.secao(p, "Inventário geral", row=3, column=0, columnspan=2)
         self.l_carga_inv = Rot(c, size=10)
         self.l_carga_inv.grid(row=0, column=0, columnspan=5, sticky="w", pady=(0, 6))
-        self.cabecalho(c, ["Item", "Carga"], PERG2, row=1, col0=0)
-        self.cabecalho(c, ["Item", "Carga"], PERG2, row=1, col0=3)
-        tk.Frame(c, width=24, bg=PERG).grid(row=1, column=2)
+        self.cabecalho(c, ["Item", "Qtd", "Peso"], PERG2, row=1, col0=0)
+        self.cabecalho(c, ["Item", "Qtd", "Peso"], PERG2, row=1, col0=4)
+        tk.Frame(c, width=24, bg=PERG).grid(row=1, column=3)
         c.columnconfigure(0, weight=1)
-        c.columnconfigure(3, weight=1)
+        c.columnconfigure(4, weight=1)
         self.inv = []
+        nomes_itens = [i["nome"] for i in self.itens_livro]
         for i in range(30):
-            it = {"item": self.var(), "carga": self.var()}
-            r, cc = 2 + i % 15, (i // 15) * 3
-            ttk.Entry(c, textvariable=it["item"]).grid(row=r, column=cc, padx=(0, 2), pady=1, sticky="we")
-            ttk.Entry(c, textvariable=it["carga"], width=6).grid(row=r, column=cc + 1, padx=2, pady=1)
+            it = {"item": self.var(), "carga": self.var(), "qtd": self.var()}
+            r, cc = 2 + i % 15, (i // 15) * 4
+            cb = ttk.Combobox(c, textvariable=it["item"], values=nomes_itens, height=20)
+            cb.grid(row=r, column=cc, padx=(0, 2), pady=1, sticky="we")
+            cb.bind("<<ComboboxSelected>>", lambda e, it=it: self._item_escolhido(it))
+            ttk.Entry(c, textvariable=it["qtd"], width=3).grid(row=r, column=cc + 1, padx=2, pady=1)
+            ttk.Entry(c, textvariable=it["carga"], width=5).grid(row=r, column=cc + 2, padx=2, pady=1)
             self.inv.append(it)
+        bi = ttk.Frame(c)
+        bi.grid(row=18, column=0, columnspan=3, sticky="w", pady=(8, 0))
+        ttk.Button(bi, text="⚗ Usar item…", command=self.usar_item_menu).pack(side="left")
+        ttk.Label(bi, text="Itens do livro já vêm com o peso. Peso é por unidade (× Qtd).", style="Sub.TLabel").pack(side="left", padx=8)
         self.v_dinheiro = self.var()
         dn = tk.Frame(c, bg=C_DIN, padx=8, pady=4)
-        dn.grid(row=18, column=3, columnspan=2, sticky="we", pady=(8, 0))
+        dn.grid(row=18, column=4, columnspan=3, sticky="we", pady=(8, 0))
         tk.Label(dn, text="Dinheiro atual", bg=C_DIN, fg=FAIXA, font=(FONTE, 10, "bold")).pack(side="left")
         ttk.Entry(dn, textvariable=self.v_dinheiro, width=16).pack(side="right")
 
@@ -1371,6 +1392,7 @@ class App(tk.Tk):
                         *self.ca_peso_protecao()[:2], to_int(self.arm["ca_extra"].get()))
         ef = R.efeitos_talentos(tal, self.talentos_ativos(), self.arm["armadura"].get())
         self.aplicar_efeitos(d, ef)
+        d["carga"] += R.carga_extra_itens(self._inventario(), self.itens_livro)   # Mochila: +5
         self.d, self.a, self.ef = d, a, ef
         avisos = []
 
@@ -1535,7 +1557,8 @@ class App(tk.Tk):
             _, bonus, dados = R.pericia_fora(a, nivel, atrs, nome in treinadas)
             bonus += ef["pericia"].get(nome, 0)
             pinfo["bonus"].configure(text=f"+{bonus}" + ("*" if nome in ef["pericia"] else ""))
-            pinfo["dados"].configure(text=f"{dados}d20")
+            pinfo["dados"].configure(text=f"🎲 {dados}d20")
+            pinfo["calc"] = (bonus, dados)
         self.l_per_cont.configure(text=f"Treinadas fora de combate: {len(treinadas)}/{d['pericias_treinadas_max']}",
                                   style="Erro.TLabel" if len(treinadas) > d["pericias_treinadas_max"] else "Ok.TLabel")
         if len(treinadas) > d["pericias_treinadas_max"]:
@@ -1560,7 +1583,9 @@ class App(tk.Tk):
         self._recalc_armas(a, nivel, avisos)
         for i, b in enumerate(self.bt_rolar_arma):
             g = self.armas_ui[i]["grupo"].get()
-            b.configure(text=f"🎲 {g} nv {self.armas_ui[i]['nivel'].get()}" if g else f"🎲 Arma {i + 1} (vazia)")
+            dg = self.desgaste.get(i, {})
+            st = (" · DESGASTADA" if dg.get("desgastada") else f" · afiada {R.DESGASTE_TURNOS - dg.get('usados', 0)}/{R.DESGASTE_TURNOS}")
+            b.configure(text=f"🎲 {g} nv {self.armas_ui[i]['nivel'].get()}{st}" if g else f"🎲 Arma {i + 1} (vazia)")
             b.state(["!disabled"] if g else ["disabled"])
         partes = []
         for nome in sorted(tal):
@@ -1575,8 +1600,11 @@ class App(tk.Tk):
             bits += [f"+{v} {p_}" for p_, v in e_.get("pericia", {}).items()]
             partes.append(f"{nome}{' (ativo)' if e_['tipo'] == 'sit' else ''}: {', '.join(bits)}")
         self.l_ef_mestre.configure(text=("Do mestre — " + "  ·  ".join(
-            f"{e['nome']} ({e['rodadas']} rodada(s))" if e.get("rodadas") else f"{e['nome']} (sem fim)" for e in self.efeitos_mestre))
+            f"{e['nome']} ({e['rodadas']} turno(s))" if e.get("rodadas") else
+            f"{e['nome']} (até o fim do combate)" if e.get("fim_combate") else f"{e['nome']} (sem fim)" for e in self.efeitos_mestre))
             if self.efeitos_mestre else "")
+        self.l_descanso.configure(text=f"Descansos curtos desde o longo: {self.descansos_curtos}/{R.DESCANSOS_CURTOS_MAX}  ·  "
+                                       f"Poção Espiritual: {R.pocao_espiritual_dados(nivel, d['curva']['VIT'])}d10")
         self.l_ef_ativos.configure(text=("Efeitos de talento em uso — " + "  ·  ".join(partes)) if partes else
                                    "Nenhum efeito de talento em uso. Talentos situacionais são ligados na aba Talentos (\"ativo agora\").")
 
@@ -1604,13 +1632,13 @@ class App(tk.Tk):
             self.txt_avisos.insert("end", ("• " if tag == "erro" else "ℹ ") + msg + "\n", tag)
         self.txt_avisos.configure(state="disabled")
 
+    def _inventario(self):
+        return [{"item": i["item"].get().strip(), "carga": i["carga"].get().strip(), "qtd": i["qtd"].get().strip()}
+                for i in self.inv if i["item"].get().strip() or i["carga"].get().strip()]
+
     def _carga_atual(self):
-        tot = 0.0
-        for it in self.inv:
-            try:
-                tot += float(str(it["carga"].get()).replace(",", ".") or 0)
-            except ValueError:
-                pass
+        tot = R.peso_inventario(self._inventario())
+        tot += R.peso_pecas_set({p: {"set": sp["set"].get(), "nome": sp["nome"].get()} for p, sp in self.set_pecas.items()})
         _, _, p_arm, p_esc = self.ca_peso_protecao()
         tot += p_arm + p_esc
         if "Veterano de Armadura" in self.talentos_escolhidos() and p_arm:
@@ -2175,11 +2203,24 @@ class App(tk.Tk):
         linha = self._linha_arma(arma["nome"], nv)
         linha_dano = self._linha_arma(arma["nome"], nv_dano) or linha
         bonus = self.d["bc"][k] + self.nivel() // 3 + R.ACERTO_ARMA.get(nv, 0) + ef["acerto"]
+        dg = self.desgaste.setdefault(i, {"usados": 0, "desgastada": False, "em": 0, "contado": -1})
+        if dg["desgastada"]:
+            if not messagebox.askyesno(APP_NOME, f"{arma['nome']} está desgastada: não pode ser usada por um turno.\n\n"
+                                                 "Já passou esse turno? Sim = a arma volta afiada e você ataca."):
+                return
+            dg.update(usados=0, desgastada=False, contado=-1)
         vig = (10 if nv >= 8 else 8 if nv >= 4 else 5) if arma.get("vigor") else 0
         ok, txt_custo = self._pagar(self.v_vigor_atual, self.d["vigor"], vig, "Vigor")
         if not ok:
             return
         at = R.rolar_ataque(bonus, R.vantagem(self.a[k]), to_int(linha["critico"], 20), self._rng)
+        # desgaste: conta 1 turno afiado por turno em que atacou (na sessão, pelo turno do mestre; fora dela, por ataque)
+        turno = self.meus_turnos if self.janela_sessao is not None and self.meus_turnos else None
+        if at["critico"] or turno is None or dg["contado"] != turno:
+            dg["usados"], gastou = R.desgaste_apos_ataque(dg["usados"], at["critico"])
+            dg["contado"] = turno if turno is not None else -1
+            if gastou:
+                dg.update(desgastada=True, em=self.meus_turnos)
         linhas = [self._txt_ataque(at)]
         if not at["desastre"]:
             expr = R.dano_com_dados(linha_dano["dano"], R.cap(self.a[k]) // 30)
@@ -2189,7 +2230,14 @@ class App(tk.Tk):
             linhas.append(txt_custo)
         if ef["acerto"]:
             linhas.append(f"Inclui +{ef['acerto']} de acerto de talento situacional.")
+        if at["critico"]:
+            linhas.append(f"Desgaste: o crítico reafiou a arma ({R.DESGASTE_TURNOS}/{R.DESGASTE_TURNOS}).")
+        elif dg["desgastada"]:
+            linhas.append("Desgaste: a arma desgastou — não pode ser usada no próximo turno.")
+        else:
+            linhas.append(f"Desgaste: restam {R.DESGASTE_TURNOS - dg['usados']} turno(s) afiado(s).")
         self.registrar(f"⚔ {arma['nome']} nv {nv}", linhas, destaque=at["critico"] or at["desastre"])
+        self.recalc()
 
     def rolar_iniciativa(self):
         self.recalc()
@@ -2244,16 +2292,144 @@ class App(tk.Tk):
         dt = self.d["dt_feiticaria"] if k == "INT" else self.d["dt_desejo"]
         linhas = [f"{pericia}: " + self._txt_ataque(at).split(": ", 1)[1], f"DT para o alvo resistir: {dt}"]
         expr = R.dano_do_encantamento(v["descricao"])
+        conds = R.condicoes_do_encantamento(v["descricao"])
+        if expr and conds and re.sub(r"\s+", " ", expr) == conds[0][0]:
+            expr = None   # os únicos dados são de condição: rolados abaixo, com o Arcano
+        for ce, cn in conds:
+            if at["desastre"]:
+                break
+            esc = R.escalar_arcano(ce, self.a["ARC"], cn)
+            total, partes = R.rolar_expr(esc, self._rng, dobrar=at["critico"])
+            linhas.append(self._txt_dano(total, partes).replace("Dano:", f"{cn}:") + " pontos"
+                          + (f"  · {ce} → {esc} por {R.cap(self.a['ARC'])} de Arcano" if esc != ce else ""))
         if expr and not at["desastre"]:
             extra = self.d["dados_extra_magia"] if k == "INT" else self.d["dados_extra_feitico"]
             total, partes = R.rolar_expr(R.dano_com_dados(expr, extra), self._rng, dobrar=at["critico"])
             linhas.append(self._txt_dano(total, partes).replace("Dano:", "Dados do encantamento:") + (f"  · +{extra} dado por {k}" if extra else ""))
-        elif not expr:
+        elif not expr and not conds:
             linhas.append("Este encantamento não tem dados na descrição.")
         if txt_custo:
             linhas.append(txt_custo)
         linhas += avisos
         self.registrar(f"✧ {e['nome']} ({v['tier']} nv {v['nivel']})", linhas, destaque=at["critico"] or at["desastre"])
+
+    def rolar_pericia(self, nome):
+        """Teste fora de combate: 1d20 a mais a cada 20 pontos do atributo, fica o maior, + bônus."""
+        self.recalc()
+        pinfo = self.per.get(nome)
+        if not pinfo or "calc" not in pinfo:
+            return
+        bonus, dados = pinfo["calc"]
+        r = R.rolar_pericia(bonus, dados, self._rng)
+        d20 = ", ".join(map(str, r["d20"])) + (" → fica o maior" if len(r["d20"]) > 1 else "")
+        self.registrar(f"🎲 {nome}", [f"{nome}: {r['total']}  [d20 {d20} +{bonus}]",
+                                      "DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80"])
+
+    def descansar(self, tipo):
+        """Descanso curto (metade de Vida/Mana/Vigor, −25 em cada condição; máx. 2 entre longos) ou longo (tudo)."""
+        self.recalc()
+        if tipo == "curto" and self.descansos_curtos >= R.DESCANSOS_CURTOS_MAX:
+            if not messagebox.askyesno(APP_NOME, f"Já foram {self.descansos_curtos} descansos curtos desde o último longo "
+                                                 f"(o livro permite {R.DESCANSOS_CURTOS_MAX}). Descansar mesmo assim?"):
+                return
+        d = self.d
+        maxs = {"vida": d["vida"], "mana": d["mana"], "vigor": d["vigor"]}
+        vars_ = {"vida": self.v_vida_atual, "mana": self.v_mana_atual, "vigor": self.v_vigor_atual}
+        ats = {k: self._atual(v, maxs[k]) for k, v in vars_.items()}
+        conds = {n: to_int(c["atual"].get()) for n, c in self.cond.items()}
+        novos, ncond = R.descanso(tipo, maxs, ats, conds)
+        for k, v in vars_.items():
+            v.set(str(novos[k]))
+        for n, c in self.cond.items():
+            c["atual"].set(str(ncond[n]) if ncond[n] else "")
+        self.descansos_curtos = 0 if tipo == "longo" else self.descansos_curtos + 1
+        if tipo == "longo":
+            for dg in self.desgaste.values():
+                dg.update(usados=0, desgastada=False, contado=-1)
+        linhas = [f"{k.capitalize()}: {ats[k]} → {novos[k]}" for k in ("vida", "mana", "vigor")]
+        mudou = [f"{n} {conds[n]} → {ncond[n]}" for n in conds if conds[n] != ncond[n]]
+        if mudou:
+            linhas.append("Condições: " + ", ".join(mudou))
+        linhas.append("Pode trocar o equipamento livremente." if tipo == "curto" else
+                      "Efeitos temporários médios somem; armas reafiadas; a Poção Espiritual volta.")
+        self.registrar("☾ Descanso curto" if tipo == "curto" else "☀ Descanso longo", linhas)
+        self.recalc()
+
+    def pocao_espiritual(self):
+        """(½ nível + ½ Curva da VIT) d10 de Vida, mínimo 2 dados."""
+        self.recalc()
+        n = R.pocao_espiritual_dados(self.nivel(), self.d["curva"]["VIT"])
+        total, partes = R.rolar_expr(f"{n}d10", self._rng)
+        mx = self.d["vida"]
+        antes = self._atual(self.v_vida_atual, mx)
+        self.desfazer.append((self.v_vida_atual, self.v_vida_atual.get(), "Poção Espiritual"))
+        self.v_vida_atual.set(str(min(mx, antes + total)))
+        self.registrar("⚗ Poção Espiritual", [f"Cura: {total}  ({n}d10 {partes[0][1]})", f"Vida: {antes} → {min(mx, antes + total)}",
+                                              "Ação comum para beber; uma por jogador por descanso longo."])
+        self.recalc()
+
+    def _item_escolhido(self, it):
+        info = self.item_por_nome.get(it["item"].get().strip().lower())
+        if info:
+            it["carga"].set(f"{info['peso']:g}")
+            if not it["qtd"].get().strip():
+                it["qtd"].set("1")
+
+    def usar_item_menu(self):
+        """Lista os consumíveis do livro que estão na bolsa."""
+        usaveis = [(i, it) for i, it in enumerate(self.inv)
+                   if (self.item_por_nome.get(it["item"].get().strip().lower()) or {}).get("uso", {}).get("consome")]
+        if not usaveis:
+            messagebox.showinfo(APP_NOME, "Nenhum consumível do livro na bolsa (poções, antídotos, rações...).")
+            return
+        w = tk.Toplevel(self)
+        w.title("Usar item")
+        w.configure(background=PERG)
+        w.transient(self)
+        f = tk.Frame(w, bg=PERG, padx=18, pady=14)
+        f.pack(fill="both", expand=True)
+        tk.Label(f, text="Usar qual item?", bg=PERG, fg=VINHO, font=(FONTE_TIT, 13, "bold")).pack(anchor="w", pady=(0, 8))
+        for i, it in usaveis:
+            q = to_int(it["qtd"].get(), 1) or 1
+            ttk.Button(f, text=f"{it['item'].get()}  (×{q})", command=lambda i=i: (w.destroy(), self.usar_item(i))).pack(fill="x", pady=2)
+        tk.Label(f, text=self.dados.get("itens_regras", ""), bg=PERG, fg=TINTA2, font=(FONTE, 9, "italic"),
+                 wraplength=360, justify="left").pack(anchor="w", pady=(8, 0))
+        w.grab_set()
+
+    def usar_item(self, i):
+        """Aplica o efeito do item (Mana, Vigor, pontos de condição) e gasta uma unidade."""
+        self.recalc()
+        it = self.inv[i]
+        info = self.item_por_nome.get(it["item"].get().strip().lower()) or {}
+        uso, linhas = info.get("uso", {}), []
+        for k, var in (("mana", self.v_mana_atual), ("vigor", self.v_vigor_atual)):
+            if k in uso:
+                mx = self.d[k]
+                antes = self._atual(var, mx)
+                if uso[k] == "tudo":
+                    ganho = mx - antes
+                else:
+                    ganho, partes = R.rolar_expr(str(uso[k]), self._rng)
+                depois = min(mx, antes + ganho)
+                self.desfazer.append((var, var.get(), info["nome"]))
+                var.set(str(depois))
+                linhas.append(f"{k.capitalize()}: {antes} → {depois}")
+        if "condicao" in uso:
+            c = self.cond[uso["condicao"]]
+            antes = to_int(c["atual"].get())
+            depois = max(0, antes - int(uso["pontos"]))
+            c["atual"].set(str(depois) if depois else "")
+            linhas.append(f"{uso['condicao']}: {antes} → {depois}")
+        q = to_int(it["qtd"].get(), 1) or 1
+        if q > 1:
+            it["qtd"].set(str(q - 1))
+        else:
+            for k in ("item", "carga", "qtd"):
+                it[k].set("")
+        linhas.append(f"Restam {q - 1}." if q > 1 else "Era o último.")
+        self.registrar(f"⚗ {info.get('nome', it['item'].get())}", linhas)
+        self.recalc()
+        return linhas
 
     def registrar(self, titulo, linhas, destaque=False):
         import datetime
@@ -2712,7 +2888,8 @@ class App(tk.Tk):
                      "habilidades": [{k: g(h[k]) for k in ("nome", "efeito", "tipo")} for h in self.alma_hab]},
             "talismas": [{"nome": g(t["nome"]), "efeito": g(t["efeito"])} for t in self.talismas],
             "set": {p: {"set": g(sp["set"]), "nome": g(sp["nome"])} for p, sp in self.set_pecas.items()},
-            "inventario": [{"item": g(i["item"]), "carga": g(i["carga"])} for i in self.inv], "dinheiro": g(self.v_dinheiro),
+            "inventario": [{"item": g(i["item"]), "carga": g(i["carga"]), "qtd": g(i["qtd"])} for i in self.inv], "dinheiro": g(self.v_dinheiro),
+            "desgaste": {str(k): v for k, v in self.desgaste.items()}, "descansos_curtos": self.descansos_curtos,
             "condicoes": {n: {k: g(c[k]) for k in ("max", "atual", "notas")} for n, c in self.cond.items()},
             "portao": {n: [g(v) for v in vs] for n, vs in self.portao.items()}, "cicatrizes": g(self.v_cicatrizes),
             "vinculos": {"grupo": g(self.v_vinc_grupo), "mundo": g(self.v_vinc_mundo), "metas": g(self.v_metas)},
@@ -2770,7 +2947,9 @@ class App(tk.Tk):
                 x = s.get("set", {}).get(p, {})
                 sv["set"].set(x.get("set", "")); sv["nome"].set(x.get("nome", ""))
             for it, iv in zip(self.inv, s.get("inventario", []) + [{}] * 30):
-                it["item"].set(iv.get("item", "")); it["carga"].set(iv.get("carga", ""))
+                it["item"].set(iv.get("item", "")); it["carga"].set(iv.get("carga", "")); it["qtd"].set(iv.get("qtd", ""))
+            self.desgaste = {int(k): dict(v) for k, v in (s.get("desgaste") or {}).items() if str(k) in ("0", "1")}
+            self.descansos_curtos = to_int(s.get("descansos_curtos"), 0)
             self.v_dinheiro.set(s.get("dinheiro", ""))
             for n, c in self.cond.items():
                 x = s.get("condicoes", {}).get(n, {})
@@ -2955,7 +3134,7 @@ class App(tk.Tk):
 
 
 class PonteSessao:
-    """Liga a ficha aberta à sessão: manda o resumo ao mestre e recebe dano e condições."""
+    """Liga a ficha aberta à sessão: manda o resumo ao mestre e recebe dano, condições, itens e a vez."""
 
     def __init__(self, app):
         self.app = app
@@ -2964,37 +3143,136 @@ class PonteSessao:
         a = self.app
         if not a.inicializado:
             return None
-        d = a.d
+        d, aa, n3 = a.d, a.a, a.nivel() // 3
+        tal = a.talentos_escolhidos()
+        defesas = {n: [d["bc"][k] + n3 + (2 if tn in tal else 0), R.vantagem(aa[k])] for n, k, tn in R.PERICIAS_DEFESA}
         return {"personagem": a.v_nome.get().strip(), "especie": a.v_especie.get().strip(), "nivel": a.nivel(),
                 "vida": a._atual(a.v_vida_atual, d["vida"]), "vida_max": d["vida"],
                 "mana": a._atual(a.v_mana_atual, d["mana"]), "mana_max": d["mana"],
                 "vigor": a._atual(a.v_vigor_atual, d["vigor"]), "vigor_max": d["vigor"],
                 "ca": d["ca"], "movimento": d["movimento"], "iniciativa": d["iniciativa_bonus"],
+                "iniciativa_dados": d["iniciativa_dados"], "rd": d["rd"], "resistencias": list(d["resistencias"]),
+                "defesas": defesas,
                 "portao": [sum(v.get() for v in a.portao["Sucessos"]), sum(v.get() for v in a.portao["Falhas"])],
-                "condicoes": [[n, to_int(c["atual"].get()), to_int(c["max"].get(), 100)] for n, c in a.cond.items() if to_int(c["atual"].get())],
+                "condicoes": [[n, to_int(c["atual"].get()), to_int(c["max"].get(), 100)] for n, c in a.cond.items()],
+                "inventario": [{"item": i["item"], "carga": i["carga"], "qtd": to_int(i["qtd"], 1) or 1} for i in a._inventario()],
+                "dinheiro": a.v_dinheiro.get().strip(), "carga": [round(a._carga_atual(), 1), d["carga"]],
                 "sem_alma": a.sem_alma}
 
+    def _nomes_efeitos(self):
+        return {e.get("nome") for e in self.app.efeitos_mestre}
+
     def aplicar_dano(self, valor, tipo, desc):
-        """valor > 0 tira Vida; valor < 0 cura (sem passar do máximo). Devolve o texto do resultado."""
+        """valor > 0: dano, descontando RD e resistências da ficha; valor < 0: cura (sem passar do máximo).
+        Devolve (texto para o jogador, relato para o mestre)."""
         a = self.app
         a.recalc()
         maximo = a.d["vida"]
         antes = a._atual(a.v_vida_atual, maximo)
-        depois = max(0, min(maximo, antes - valor))
+        notas = []
+        final = valor
+        if valor > 0:
+            ef = self._nomes_efeitos()
+            final, notas = R.defesas_contra_dano(valor, tipo, a.d, a._rng, "Fragilizado" in ef, "Loucura" in ef)
+        depois = max(0, min(maximo, antes - final))
         a.v_vida_atual.set(str(depois))
-        txt = f"Vida: {antes} → {depois}"
+        txt = (f"Recebeu {final}" + (f" ({'; '.join(notas)})" if notas else "") + ". " if valor > 0 else "") + f"Vida: {antes} → {depois}"
         if depois == 0 and antes > 0:
             txt += "  — INCAPAZ: role o Portão da Morte no início do seu turno."
+            if final > maximo // 2:
+                txt += " Dano maior que metade da Vida: 1 falha automática."
         oque = f"Cura de {-valor}" if valor < 0 else f"{valor} de dano" + (f" ({tipo})" if tipo else "")
         a.registrar("📣 Do mestre", [oque + (f" — {desc}" if desc else ""), txt])
+        relato = (f"recebeu {final} de {valor} ({'; '.join(notas)}), Vida {depois}/{maximo}" if valor > 0 and notas else
+                  f"Vida {depois}/{maximo}" + (" — INCAPAZ" if depois == 0 and antes > 0 else ""))
+        return txt, relato
+
+    def pontos_condicao(self, cond, pontos, dt, desc):
+        """Rola Fortitude/Vontade contra a DT; sucesso recebe metade. Se a barra encher, aplica o efeito do livro.
+        Devolve (texto, relato, condição ativada ou None)."""
+        a = self.app
+        if cond not in a.cond:
+            return "", "", None
+        a.recalc()
+        defesa = R.CONDICAO_TESTE.get(cond, "Fortitude")
+        k = next(k for n, k, _ in R.PERICIAS_DEFESA if n == defesa)
+        tn = next(tn for n, _, tn in R.PERICIAS_DEFESA if n == defesa)
+        bonus = a.d["bc"][k] + a.nivel() // 3 + (2 if tn in a.talentos_escolhidos() else 0)
+        auto_falha = defesa == "Vontade" and "Loucura" in self._nomes_efeitos()
+        t = R.rolar_defesa(bonus, R.vantagem(a.a[k]), a._rng)
+        sucesso = not auto_falha and t["total"] >= dt
+        c = a.cond[cond]
+        mx = to_int(c["max"].get(), 100)
+        antes = to_int(c["atual"].get())
+        rec, novo, ativou = R.receber_condicao(antes, mx, pontos, sucesso)
+        c["atual"].set(str(novo) if novo else "")
+        teste = (f"{defesa} {t['total']} [d20 {', '.join(map(str, t['d20']))} +{bonus}] contra DT {dt}: "
+                 + ("falha automática (Loucura)" if auto_falha else "SUCESSO, metade" if sucesso else "falhou"))
+        linhas = [f"{pontos} de {cond}" + (f" — {desc}" if desc else ""), teste, f"{cond}: {antes} → {min(antes + rec, mx)}/{mx} (+{rec})"]
+        relato = f"{teste}; {cond} +{rec} → {min(antes + rec, mx)}/{mx}"
+        if ativou:
+            info = R.CONDICAO_ATIVA[cond]
+            linhas.append(f"⚠ {cond.upper()} ATIVOU: {info['desc']} A barra volta a zero.")
+            relato += f" — {cond.upper()} ATIVOU"
+            if info.get("pct_ja"):
+                perda = max(1, a.d["vida"] * info["pct_ja"] // 100)
+                vida = a._atual(a.v_vida_atual, a.d["vida"])
+                a.v_vida_atual.set(str(max(0, vida - perda)))
+                linhas.append(f"Vida: {vida} → {max(0, vida - perda)} (−{perda})")
+                relato += f", perdeu {perda} de Vida"
+        a.registrar(f"📣 {cond}", linhas, destaque=ativou)
+        a.recalc()
+        return "\n".join(linhas[1:]), relato, cond if ativou else None
+
+    def item(self, ev):
+        """O mestre dá ou tira um item da bolsa."""
+        a = self.app
+        if ev.get("acao") == "dar":
+            it = ev.get("item") or {}
+            nome, q = str(it.get("item", ""))[:40], max(1, to_int(it.get("qtd"), 1))
+            linha = next((x for x in a.inv if x["item"].get().strip().lower() == nome.lower()), None)
+            if linha:
+                linha["qtd"].set(str((to_int(linha["qtd"].get(), 1) or 1) + q))
+            else:
+                linha = next((x for x in a.inv if not x["item"].get().strip() and not x["carga"].get().strip()), None)
+                if linha is None:
+                    a.registrar("📣 Do mestre", [f"Recebeu {q}× {nome}, mas a bolsa está cheia (30 linhas): anote à mão."])
+                    return f"Bolsa cheia: {q}× {nome} não coube."
+                linha["item"].set(nome)
+                linha["carga"].set(str(it.get("carga", "")))
+                linha["qtd"].set(str(q))
+            txt = f"Recebeu {q}× {nome}" + (f" — {ev.get('desc')}" if ev.get("desc") else "")
+        else:
+            nome, q = str(ev.get("nome", "")), max(1, to_int(ev.get("qtd"), 1))
+            linha = next((x for x in a.inv if x["item"].get().strip().lower() == nome.lower()), None)
+            if not linha:
+                return f"O mestre tirou {nome}, mas o item não está mais na bolsa."
+            resto = (to_int(linha["qtd"].get(), 1) or 1) - q
+            if resto > 0:
+                linha["qtd"].set(str(resto))
+            else:
+                for k in ("item", "carga", "qtd"):
+                    linha[k].set("")
+            txt = f"O mestre tirou {q}× {nome}" + (f" — {ev.get('desc')}" if ev.get("desc") else "")
+        a.registrar("📣 Bolsa", [txt])
+        a.recalc()
         return txt
+
+    def minha_vez(self):
+        """Começo do meu turno: conta para o desgaste (a arma desgastada volta depois de um turno parada)."""
+        a = self.app
+        a.meus_turnos += 1
+        for dg in a.desgaste.values():
+            if dg.get("desgastada") and a.meus_turnos >= dg.get("em", 0) + 2:
+                dg.update(usados=0, desgastada=False, contado=-1)
+        a.recalc()
 
     def efeitos(self, lista, rodada):
         self.app.efeitos_mestre = list(lista)
         self.app.recalc()
 
     def aviso(self, texto):
-        pass   # o próprio diário já registra o dano; condições aparecem na aba Combate
+        pass   # o próprio diário já registra; efeitos aparecem na aba Combate
 
 
 REGRAS_TXT = """Fórmulas (PREVA 3.1)
@@ -3030,6 +3308,16 @@ ou selo (Feitiço) de nível igual ou maior. Teste de aprendizado: DT 15 + 3 por
 +1 dado de dano a cada 30 de INT (Magias) / FÉ (Feitiços). Contra-encantamentos: 1 a cada 10 em INT ou FÉ (o maior).
 
 Alma: nível = nível do personagem ÷ 3. Usos por descanso longo = 2 + nível da alma ÷ 3. Nova ativa nos níveis 10, 20 e 30.
+
+Descanso curto: recupera metade de Vida, Mana e Vigor e tira 25 pontos de cada condição (máx. 2 entre descansos longos).
+Descanso longo: recupera tudo e zera as condições. Poção Espiritual: (½ nível + ½ Curva da VIT) d10 de Vida, mínimo 2 dados.
+Desgaste: 3 turnos afiados por arma (turnos em que atacou); o crítico reinicia; ao acabar, a arma fica 1 turno sem uso.
+Arcano nas condições: a cada 20 de ARC, uma cópia dos dados de condição do encantamento; a cada 15, +1 dado um tamanho
+abaixo (d12→d10→d8→d6→d4). Morte só recebe os dados inferiores. Valores fixos não copiam.
+Condições: barra de 100 por condição. Pontos de inimigo: teste de Fortitude (Veneno, Podridão, Sangramento, Congelamento)
+ou Vontade (Sono, Loucura, Morte) contra a DT; sucesso recebe metade. Ao encher, o efeito ativa e a barra volta a zero.
+Dano recebido: rola a RD (1d4 a cada 20 TEN) e depois a resistência corta pela metade. Magia Pura e Relâmpago ignoram RD.
+Carga: Capacete, Manopla, Calça e Bota de set pesam 1 cada; a Mochila aumenta a Carga em 5.
 Talismãs: 1 espaço + 1 a cada 6 níveis (máx. 5).
 
 Talentos aplicados automaticamente: Vida Dura, Fôlego de Guerreiro, Mochileiro, Mula de Carga, Cabeça Cheia, Mente Expandida,

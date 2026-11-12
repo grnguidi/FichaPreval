@@ -23,7 +23,11 @@ Execute `GERAR_EXE.bat`. O script instala PyInstaller, reportlab e segno, compil
 - Controle de pontos de atributo por nível, com painel de avisos para pendências.
 - Menus de armas, encantamentos, talentos, armaduras, escudos, talismãs e sets, indicando o que está disponível e o motivo de cada restrição.
 - Assistente de criação de personagem, seguindo o capítulo "Criando seu Personagem".
-- Rolagens de ataque e conjuração, com consumo de Vigor e Mana e diário de rolagens.
+- Rolagens de ataque, conjuração e perícias (1d20 a mais a cada 20 pontos do atributo, fica o maior), com consumo de Vigor e Mana e diário de rolagens.
+- Encantamentos com dados de condição já escalados pelo Arcano (cópias a cada 20, dados inferiores a cada 15).
+- Desgaste de armas: 3 turnos afiados, o crítico reafia; a arma desgastada fica um turno parada.
+- Descanso curto e longo (Vida, Mana, Vigor e barras de condição) e Poção Espiritual.
+- Inventário com a lista de Itens Diversos do livro (peso já preenchido), quantidade e botão de usar consumíveis (poções de Mana e Vigor, antídotos…). A Mochila soma +5 de Carga; peças de set pesam 1.
 - Comparação entre duas fichas.
 - Exportação da ficha em PDF.
 - Modo noturno.
@@ -38,9 +42,12 @@ Liga o mestre aos jogadores na mesma rede local (Wi-Fi ou cabo). Existe uma úni
 **Mestre:** abra Sessão e selecione "Entrar como mestre". Abre o painel do mestre:
 
 - Um cartão por jogador com o personagem, barras de Vida, Mana e Vigor, nível, CA, movimento, iniciativa, Portão da Morte (quando a Vida chega a 0), acúmulos de condição e se está no celular ou sem sinal. Atualiza sozinho quando o jogador muda a ficha.
-- **Dano / Cura:** valor, tipo de dano e descrição. É aplicado direto na Vida do personagem e o jogador recebe o aviso (também fica no diário dele). Marque vários jogadores para enviar a todos de uma vez.
-- **Condição:** nome, duração em rodadas (0 = até o mestre remover) e descrição. Aparece na ficha do jogador, na aba Combate. "Próxima rodada ▶" conta as rodadas e retira as condições que terminam, avisando o jogador. O ✕ no cartão remove uma condição antes da hora.
-- À direita, a fila de mãos levantadas ("Dar a palavra" avisa o jogador e baixa a mão dele) e o registro de tudo que o mestre enviou.
+- **Dano / Cura:** valor, um dos tipos de dano do livro e descrição. A ficha de cada jogador desconta a RD e as resistências dele (Magia Pura e Relâmpago ignoram RD; "Direto" ignora tudo) e o resultado volta para o registro do mestre. Marque vários jogadores para enviar a todos de uma vez.
+- **Efeito:** um dos efeitos do livro (Abalado, Caído, Exposto, Fragilizado, Paralisado…) com a descrição já preenchida, duração em turnos (0 = até o mestre remover). Aparece na aba Combate do jogador. Fragilizado tira a RD e as resistências do dano recebido.
+- **Condição:** pontos de Veneno, Podridão, Sangramento, Congelamento, Sono, Loucura ou Morte com a DT do inimigo. A ficha rola Fortitude ou Vontade, recebe metade num sucesso e, se a barra de 100 encher, aplica o efeito do livro (Sangramento tira 25% da Vida na hora; Veneno tira 5% por turno por 5 turnos; Sono deixa Inconsciente…).
+- **Bolsa:** o mestre vê o inventário, a carga e o dinheiro de cada jogador, dá itens (da lista do livro ou personalizados) e tira itens. O jogador é avisado.
+- **Turnos:** "🎲 Iniciativa" rola a iniciativa de todos pela ficha e monta a ordem de turno (dá para mudar valores ou tirar alguém). "Passar turno ▶" passa a vez, avisa o jogador da vez e, depois do último, começa a rodada seguinte. As durações contam no fim do turno do afetado, como no livro, e Veneno e Podridão tiram Vida no começo do turno. "Fim do combate" limpa a ordem e os efeitos que duram até o fim do combate.
+- À direita, a ordem de turno, a fila de mãos levantadas ("Dar a palavra" avisa o jogador e baixa a mão dele) e o registro de tudo que o mestre enviou e do que os jogadores rolaram.
 
 **Jogador no computador:** abra a ficha, depois Sessão → "Entrar como jogador". O programa localiza o mestre automaticamente; se não localizar, informe o IP exibido na tela do mestre. A ficha aberta é enviada ao painel do mestre e recebe dano e condições.
 
@@ -53,13 +60,13 @@ Observações:
 - Na primeira execução como mestre, o Firewall do Windows solicita permissão. Permita o acesso em redes privadas.
 - Redes que isolam dispositivos entre si (Wi-Fi de visitantes, hotéis, escolas) impedem a conexão.
 - Portas utilizadas: 5757 (TCP), 5758 (UDP) e 5760 (HTTP).
-- A sessão envia ao mestre só o resumo da ficha (nome, espécie, nível, Vida, Mana, Vigor, CA, movimento, iniciativa, Portão da Morte e acúmulos de condição).
+- A sessão envia ao mestre só o resumo da ficha (nome, espécie, nível, Vida, Mana, Vigor, CA, movimento, iniciativa, defesas, RD, resistências, Portão da Morte, barras de condição, inventário, carga e dinheiro).
 - Celular com a tela bloqueada continua na mesa: o mestre vê "(sem sinal)" ao lado do nome depois de 20 segundos e a mão continua na fila. O jogador só sai da mesa depois de 10 minutos sem contato.
 - Se a conexão cair, o jogador no computador vê "Conexão perdida" e um botão para conectar de novo. Quando o mestre não é encontrado na rede, o programa sugere o último IP usado.
 
 ## App de celular (ficha de mesa)
 
-Versão para usar na mesa pelo celular: Vida, Mana e Vigor, atributos, características, perícias, armas com ações, rolagens de ataque e conjuração, grimório, talentos e bolsa (inventário com carga, dinheiro e peças de set com os bônus ativos). Também tem Modo Jogo e Modo Edição, como no PC. Abre os mesmos arquivos `.json` do programa de PC e funciona sem internet depois de instalado.
+Versão para usar na mesa pelo celular: Vida, Mana e Vigor, atributos, características, perícias, armas com ações, rolagens de ataque e conjuração, grimório, talentos e bolsa (inventário com os itens do livro, quantidade, botão de usar, carga, dinheiro e peças de set com os bônus ativos). Também rola perícias, faz descanso curto/longo, Poção Espiritual e controla o desgaste das armas. Também tem Modo Jogo e Modo Edição, como no PC. Abre os mesmos arquivos `.json` do programa de PC e funciona sem internet depois de instalado.
 
 **Instalar no Android:** abra https://grnguidi.github.io/FichaPreval/ no Chrome e toque em ⋮ → "Instalar app" (ou "Adicionar à tela inicial").
 
