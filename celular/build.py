@@ -2,14 +2,17 @@
 
 Uso:  py celular/build.py
 Junta estilo, dados do livro (de dados_prevalecentes.py), regras.js e app.js num index.html só,
-e copia manifest, service worker e ícones. Os efeitos de talento vêm de regras.py, para que
+e copia manifest, service worker e ícones. Também gera ../pagina_celular.py: a mesma ficha, que o
+PC do mestre serve aos celulares da mesa durante a sessão (sessao.py). Os efeitos de talento vêm de regras.py, para que
 PC e celular usem a mesma tabela.
 """
+import base64
 import json
 import os
 import re
 import shutil
 import sys
+import zlib
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
@@ -35,15 +38,25 @@ def main():
     js_regras = re.sub(r"const EFEITOS_TALENTOS = \{.*?\};", lambda m: f"const EFEITOS_TALENTOS = {efeitos};", ler("regras.js"), count=1, flags=re.S)
     pwa = ('<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" href="icone-192.png">\n'
            '<link rel="apple-touch-icon" href="icone-192.png">')
-    html = (ler("src", "index.tpl.html").replace("<!--PWA-->", pwa).replace("/*CSS*/", ler("src", "estilo.css"))
+    base = (ler("src", "index.tpl.html").replace("/*CSS*/", ler("src", "estilo.css"))
             .replace("/*DADOS*/", dj).replace("/*REGRAS*/", js_regras).replace("/*APP*/", ler("src", "app.js")))
+    html = base.replace("<!--PWA-->", pwa)
     os.makedirs(SAIDA, exist_ok=True)
     with open(os.path.join(SAIDA, "index.html"), "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
     for nome in ("manifest.webmanifest", "sw.js", "icone-192.png", "icone-512.png"):
         shutil.copy(os.path.join(AQUI, "src", nome), os.path.join(SAIDA, nome))
     open(os.path.join(SAIDA, ".nojekyll"), "w").close()
-    print(f"docs/index.html gerado ({len(html) // 1024} KB)")
+    # versão servida pelo mestre na rede local (sem manifest/service worker: é http e só vale durante a sessão)
+    mesa = base.replace("<!--PWA-->", "")
+    b64 = base64.b64encode(zlib.compress(mesa.encode("utf-8"), 9)).decode("ascii")
+    linhas = "\n".join(f'    "{b64[i:i + 100]}"' for i in range(0, len(b64), 100))
+    with open(os.path.join(RAIZ, "pagina_celular.py"), "w", encoding="utf-8", newline="\n") as f:
+        f.write('"""Ficha do celular servida pelo PC do mestre na sessão local.\n\n'
+                'ARQUIVO GERADO por celular/build.py — não edite à mão; mude celular/src e rode o build."""\n'
+                "import base64\nimport zlib\n\n_B = (\n" + linhas + "\n)\n\n"
+                'HTML = zlib.decompress(base64.b64decode(_B)).decode("utf-8")\n')
+    print(f"docs/index.html gerado ({len(html) // 1024} KB) · pagina_celular.py ({len(b64) // 1024} KB)")
 
 
 if __name__ == "__main__":

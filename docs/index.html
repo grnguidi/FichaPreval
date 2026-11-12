@@ -124,7 +124,7 @@ details.acoes summary:before{content:"📖 "}
 .avisos li.info{color:var(--tinta2)} .avisos li.info:before{content:"ℹ"}
 .avisos li.tudo{color:var(--verde)} .avisos li.tudo:before{content:"✓"}
 /* barra inferior */
-.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--fundo);border-top:1px solid var(--ouro);display:grid;grid-template-columns:repeat(5,1fr);
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--fundo);border-top:1px solid var(--ouro);display:grid;grid-template-columns:repeat(6,1fr);
   padding-bottom:env(safe-area-inset-bottom)}
 .nav button{border:0;background:transparent;color:#9fae9f;padding:8px 0 7px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--serif)}
 .nav button i{font-style:normal;font-size:20px;line-height:1}
@@ -153,7 +153,7 @@ details.acoes summary:before{content:"📖 "}
 .meta{color:var(--tinta2);font-size:13.5px;margin:2px 0 6px}
 .toast{position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:60;background:var(--fundo2);color:var(--faixa);
   border:1px solid var(--ouro);border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.45;transform:translateY(20px);opacity:0;transition:.25s;pointer-events:none}
-.toast.on{opacity:1;transform:none}
+.toast.on{opacity:1;transform:none;pointer-events:auto}
 .campo{display:block;margin:10px 0}
 .campo span{display:block;font-size:12.5px;color:var(--tinta2);margin-bottom:3px}
 .campo input,.campo select,.campo textarea{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--ouro);background:var(--campo)}
@@ -168,21 +168,45 @@ details.acoes summary:before{content:"📖 "}
 .bolinha.on.f{background:var(--c-vida);border-color:var(--c-vida)}
 input[type=number]{-moz-appearance:textfield}
 @media (min-width:700px){ .pagina{max-width:760px;margin:8px auto 0} .g4m{grid-template-columns:repeat(4,1fr)!important} }
+/* modo jogo / edição */
+.jogo .so-ed{display:none!important}
+.faixa-modo{display:flex;align-items:center;gap:8px;margin:-4px 0 10px;padding:6px 8px 6px 12px;border-radius:10px;background:var(--agua);border:1px solid var(--linha);font-size:13px}
+.faixa-modo.ed{background:var(--rosa)}
+.faixa-modo span{flex:1;line-height:1.3}
+.faixa-modo button{border:1px solid var(--ouro);background:var(--campo);color:var(--tinta);border-radius:16px;padding:6px 12px;font-family:var(--serif);font-size:13.5px;font-weight:700;white-space:nowrap}
+/* bolsa */
+.barra.grossa{height:12px;border-radius:6px;background:var(--perg2);overflow:hidden}
+.barra.grossa i{display:block;height:100%}
+.cartao.dinheiro{display:flex;align-items:baseline;gap:10px;padding:12px 14px;margin-top:10px;border-left:6px solid var(--c-per)}
+.cartao.dinheiro span{font-family:var(--tit);font-size:13px;color:var(--c-per)}
+.cartao.dinheiro b{flex:1;font-size:19px}
+.cartao.dinheiro small{color:var(--tinta2);font-style:italic;font-size:12px}
+/* sessão do mestre */
+.mesa{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom));z-index:29;display:flex;gap:6px;padding:6px 8px;background:var(--fundo2);border-top:1px solid var(--ouro)}
+.mesa .info{flex:1;min-width:0;text-align:left;border:0;background:transparent;color:var(--faixa);font-family:var(--serif);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mesa .mao{border:1px solid var(--ouro);background:var(--ouro2);color:#2d2015;border-radius:18px;padding:6px 14px;font-weight:700;font-family:var(--serif);font-size:14px}
+.mesa .mao.on{background:var(--vinho);color:#fff}
+body.com-mesa{padding-bottom:calc(108px + env(safe-area-inset-bottom))}
+body.com-mesa .toast{bottom:calc(124px + env(safe-area-inset-bottom))}
+.lista.mestre .item{background:var(--rosa)}
+.toast hr{border:0;border-top:1px solid var(--ouro);opacity:.5;margin:6px 0}
 </style>
 </head>
 <body>
 <header class="topo">
   <div class="nome"><b id="t-nome">Prevalecentes</b><small id="t-sub"></small></div>
-  <div class="nivel" id="nivel"><button data-a="nivel" data-d="-1" aria-label="Diminuir nível">−</button><span id="nv">Nv 1</span><button data-a="nivel" data-d="1" aria-label="Subir nível">+</button></div>
+  <div class="nivel" id="nivel"><button class="so-ed" data-a="nivel" data-d="-1" aria-label="Diminuir nível">−</button><span id="nv">Nv 1</span><button class="so-ed" data-a="nivel" data-d="1" aria-label="Subir nível">+</button></div>
   <button class="icone" data-a="menu" aria-label="Menu">☰</button>
 </header>
 <main class="pagina" id="pagina"></main>
+<div class="mesa oculto" id="mesa"></div>
 <nav class="nav" id="nav">
   <button data-a="aba" data-aba="ficha"><i>⚜</i>Ficha</button>
   <button data-a="aba" data-aba="combate"><i>⚔</i>Combate</button>
   <button data-a="aba" data-aba="pericias"><i>✎</i>Perícias</button>
   <button data-a="aba" data-aba="grimorio"><i>✧</i>Grimório</button>
   <button data-a="aba" data-aba="talentos"><i>❖</i>Talentos</button>
+  <button data-a="aba" data-aba="bolsa"><i>⚖</i>Bolsa</button>
 </nav>
 <div class="veu" id="veu"></div>
 <section class="folha" id="folha" role="dialog" aria-modal="true">
@@ -421,6 +445,8 @@ const ARMAS = Object.fromEntries(D.armas.map((a) => [a.nome, a]));
 const ENC = Object.fromEntries(D.encantamentos.map((e) => [e.nome, e]));
 const TAL = {}; D.talentos.forEach((t) => { if (!TAL[t.nome]) TAL[t.nome] = t; });
 const TALISMA = Object.fromEntries(D.talismas.map((t) => [t.nome, t]));
+const SETS = Object.fromEntries((D.sets || []).map((x) => [x.nome, x]));
+const PECAS = ["Capacete", "Peitoral", "Manopla", "Calça", "Bota", "Arma"];
 const SLOTS = [...Array(15)].map((_, i) => String(2 + 2 * i)).concat(["extra"]);
 const CATS_TAL = [...new Set(D.talentos.map((t) => t.categoria))].sort();
 const CATS_ENC = [...new Set(D.encantamentos.map((e) => e.categoria))];
@@ -428,7 +454,7 @@ const TIERS = [...new Set(D.encantamentos.flatMap((e) => e.versoes.map((v) => v.
 
 // ------------------------------------------------------------------ armazenamento
 const CHAVE = "prevalecentes.mesa.v1";
-let banco = { fichas: {}, atual: null, tema: "dia" };
+let banco = { fichas: {}, atual: null, tema: "dia", modo: "jogo" };
 function lerLocal() { try { const x = JSON.parse(localStorage.getItem(CHAVE)); if (x && x.fichas) banco = Object.assign(banco, x); } catch (e) { /* sem storage */ } }
 function gravarLocal() { try { localStorage.setItem(CHAVE, JSON.stringify(banco)); } catch (e) { /* cheio ou bloqueado */ } }
 let nuvem = null, nuvemUid = null, timerNuvem = null;
@@ -500,6 +526,8 @@ function normalizar(s) {
   out.condicoes = Object.assign(novoEstado().condicoes, out.condicoes);
   out.manual = Object.assign({}, out.manual || {});
   out.talentos_ativos = Array.isArray(out.talentos_ativos) ? out.talentos_ativos : [];
+  out.inventario = (Array.isArray(out.inventario) ? out.inventario : []).filter((i) => i && (String(i.item || "").trim() || String(i.carga || "").trim()));
+  out.set = Object.assign({}, out.set || {});
   return out;
 }
 function salvar() {
@@ -621,7 +649,7 @@ const ordenar = (lista) => lista.filter((x) => !x.motivo.length).concat(lista.fi
 function secao(t, extra = "") { return `<div class="secao">${esc(t)}${extra ? `<span class="extra">${extra}</span>` : ""}</div>`; }
 function caixa(t, v, sub, cor = "var(--c-atr)") { return `<div class="cartao caixa"><div class="faixa" style="background:${cor}">${esc(t)}</div><b>${v}</b><small>${sub || "&nbsp;"}</small></div>`; }
 let timerToast;
-function toast(msg) { const t = $("#toast"); t.innerHTML = msg; t.classList.add("on"); clearTimeout(timerToast); timerToast = setTimeout(() => t.classList.remove("on"), 3200); }
+function toast(msg, ms) { const t = $("#toast"); t.innerHTML = msg; t.classList.add("on"); clearTimeout(timerToast); timerToast = setTimeout(() => t.classList.remove("on"), ms || (msg.includes("<hr>") ? 6000 : 3200)); }
 function folha(titulo, corpo, rodape = "", aoMontar) {
   $("#folha-tit").textContent = titulo;
   $("#folha-corpo").innerHTML = corpo;
@@ -680,13 +708,18 @@ function render() {
   const vazio = !S;
   $("#nav").classList.toggle("oculto", vazio);
   $("#nivel").classList.toggle("oculto", vazio);
-  if (vazio) { $("#t-nome").textContent = "Prevalecentes"; $("#t-sub").textContent = "Ficha de mesa"; $("#pagina").innerHTML = telaInicial(); return; }
+  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Prevalecentes"; $("#t-sub").textContent = "Ficha de mesa"; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
   C = calcular();
   $("#t-nome").textContent = S.identidade.nome || "Sonhador sem nome";
   $("#t-sub").innerHTML = C.resto ? `<span style="color:#f0a08c">${C.resto > 0 ? `faltam ${C.resto} pontos` : `excedeu ${-C.resto}`}</span>` : (S.identidade.especie || "") + (S.sem_alma ? " · sem alma" : "");
   $("#nv").textContent = `Nv ${C.nv}`;
+  document.documentElement.classList.toggle("jogo", banco.modo !== "edicao");
   document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("on", b.dataset.aba === aba));
-  $("#pagina").innerHTML = { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, talentos: pTalentos }[aba]();
+  const faixa = banco.modo === "edicao"
+    ? `<div class="faixa-modo ed"><span>✎ <b>Modo Edição</b> — criar, subir de nível, escolher e aprender</span><button data-a="modo">⚔ Jogar</button></div>`
+    : `<div class="faixa-modo"><span>⚔ <b>Modo Jogo</b> — rolar, gastar e anotar na mesa</span><button data-a="modo">✎ Editar</button></div>`;
+  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, talentos: pTalentos, bolsa: pBolsa }[aba]();
+  pintarSessao();
 }
 function aplicarTema() { document.documentElement.classList.toggle("noite", banco.tema === "noite"); }
 
@@ -712,8 +745,8 @@ function pFicha() {
   const falta = Math.max(0, C.nVida - (v.rolagens || []).length);
   let h = secao("Vigor do corpo") + `<div class="vitais">${vital("VIDA", "var(--c-vida)", "atual", d.vida)}${vital("MANA", "var(--c-mana)", "mana_atual", d.mana)}${vital("VIGOR", "var(--c-vigor)", "vigor_atual", d.vigor)}</div>
     <p class="sub" style="margin:8px 2px">Vigor recupera ${d.vigor_regen}/turno · Dados de vida: ${C.nVida}d12 ${v.modo === "media" ? "(média 7)" : `(rolados: ${Math.min(v.rolagens.length, C.nVida)})`}
-    · <a href="#" data-a="modo-vida" style="color:var(--vinho)">${v.modo === "media" ? "usar rolagem" : "usar média"}</a>
-    ${v.modo === "rolar" && falta ? ` · <a href="#" data-a="rolar-vida" style="color:var(--vinho);font-weight:700">🎲 rolar ${falta}d12</a>` : ""}</p>`;
+    <span class="so-ed">· <a href="#" data-a="modo-vida" style="color:var(--vinho)">${v.modo === "media" ? "usar rolagem" : "usar média"}</a>
+    ${v.modo === "rolar" && falta ? ` · <a href="#" data-a="rolar-vida" style="color:var(--vinho);font-weight:700">🎲 rolar ${falta}d12</a>` : ""}</span></p>`;
   h += `<div class="grade g3 g4m">${caixa("CA", d.ca, `TEN +${d.ca_ten}`, "var(--c-ca)")}${caixa("Movimento", `${C.mov} m`, `${Math.round(C.mov / 1.5)} quadrados${C.lentidao ? " · lento" : ""}`, "var(--c-mov)")}
     ${caixa("Iniciativa", `+${d.iniciativa_bonus}`, `${d.iniciativa_dados}d20, o maior`)}${caixa("Ações extras", d.acoes_extras, C.exaustao ? "Exaustão" : "por DES")}
     ${caixa("Carga", `${C.carga}/${d.carga}`, C.lentidao ? "Lentidão" : "atual / máx.")}${caixa("Red. dano", d.rd ? `${d.rd}d4` : "—", "por TEN")}
@@ -723,7 +756,7 @@ function pFicha() {
     return `<div class="cartao atr"><div class="faixa" style="background:var(--c-atr);color:var(--ouro2)">${R.NOMES_ATR[k]}</div>
       <div class="total ${val > 99 ? "erro" : ""}" data-a="manual" data-k="${k}">${val}${S.manual[k] != null ? `<span style="font-size:14px;color:var(--vinho)"> ✎</span>` : ""}</div><div class="info">Curva ${d.curva[k]} · BC +${d.bc[k]} · ${1 + Math.floor(R.cap(val) / 20)}d20${R.vantagem(val) ? ` · <span class="vant">vant.</span>` : ""}</div>
       <div class="info" style="font-size:11px">ini ${x.inicial || "—"} · esp ${int(x.especie) >= 0 ? "+" : ""}${int(x.especie)}${C.tb[k] ? ` · talismã +${C.tb[k]}` : ""}${int(x.bonus) ? ` · bôn ${int(x.bonus)}` : ""}</div>
-      <div class="ctrl"><button data-a="pts" data-k="${k}" data-d="-1">−</button><span>nível +${int(x.niveis)}</span><button data-a="pts" data-k="${k}" data-d="1">+</button></div></div>`;
+      <div class="ctrl so-ed"><button data-a="pts" data-k="${k}" data-d="-1">−</button><span>nível +${int(x.niveis)}</span><button data-a="pts" data-k="${k}" data-d="1">+</button></div></div>`;
   }).join("")}</div>`;
   const erros = C.avisos.filter((a) => a[0] === "erro"), infos = C.avisos.filter((a) => a[0] !== "erro");
   h += secao("Avisos do escriba") + `<div class="lista"><ul class="avisos">${erros.length ? "" : `<li class="tudo">Nada pendente na ficha.</li>`}${erros.concat(infos).map(([t, m]) => `<li class="${t}">${esc(m)}</li>`).join("")}</ul></div>`;
@@ -766,6 +799,7 @@ function pCombate() {
   const ef = textoEfeitos();
   let h = secao("Rolar") + `<div class="linhabts" style="margin-top:0"><button class="botao prim" data-a="rolar-ini">🎲 Iniciativa</button>
     <button class="botao" data-a="conjurar-menu">✧ Conjurar</button><button class="botao leve" data-a="diario">📜 Diário</button></div>
+    ${sessao.efeitos.length ? `<div class="lista mestre">${sessao.efeitos.map((e) => `<div class="item"><span class="marca">⏳</span><div class="tx"><b>${esc(e.nome)}</b><small>${e.rodadas ? `${e.rodadas} rodada(s)` : "até o mestre remover"}${e.desc ? " · " + esc(e.desc) : ""}</small></div></div>`).join("")}</div>` : ""}
     <p class="sub">${ef.length ? "Talentos em uso: " + ef.join(" · ") : "Nenhum efeito de talento em uso. Situacionais: aba Talentos → \"ativo agora\"."}</p>`;
   h += secao("Ataque") + `<div class="lista"><div class="cab" style="background:var(--c-atk)">Perícia<span style="flex:1"></span>Bônus</div>${R.PERICIAS_ATAQUE.map(([n, atrs]) =>
     `<div class="item"><div class="tx"><b>${n}</b><small>${atrs.join(" ou ")}</small></div><span class="num">${atrs.map((k) => `+${d.bc[k] + d.n3 + (n === "Luta" || n === "Pontaria" ? C.ef.acerto : 0)}${R.vantagem(C.a[k]) ? "ᵛ" : ""}`).join(" / ")}</span></div>`).join("")}</div>`;
@@ -822,7 +856,7 @@ function pGrimorio() {
   const d = C.d;
   let h = secao("Grimório") + `<div class="grade g3">${caixa("Espaços", `${C.espUsados}/${d.espacos_encant}`, "equipados", "var(--c-mana)")}
     ${caixa("DT", `${d.dt_feiticaria}/${d.dt_desejo}`, "Feitiçaria / Desejo")}${caixa("Dados extras", `+${d.dados_extra_magia}/+${d.dados_extra_feitico}`, "Magia / Feitiço")}</div>`;
-  h += `<div class="linhabts" style="margin-bottom:10px"><button class="botao prim" data-a="aprender">✦ Aprender encantamento</button></div>`;
+  h += `<div class="linhabts so-ed" style="margin-bottom:10px"><button class="botao prim" data-a="aprender">✦ Aprender encantamento</button></div>`;
   if (!S.encantamentos.length) return h + `<div class="vazio-msg">Nenhum encantamento aprendido.</div>`;
   const impl = (dom) => Math.max(0, ...S.armas.filter((w) => w.grupo === (dom === "Magia" ? "Cajado" : "Selo")).map((w) => int(w.nivel, 1)));
   h += `<div class="lista">${S.encantamentos.map((x, i) => {
@@ -864,6 +898,75 @@ function pTalentos() {
 
 // ------------------------------------------------------------------ ações
 const A = {};
+
+function setsAtivos() {
+  const cont = {};
+  for (const p of PECAS) { const n = (S.set[p] || {}).set; if (n && SETS[n]) cont[n] = (cont[n] || 0) + 1; }
+  return cont;
+}
+function pBolsa() {
+  const d = C.d, itens = S.inventario;
+  const pesoItens = itens.reduce((t, i) => t + (parseFloat(String(i.carga || 0).replace(",", ".")) || 0), 0);
+  const pesoArmas = S.armas.reduce((t, w) => { const ar = ARMAS[w.grupo]; const l = ar && ar.tabela.find((x) => x.nivel === int(w.nivel, 1)); return t + (l ? l.espaco : 0); }, 0);
+  const pesoProt = (C.arm ? C.arm.peso : 0) + (C.esc ? C.esc.peso : 0) - (C.tal.has("Veterano de Armadura") && C.arm ? 2 : 0);
+  const pesoTal = S.talismas.filter((t) => t.nome).length;
+  const pct = Math.max(0, Math.min(100, (C.carga / Math.max(1, d.carga)) * 100));
+  const cor = C.carga > d.carga || C.lentidao ? "var(--c-vida)" : C.exaustao ? "var(--c-per)" : "var(--c-vigor)";
+  let h = secao("Carga", `${C.carga} / ${d.carga}`) + `<div class="cartao" style="padding:12px">
+    <div class="barra grossa"><i style="width:${pct}%;background:${cor}"></i></div>
+    <p class="sub" style="margin:8px 0 0">Itens ${pesoItens} · armas ${pesoArmas} · proteção ${pesoProt} · talismãs ${pesoTal}
+    ${C.lentidao ? `<br><b class="erro">Lentidão</b>: movimento preso em 6 m.` : C.exaustao ? `<br><b class="erro">Exaustão</b>: 10 ou menos de carga livre.` : ""}</p></div>`;
+  h += `<div class="cartao dinheiro" data-a="dinheiro"><span>Dinheiro</span><b>${esc(S.dinheiro || "—")}</b><small>toque para mudar</small></div>`;
+  h += secao("Itens", `${itens.length}/30`) + (itens.length ? `<div class="lista">${itens.map((it, i) =>
+    `<div class="item" data-a="item" data-i="${i}"><span class="marca" style="color:var(--ouro)">◆</span><div class="tx"><b>${esc(it.item || "Sem nome")}</b></div><span class="num">${esc(it.carga || "0")}</span></div>`).join("")}</div>`
+    : `<div class="vazio-msg">A bolsa está vazia.</div>`)
+    + `<div class="linhabts"><button class="botao prim" data-a="item" data-i="-1" ${itens.length >= 30 ? "disabled" : ""}>＋ Adicionar item</button></div>`;
+  const cont = setsAtivos();
+  h += secao("Peças de set") + `<div class="lista">${PECAS.map((p) => {
+    const x = S.set[p] || {};
+    return `<div class="item" data-a="peca" data-p="${p}"><div class="tx"><b>${p}</b><small>${x.set && SETS[x.set] ? `Set ${esc(x.set)}${x.nome ? " · " + esc(x.nome) : ""}` : x.nome ? esc(x.nome) : "sem peça de set"}</small></div><span class="sub so-ed">›</span></div>`;
+  }).join("")}</div>`;
+  const at = Object.entries(cont).filter(([, q]) => q >= 2).sort((a, b) => b[1] - a[1]);
+  h += at.length ? `<div class="lista">${at.map(([n, q]) => `<div class="item" style="display:block"><b style="color:var(--vinho)">Set ${esc(n)} — ${q} peças</b>
+      <div class="sub" style="margin-top:3px"><b>2 peças:</b> ${esc(SETS[n].p2)}${q >= 4 ? `<br><b>4 peças:</b> ${esc(SETS[n].p4)}` : `<br><span style="opacity:.7">4 peças: falta ${4 - q}</span>`}</div></div>`).join("")}</div>`
+    : `<p class="sub">Duas peças do mesmo set ativam o bônus de 2; quatro ativam o de 4.</p>`;
+  h += secao("Talismãs", `${pesoTal}/${d.talismas}`) + `<p class="sub">${S.talismas.filter((t) => t.nome).map((t) => esc(t.nome)).join(" · ") || "Nenhum equipado."} <a href="#" data-a="aba" data-aba="combate" style="color:var(--vinho)">ver em Combate</a></p>`;
+  return h;
+}
+A["dinheiro"] = () => folha("Dinheiro", `<input class="busca" id="dn" value="${esc(S.dinheiro)}" placeholder="ex.: 35 moedas de prata" style="font-size:20px">`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="dinheiro-ok">Salvar</button>`);
+A["dinheiro-ok"] = () => { const v = $("#dn").value.trim(); fecharFolha(); mudar((s) => { s.dinheiro = v; }); };
+A["item"] = (el) => {
+  const i = int(el.dataset.i, -1), it = S.inventario[i] || { item: "", carga: "" };
+  folha(i < 0 ? "Novo item" : "Item", `<label class="campo"><span>Item</span><input id="it-n" value="${esc(it.item)}"></label>
+    <label class="campo"><span>Carga</span><input id="it-c" type="number" inputmode="decimal" step="0.5" value="${esc(it.carga)}"></label>`,
+  `${i >= 0 ? `<button class="botao leve" data-a="item-rem" data-i="${i}">Remover</button>` : `<button class="botao leve" data-a="fechar">Cancelar</button>`}<button class="botao prim" data-a="item-ok" data-i="${i}">Salvar</button>`);
+  setTimeout(() => { const x = $("#it-n"); if (x && i < 0) x.focus(); }, 60);
+};
+A["item-ok"] = (el) => {
+  const i = int(el.dataset.i, -1), n = $("#it-n").value.trim(), c = $("#it-c").value.trim();
+  fecharFolha(); if (!n && !c) return;
+  mudar((s) => { if (i < 0) s.inventario.push({ item: n, carga: c }); else s.inventario[i] = { item: n, carga: c }; });
+};
+A["item-rem"] = (el) => { const i = int(el.dataset.i); fecharFolha(); mudar((s) => { s.inventario.splice(i, 1); }); };
+A["peca"] = (el) => {
+  const p = el.dataset.p, x = S.set[p] || { set: "", nome: "" };
+  folha(`Peça: ${p}`, `<label class="campo"><span>Set</span><select id="pc-s"><option value="">— sem set —</option>${Object.keys(SETS).sort().map((n) => `<option ${n === x.set ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+    <label class="campo"><span>Nome da peça</span><input id="pc-n" value="${esc(x.nome)}"></label><p class="sub" id="pc-d"></p>`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="peca-ok" data-p="${p}">Salvar</button>`, (c) => {
+    const mostra = () => { const s = SETS[$("#pc-s").value]; $("#pc-d").innerHTML = s ? `<b>2:</b> ${esc(s.p2)}<br><b>4:</b> ${esc(s.p4)}` : ""; };
+    c.querySelector("#pc-s").addEventListener("change", mostra); mostra();
+  });
+};
+A["peca-ok"] = (el) => { const p = el.dataset.p, st = $("#pc-s").value, n = $("#pc-n").value.trim(); fecharFolha(); mudar((s) => { s.set[p] = { set: st, nome: n }; }); };
+
+// ------------------------------------------------------------------ modo jogo / edição
+const SO_EDICAO = new Set(["nivel", "pts", "manual", "modo-vida", "rolar-vida", "esc-arma", "esc-nivel-arma", "esc-protecao", "esc-talisma",
+  "esc-talento", "treinar", "per-atk", "prev-attr", "aprender", "prox-versao", "rem-enc", "ident", "peca", "editar-vinc"]);
+A["modo"] = () => {
+  banco.modo = banco.modo === "edicao" ? "jogo" : "edicao"; gravarLocal(); fecharFolha(); render();
+  toast(banco.modo === "edicao" ? "<b>Modo Edição</b>: suba de nível, escolha talentos, armas e encantamentos." : "<b>Modo Jogo</b>: a ficha fica pronta para a mesa.");
+};
 A["aba"] = (el) => { aba = el.dataset.aba; render(); window.scrollTo(0, 0); };
 A["nivel"] = (el) => {
   const n0 = nivel(), n1 = Math.max(1, Math.min(30, n0 + int(el.dataset.d)));
@@ -891,7 +994,7 @@ A["editar-vital"] = (el) => {
   folha(`${nome} atual`, `<input class="busca" id="ev" type="number" inputmode="numeric" value="${at}" style="font-size:28px;text-align:center">
     <div class="grade g3" style="margin-top:6px">${[-10, -5, -1, 1, 5, 10].map((x) => `<button class="botao leve" data-a="ev-somar" data-d="${x}">${x > 0 ? "+" : ""}${x}</button>`).join("")}</div>`,
   `<button class="botao leve" data-a="ev-cheio" data-max="${max}">Cheio (${max})</button><button class="botao prim" data-a="ev-ok" data-chave="${ch}" data-max="${max}">Confirmar</button>`);
-  if (ch !== "vigor_atual") $("#folha-corpo").insertAdjacentHTML("beforeend", `<div class="linhabts"><button class="botao leve" data-a="manual" data-k="${ch === "atual" ? "vida" : "mana"}">✎ Mudar o máximo (valor rolado fora da ficha)</button></div>`);
+  if (ch !== "vigor_atual" && banco.modo === "edicao") $("#folha-corpo").insertAdjacentHTML("beforeend", `<div class="linhabts"><button class="botao leve" data-a="manual" data-k="${ch === "atual" ? "vida" : "mana"}">✎ Mudar o máximo (valor rolado fora da ficha)</button></div>`);
 };
 A["ev-somar"] = (el) => { const i = $("#ev"); i.value = int(i.value) + int(el.dataset.d); };
 A["ev-cheio"] = (el) => { $("#ev").value = el.dataset.max; };
@@ -1108,7 +1211,7 @@ A["ver-enc"] = (el, ev) => {
   const prox = e.versoes.find((v) => !x.versoes.includes(v.nivel));
   const pode = prox && !R.statusVersao(prox, e.dominio, C.a, C.nv).length;
   const conj = e.versoes.filter((v) => x.versoes.includes(v.nivel)).map((v) => `<button class="botao prim" data-a="conjurar" data-f="${esc(e.nome)}" data-v="${v.nivel}">🎲 Conjurar ${esc(v.tier)} nv ${v.nivel} · ${esc(v.mana)}</button>`).join("");
-  folha(e.nome, `<div class="linhabts" style="margin:0 0 10px">${conj}</div>` + descEnc(e.nome), `<button class="botao leve" data-a="rem-enc" data-i="${i}">Remover</button>${prox ? `<button class="botao prim" data-a="prox-versao" data-i="${i}" ${pode ? "" : "disabled"}>Aprender nv ${prox.nivel}</button>` : ""}`);
+  folha(e.nome, `<div class="linhabts" style="margin:0 0 10px">${conj}</div>` + descEnc(e.nome), `${banco.modo === "edicao" ? `<button class="botao leve" data-a="rem-enc" data-i="${i}">Remover</button>` : ""}${prox && banco.modo === "edicao" ? `<button class="botao prim" data-a="prox-versao" data-i="${i}" ${pode ? "" : "disabled"}>Aprender nv ${prox.nivel}</button>` : ""}`);
 };
 A["equipar"] = (el) => {
   const x = S.encantamentos[int(el.dataset.i)];
@@ -1129,6 +1232,8 @@ A["menu"] = () => {
     <div class="item" data-a="importar"><div class="tx"><b>Abrir arquivo .json</b><small>Ficha salva pelo programa de PC</small></div></div>
     <div class="item" data-a="nova"><div class="tx"><b>Nova ficha</b><small>Criação rápida</small></div></div>
     <div class="item" data-a="lista"><div class="tx"><b>Trocar de ficha</b><small>${Object.keys(banco.fichas).length} ficha(s) neste aparelho</small></div></div>
+    ${S ? `<div class="item" data-a="modo"><div class="tx"><b>${banco.modo === "edicao" ? "⚔ Ir para o Modo Jogo" : "✎ Ir para o Modo Edição"}</b><small>${banco.modo === "edicao" ? "Usar a ficha na mesa" : "Subir de nível, escolher talentos, armas e encantamentos"}</small></div></div>` : ""}
+    ${sessao.ativa ? `<div class="item" data-a="sessao-nome"><div class="tx"><b>🛡 Sessão do mestre</b><small>Você está como “${esc(sessao.id || "—")}” · toque para trocar o nome</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b></div></div>` : ""}
     <div class="item" data-a="tema"><div class="tx"><b>${banco.tema === "noite" ? "☀ Modo diurno" : "☾ Modo noturno"}</b></div></div>
@@ -1137,7 +1242,7 @@ A["menu"] = () => {
 A["tema"] = () => { banco.tema = banco.tema === "noite" ? "dia" : "noite"; gravarLocal(); fecharFolha(); render(); };
 A["lista"] = () => { fecharFolha(); S = null; banco.atual = null; gravarLocal(); render(); };
 A["abrir"] = (el) => abrirFicha(el.dataset.id);
-function abrirFicha(id) { S = normalizar(banco.fichas[id]); banco.atual = id; gravarLocal(); aba = "ficha"; render(); }
+function abrirFicha(id, modo = "jogo") { S = normalizar(banco.fichas[id]); banco.atual = id; banco.modo = modo; gravarLocal(); aba = "ficha"; render(); }
 A["exportar"] = async () => {
   const nome = (S.identidade.nome || "ficha").trim().replace(/\s+/g, "_") + ".json";
   const copia = Object.assign({}, S); delete copia._salvo;
@@ -1196,7 +1301,7 @@ A["nova-ok"] = () => {
   s.sem_alma = $("#n-sem").checked;
   for (const k of R.ATRIBUTOS) { s.atributos[k].inicial = ini[k]; s.atributos[k].especie = String(val ? (k === kb ? val : k === kp ? -val : 0) : 0); }
   const id = "ficha-" + Date.now().toString(36);
-  banco.fichas[id] = s; banco.atual = id; fecharFolha(); abrirFicha(id); salvar();
+  banco.fichas[id] = s; banco.atual = id; fecharFolha(); abrirFicha(id, "edicao"); salvar();
   toast("Ficha criada. Ela fica guardada neste aparelho.");
 };
 function importarArquivo(arq) {
@@ -1213,12 +1318,130 @@ function importarArquivo(arq) {
   rd.readAsText(arq);
 }
 
+
+// ------------------------------------------------------------------ sessão do mestre (quando o PC do mestre serve esta página)
+const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0 };
+const CH_SESSAO = "prevalecentes.sessao.id";
+async function api(url, corpo) {
+  const r = await fetch(url, corpo === undefined ? { cache: "no-store" } : { method: "POST", body: JSON.stringify(corpo) });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+async function detectarSessao() {
+  if (!/^https?:$/.test(location.protocol) || location.protocol === "https:") return;
+  try {
+    const r = await api("/api/sessao");
+    if (!r || !r.sessao) return;
+  } catch (e) { return; }
+  sessao.ativa = true;
+  try { sessao.id = localStorage.getItem(CH_SESSAO) || ""; } catch (e) { /* sem storage */ }
+  if (sessao.id) entrarSessao(sessao.id); else pedirNomeSessao();
+  pintarSessao();
+}
+function pedirNomeSessao() {
+  const sug = S ? (S.identidade.player || S.identidade.nome || "") : "";
+  folha("Entrar na mesa", `<p class="sub">Esta página veio do PC do mestre. Com uma ficha aberta, o mestre vê sua Vida, Mana e Vigor e pode mandar dano e condições.</p>
+    <label class="campo"><span>Seu nome na mesa</span><input id="ss-n" value="${esc(sessao.id || sug)}" maxlength="30"></label>`,
+  `<button class="botao leve" data-a="fechar">Agora não</button><button class="botao prim" data-a="sessao-ok">Entrar</button>`);
+}
+A["sessao-nome"] = () => pedirNomeSessao();
+A["sessao-ok"] = () => { const n = $("#ss-n").value.trim(); if (!n) { $("#ss-n").focus(); return; } fecharFolha(); entrarSessao(n, true); };
+async function entrarSessao(nome, novo = false) {
+  try {
+    if (novo && sessao.id && sessao.id !== nome) sessao.id = "";
+    sessao.id = await api("/api/oi", { nome, id: novo ? "" : sessao.id }).then((r) => r.id);
+    try { localStorage.setItem(CH_SESSAO, sessao.id); } catch (e) { /* sem storage */ }
+    sessao.conectado = true; sessao.ultimo = "";
+    if (novo) toast(`Na mesa como <b>${esc(sessao.id)}</b>.`);
+  } catch (e) { sessao.conectado = false; toast("Não consegui falar com o mestre. Você está na mesma rede?"); }
+  clearInterval(sessao.timer); sessao.timer = setInterval(consultarSessao, 1500);
+  consultarSessao(); pintarSessao();
+}
+function resumoSessao() {
+  if (!S) return null;
+  const c = calcular(), d = c.d, at = (ch, max) => (S.vida[ch] === "" || S.vida[ch] == null ? max : int(S.vida[ch], max));
+  return { personagem: S.identidade.nome || "", especie: S.identidade.especie || "", nivel: c.nv,
+    vida: at("atual", d.vida), vida_max: d.vida, mana: at("mana_atual", d.mana), mana_max: d.mana, vigor: at("vigor_atual", d.vigor), vigor_max: d.vigor,
+    ca: d.ca, movimento: c.mov, iniciativa: d.iniciativa_bonus,
+    portao: [S.portao.Sucessos.filter(Boolean).length, S.portao.Falhas.filter(Boolean).length],
+    condicoes: R.CONDICOES.filter((n) => int((S.condicoes[n] || {}).atual)).map((n) => [n, int(S.condicoes[n].atual), int(S.condicoes[n].max, 100)]),
+    sem_alma: !!S.sem_alma };
+}
+async function consultarSessao() {
+  if (!sessao.id) return;
+  let r;
+  try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id)); }
+  catch (e) { if (sessao.conectado) { sessao.conectado = false; pintarSessao(); } return; }
+  if (!r.ok) { entrarSessao(sessao.id); return; }   // o mestre reiniciou: entra de novo com o mesmo nome
+  const mudou = !sessao.conectado || sessao.mao !== r.mao || sessao.rodada !== r.rodada || JSON.stringify(sessao.efeitos) !== JSON.stringify(r.efeitos || []);
+  sessao.conectado = true; sessao.mao = r.mao; sessao.rodada = r.rodada;
+  sessao.efeitos = r.efeitos || [];
+  const avisos = (r.eventos || []).map(receberEvento).filter(Boolean);
+  if (r.palavra) { avisos.push("🎤 <b>O mestre te deu a palavra!</b>"); vibrar([300, 120, 300]); }
+  if (avisos.length) toast(avisos.join("<hr>"));
+  if (mudou) { if (S && (aba === "combate")) render(); else pintarSessao(); }
+  const res = resumoSessao(), txt = JSON.stringify(res);
+  if (res && txt !== sessao.ultimo) {
+    try { await api("/api/ficha", { id: sessao.id, dados: res }); sessao.ultimo = txt; } catch (e) { /* tenta na próxima */ }
+  }
+}
+const vibrar = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* sem vibração */ } };
+function receberEvento(ev) {
+  const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  if (ev.tipo === "dano") {
+    const valor = int(ev.valor), desc = String(ev.desc || "");
+    const oque = valor < 0 ? `Cura de ${-valor}` : `${valor} de dano${ev.dano_tipo ? ` (${esc(ev.dano_tipo)})` : ""}`;
+    let linha = "";
+    if (S) {
+      const max = calcular().d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? max : int(S.vida.atual, max);
+      const depois = Math.max(0, Math.min(max, antes - valor));
+      S.vida.atual = String(depois); salvar(); render();
+      linha = `Vida: ${antes} → <b>${depois}</b>${depois === 0 && antes > 0 ? ` — <b class="erro">INCAPAZ</b>: role o Portão da Morte no início do turno.` : ""}`;
+    }
+    diario.unshift({ titulo: "📣 Do mestre", linhas: [oque + (desc ? " — " + esc(desc) : ""), linha].filter(Boolean), hora });
+    vibrar(valor < 0 ? 120 : [200, 80, 200]);
+    return `📣 <b>${oque}</b>${desc ? " — " + esc(desc) : ""}${linha ? "<br>" + linha : ""}`;
+  } else if (ev.tipo === "condicao") {
+    const dur = ev.rodadas ? `${ev.rodadas} rodada(s)` : "até o mestre remover";
+    diario.unshift({ titulo: "📣 Condição", linhas: [`${esc(ev.nome)} (${dur})${ev.desc ? " — " + esc(ev.desc) : ""}`], hora });
+    vibrar(200);
+    return `⏳ <b>${esc(ev.nome)}</b> (${dur})${ev.desc ? " — " + esc(ev.desc) : ""}`;
+  } else if (ev.tipo === "fim") {
+    return `Terminou: <b>${esc(ev.nome)}</b>`;
+  }
+  return "";
+}
+A["sessao-mao"] = async () => {
+  if (!sessao.id) { pedirNomeSessao(); return; }
+  try { await api(sessao.mao ? "/api/abaixar" : "/api/mao", { id: sessao.id }); sessao.mao = !sessao.mao; pintarSessao(); consultarSessao(); }
+  catch (e) { toast("Sem conexão com o mestre…"); }
+};
+A["sessao-efeitos"] = () => folha(`Mesa · Rodada ${sessao.rodada}`, sessao.efeitos.length
+  ? `<div class="lista">${sessao.efeitos.map((e) => `<div class="item"><span class="marca">⏳</span><div class="tx"><b>${esc(e.nome)}</b><small>${e.rodadas ? `${e.rodadas} rodada(s)` : "até o mestre remover"}${e.desc ? " · " + esc(e.desc) : ""}</small></div></div>`).join("")}</div>`
+  : `<div class="vazio-msg">Nenhuma condição do mestre em você.</div>`, `<button class="botao leve" data-a="sessao-nome">Trocar nome</button><button class="botao prim" data-a="fechar">OK</button>`);
+function pintarSessao() {
+  const b = $("#mesa");
+  if (!b) return;
+  b.classList.toggle("oculto", !sessao.ativa);
+  document.body.classList.toggle("com-mesa", sessao.ativa);
+  if (!sessao.ativa) return;
+  const ef = sessao.efeitos.length ? ` · ⏳ ${sessao.efeitos.map((e) => esc(e.nome)).join(", ")}` : "";
+  b.innerHTML = `<button class="info" data-a="sessao-efeitos"><b>${sessao.conectado ? "🛡 Mesa" : "⚠ Sem sinal"}</b> · Rodada ${sessao.rodada}${ef}${S ? "" : " · abra uma ficha"}</button>
+    <button class="mao ${sessao.mao ? "on" : ""}" data-a="sessao-mao">✋ ${sessao.mao ? "Abaixar" : "Mão"}</button>`;
+}
+
 // ------------------------------------------------------------------ eventos
 document.addEventListener("click", (ev) => {
   const el = ev.target.closest("[data-a]");
   if (!el) return;
   const f = A[el.dataset.a];
-  if (f) { if (el.tagName === "A") ev.preventDefault(); f(el, ev); }
+  if (!f) return;
+  if (el.tagName === "A") ev.preventDefault();
+  if (S && banco.modo !== "edicao" && SO_EDICAO.has(el.dataset.a)) {
+    toast(`Isso muda a ficha — use o <b>Modo Edição</b>. <button class="botao leve" data-a="modo" style="min-height:32px;padding:4px 10px;margin-left:6px">✎ Editar</button>`);
+    return;
+  }
+  f(el, ev);
 });
 document.addEventListener("DOMContentLoaded", () => {
   lerLocal();
@@ -1227,6 +1450,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#arquivo").addEventListener("change", (e) => { if (e.target.files[0]) importarArquivo(e.target.files[0]); e.target.value = ""; });
   render();
   setTimeout(ligarNuvem, 50);
+  detectarSessao();
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost") && !window.claude) navigator.serviceWorker.register("sw.js").catch(() => {});
 });
 </script>

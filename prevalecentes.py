@@ -232,10 +232,15 @@ class App(tk.Tk):
         self.encantamentos = []
         self.d = {}
         self.caixas = {}
+        self.so_edicao = []
+        self.modo = "jogo"
+        self.efeitos_mestre = []
+        self.janela_sessao = None
         aplicar_tema(ler_pref().get("tema", "diurno"))
         self._estilo()
         self._menu()
         self._montar()
+        self._aplicar_modo()
         self.novo(perguntar=False)
         self.bind_all("<MouseWheel>", lambda e: self._roda(e, -1 if e.delta > 0 else 1, abs(e.delta)))
         self.bind_all("<Button-4>", lambda e: self._roda(e, -1, 120))
@@ -339,6 +344,11 @@ class App(tk.Tk):
         self._recalc_agendado = True
         self.after_idle(self.recalc)
 
+    def ed(self, w):
+        """Marca um controle como "só no Modo Edição" (desabilitado no Modo Jogo)."""
+        self.so_edicao.append(w)
+        return w
+
     def secao(self, master, titulo, row=0, column=0, columnspan=1, rowspan=1, sticky="nsew", pady=(10, 4)):
         """Cabeçalho de seção: título em versalete + filete dourado. Retorna o corpo."""
         box = ttk.Frame(master)
@@ -408,7 +418,8 @@ class App(tk.Tk):
         arq.add_command(label="Sair", command=self.fechar)
         m.add_cascade(label="Arquivo", menu=arq)
         fi = tk.Menu(m, tearoff=0)
-        fi.add_command(label="Refazer distribuição inicial…", command=lambda: self.inicializar() if self.inicializado else self.novo())
+        fi.add_command(label="Refazer distribuição inicial…",
+                       command=lambda: (self.novo() if not self.inicializado else None if self._so_edicao("A distribuição inicial") else self.inicializar()))
         fi.add_command(label="Comparar duas fichas…", command=self.comparar)
         m.add_cascade(label="Ficha", menu=fi)
         se = tk.Menu(m, tearoff=0)
@@ -437,18 +448,20 @@ class App(tk.Tk):
         tit.pack(side="left", anchor="n")
         tk.Label(tit, text="⚜ Prevalecentes", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
         tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.1", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
+        self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
+        self.lbl_modo.pack(anchor="w", pady=(4, 0))
 
         idf = ttk.Frame(ban, style="Mesa.TFrame")
         idf.pack(side="left", padx=(36, 0), anchor="n")
         self.v_nome, self.v_player, self.v_nivel = self.var(), self.var(), self.var("1")
         self.v_especie, self.v_sonho, self.v_guilda = self.var(), self.var(), self.var()
-        self.campo(idf, 0, 0, "Nome", self.v_nome, 24, estilo="Mesa")
-        self.campo(idf, 0, 2, "Player", self.v_player, 16, estilo="Mesa")
+        self.ed(self.campo(idf, 0, 0, "Nome", self.v_nome, 24, estilo="Mesa"))
+        self.ed(self.campo(idf, 0, 2, "Player", self.v_player, 16, estilo="Mesa"))
         ttk.Label(idf, text="Nível", style="Mesa.TLabel").grid(row=0, column=4, sticky="w", padx=(0, 4))
-        ttk.Spinbox(idf, from_=1, to=R.NIVEL_MAX, textvariable=self.v_nivel, width=4, style="Mesa.TSpinbox").grid(row=0, column=5, sticky="w")
-        self.campo(idf, 1, 0, "Espécie", self.v_especie, 24, estilo="Mesa")
-        self.campo(idf, 1, 2, "Sonho", self.v_sonho, 16, estilo="Mesa")
-        self.campo(idf, 1, 4, "Guilda", self.v_guilda, 4, estilo="Mesa")
+        self.ed(ttk.Spinbox(idf, from_=1, to=R.NIVEL_MAX, textvariable=self.v_nivel, width=4, style="Mesa.TSpinbox")).grid(row=0, column=5, sticky="w")
+        self.ed(self.campo(idf, 1, 0, "Espécie", self.v_especie, 24, estilo="Mesa"))
+        self.ed(self.campo(idf, 1, 2, "Sonho", self.v_sonho, 16, estilo="Mesa"))
+        self.ed(self.campo(idf, 1, 4, "Guilda", self.v_guilda, 4, estilo="Mesa"))
 
         arq = tk.Frame(ban, bg=FUNDO)
         arq.pack(side="right", anchor="n", padx=(22, 0), pady=(4, 0))
@@ -457,6 +470,8 @@ class App(tk.Tk):
         ttk.Button(arq, text="Salvar", command=self.salvar).pack(fill="x", pady=1)
         ext = tk.Frame(ban, bg=FUNDO)
         ext.pack(side="right", anchor="n", padx=(12, 0), pady=(4, 0))
+        self.bt_modo = ttk.Button(ext, text="✎ Modo Edição", command=self.alternar_modo)
+        self.bt_modo.pack(fill="x", pady=1)
         ttk.Button(ext, text="☀ Modo diurno" if NOTURNO else "☾ Modo noturno", command=self.alternar_tema).pack(fill="x", pady=1)
         ttk.Button(ext, text="⚖ Comparar fichas", command=self.comparar).pack(fill="x", pady=1)
         ttk.Button(ext, text="📜 Exportar PDF", command=self.exportar_pdf).pack(fill="x", pady=1)
@@ -571,8 +586,8 @@ class App(tk.Tk):
         dv.grid(row=1, column=0, columnspan=2, sticky="w", pady=(10, 0))
         self.v_vida_modo = self.var("media")
         ttk.Label(dv, text="Dados de vida (1d12 por ponto de Curva da VIT):", style="Rot.TLabel").pack(side="left")
-        ttk.Radiobutton(dv, text="média fixa (7)", value="media", variable=self.v_vida_modo).pack(side="left", padx=6)
-        ttk.Radiobutton(dv, text="rolar", value="rolar", variable=self.v_vida_modo).pack(side="left", padx=6)
+        self.ed(ttk.Radiobutton(dv, text="média fixa (7)", value="media", variable=self.v_vida_modo)).pack(side="left", padx=6)
+        self.ed(ttk.Radiobutton(dv, text="rolar", value="rolar", variable=self.v_vida_modo)).pack(side="left", padx=6)
         self.btn_rolar = ttk.Button(dv, text="🎲 Rolar dados novos", command=self.rolar_vida)
         self.btn_rolar.pack(side="left", padx=6)
         ttk.Button(dv, text="Zerar", command=self.zerar_rolagens, style="Peq.TButton").pack(side="left")
@@ -623,9 +638,9 @@ class App(tk.Tk):
                 if chave in ("inicial", "especie"):
                     w = tk.Label(ent, textvariable=row[chave], bg=PERG2, fg=TINTA, font=(FONTE, 10, "bold"), width=4, pady=1)
                 elif chave == "niveis":
-                    w = ttk.Spinbox(ent, from_=0, to=99, textvariable=row[chave], width=3)
+                    w = self.ed(ttk.Spinbox(ent, from_=0, to=99, textvariable=row[chave], width=3))
                 else:
-                    w = ttk.Spinbox(ent, from_=-50 if chave == "bonus" else -5, to=50 if chave == "bonus" else 5, textvariable=row[chave], width=3)
+                    w = self.ed(ttk.Spinbox(ent, from_=-50 if chave == "bonus" else -5, to=50 if chave == "bonus" else 5, textvariable=row[chave], width=3))
                 w.grid(row=1, column=j, padx=1)
             self.atr[k] = row
         self.lbl_pontos = Rot(c, size=10)
@@ -657,10 +672,10 @@ class App(tk.Tk):
             bloco, r = (0, i + 1) if i < metade else (1, i - metade + 1)
             col0 = bloco * 6
             v = self.var(False, tk.BooleanVar)
-            ttk.Checkbutton(c, variable=v).grid(row=r, column=col0, padx=(4, 0))
+            self.ed(ttk.Checkbutton(c, variable=v)).grid(row=r, column=col0, padx=(4, 0))
             tk.Label(c, text=nome + ("  •" if req else ""), bg=PERG, fg=TINTA, font=(FONTE, 10), anchor="w").grid(row=r, column=col0 + 1, sticky="w", padx=6, pady=1)
             if atrs is None:
-                ttk.Combobox(c, values=R.ATRIBUTOS, textvariable=self.v_prev_attr, width=5, state="readonly").grid(row=r, column=col0 + 2, sticky="w", padx=6)
+                self.ed(ttk.Combobox(c, values=R.ATRIBUTOS, textvariable=self.v_prev_attr, width=5, state="readonly")).grid(row=r, column=col0 + 2, sticky="w", padx=6)
             else:
                 tk.Label(c, text="/".join(atrs), bg=PERG, fg=TINTA2, font=(FONTE, 9)).grid(row=r, column=col0 + 2, sticky="w", padx=6)
             lb = Rot(c, size=10)
@@ -677,7 +692,7 @@ class App(tk.Tk):
         ttk.Label(rod, text="   ·   Perícia de ataque treinada inicial:", style="Rot.TLabel").pack(side="left")
         self.v_per_ataque = self.var("Luta")
         for n, _ in R.PERICIAS_ATAQUE:
-            ttk.Radiobutton(rod, text=n, value=n, variable=self.v_per_ataque).pack(side="left", padx=4)
+            self.ed(ttk.Radiobutton(rod, text=n, value=n, variable=self.v_per_ataque)).pack(side="left", padx=4)
         ttk.Label(c, text="•  requer treino.  Bônus = nível ÷ 2, mais a Curva do atributo se treinada  ·  +1d20 a cada 20 pontos no atributo  ·  "
                           "treinadas: 5 + 1 a cada 10 em INT ou MEN (o maior)", style="Sub.TLabel").grid(row=metade + 3, column=0, columnspan=11, sticky="w")
 
@@ -735,6 +750,8 @@ class App(tk.Tk):
         ttk.Button(c, text="📜 Diário de rolagens", command=self.abrir_diario).grid(row=0, column=4, padx=(0, 6), sticky="w")
         self.l_ef_ativos = Rot(c, size=9, bold=False, wraplength=980, justify="left")
         self.l_ef_ativos.grid(row=1, column=0, columnspan=6, sticky="w", pady=(6, 0))
+        self.l_ef_mestre = Rot(c, size=10, wraplength=980, justify="left", fg=VINHO)
+        self.l_ef_mestre.grid(row=3, column=0, columnspan=6, sticky="w", pady=(4, 0))
         ttk.Label(c, text="Ataques descontam o Vigor das armas pesadas e encantamentos descontam Mana; o Diário tem \"Desfazer custo\".",
                   style="Sub.TLabel").grid(row=2, column=0, columnspan=6, sticky="w")
 
@@ -782,7 +799,7 @@ class App(tk.Tk):
         topo = ttk.Frame(c)
         topo.grid(row=0, column=0, sticky="w")
         ttk.Label(topo, text="Nome da Alma", style="Rot.TLabel").pack(side="left")
-        ttk.Entry(topo, textvariable=self.alma["nome"], width=34, font=(FONTE, 12)).pack(side="left", padx=8)
+        self.ed(ttk.Entry(topo, textvariable=self.alma["nome"], width=34, font=(FONTE, 12))).pack(side="left", padx=8)
         cx = ttk.Frame(c)
         cx.grid(row=1, column=0, sticky="w", pady=(8, 0))
         self.l_alma_nivel, _ = self.caixa(cx, "Nível da Alma", C_ATR, 0, 0, sub=False, larg=14, big=16)
@@ -792,12 +809,13 @@ class App(tk.Tk):
         op = ttk.Frame(cx)
         op.grid(row=0, column=4, sticky="nw", padx=(16, 0))
         ttk.Label(op, text="DT usa", style="Rot.TLabel").grid(row=0, column=0, sticky="w")
-        ttk.Combobox(op, values=["INT", "FE"], textvariable=self.alma["atr"], width=5, state="readonly").grid(row=0, column=1, padx=6)
+        self.ed(ttk.Combobox(op, values=["INT", "FE"], textvariable=self.alma["atr"], width=5, state="readonly")).grid(row=0, column=1, padx=6)
         ttk.Label(op, text="Usos restantes", style="Rot.TLabel").grid(row=1, column=0, sticky="w", pady=6)
         ttk.Entry(op, textvariable=self.alma["restantes"], width=6).grid(row=1, column=1, padx=6)
         ttk.Label(c, text="Quem foi, por que está com você, que habilidade tinha em vida:", style="Rot.TLabel").grid(row=2, column=0, sticky="w", pady=(10, 2))
         self.txt_alma = self.texto(c, height=4)
         self.txt_alma.grid(row=3, column=0, sticky="we")
+        self.ed(self.txt_alma)
         self.txt_alma.bind("<<Modified>>", self._txt_mod)
         c.columnconfigure(0, weight=1)
 
@@ -807,9 +825,9 @@ class App(tk.Tk):
         self.alma_hab = []
         for r in range(1, 7):
             h = {"nome": self.var(), "efeito": self.var(), "tipo": self.var()}
-            ttk.Entry(c, textvariable=h["nome"], width=24).grid(row=r, column=0, padx=(0, 2), pady=2, sticky="we")
-            ttk.Entry(c, textvariable=h["efeito"]).grid(row=r, column=1, padx=2, pady=2, sticky="we")
-            ttk.Combobox(c, values=["", "Passivo", "Ativo"], textvariable=h["tipo"], width=12, state="readonly").grid(row=r, column=2, padx=2)
+            self.ed(ttk.Entry(c, textvariable=h["nome"], width=24)).grid(row=r, column=0, padx=(0, 2), pady=2, sticky="we")
+            self.ed(ttk.Entry(c, textvariable=h["efeito"])).grid(row=r, column=1, padx=2, pady=2, sticky="we")
+            self.ed(ttk.Combobox(c, values=["", "Passivo", "Ativo"], textvariable=h["tipo"], width=12, state="readonly")).grid(row=r, column=2, padx=2)
             self.alma_hab.append(h)
 
     # ------------------------------------------------------------ IV · Inventário
@@ -827,15 +845,15 @@ class App(tk.Tk):
             lin = tk.Frame(f, bg=cor)
             lin.pack(fill="x")
             tk.Label(lin, text=f"{'I' if idx == 0 else 'II'}", bg=cor, fg=VINHO, font=(FONTE_TIT, 14, "bold"), width=2).pack(side="left")
-            cg = ttk.Combobox(lin, textvariable=ui["disp_grupo"], width=44, state="readonly")
+            cg = self.ed(ttk.Combobox(lin, textvariable=ui["disp_grupo"], width=44, state="readonly"))
             cg.configure(postcommand=lambda cb=cg, i=idx: self._valores_armas(cb, i))
             cg.bind("<<ComboboxSelected>>", lambda e, i=idx: self._escolher_arma(i))
             cg.pack(side="left", padx=4)
-            cn = ttk.Combobox(lin, textvariable=ui["disp_nivel"], width=44, state="readonly")
+            cn = self.ed(ttk.Combobox(lin, textvariable=ui["disp_nivel"], width=44, state="readonly"))
             cn.configure(postcommand=lambda cb=cn, i=idx: self._valores_nivel_arma(cb, i))
             cn.bind("<<ComboboxSelected>>", lambda e, i=idx: self._escolher_nivel_arma(i))
             cn.pack(side="left", padx=4)
-            ttk.Button(lin, text="✕", width=3, command=lambda i=idx: self._remover_arma(i), style="Peq.TButton").pack(side="left", padx=4)
+            self.ed(ttk.Button(lin, text="✕", width=3, command=lambda i=idx: self._remover_arma(i), style="Peq.TButton")).pack(side="left", padx=4)
             ttk.Button(lin, text="📖 Ações", command=lambda i=idx: self.mostrar_acoes_arma(self.armas_ui[i]["grupo"].get()),
                        style="Peq.TButton").pack(side="left", padx=4)
             ttk.Button(lin, text="🎲 Atacar", command=lambda i=idx: self.rolar_arma(i), style="Peq.TButton").pack(side="left", padx=4)
@@ -851,7 +869,7 @@ class App(tk.Tk):
             pr = tk.Frame(f, bg=cor)
             pr.pack(fill="x", pady=(2, 0))
             tk.Label(pr, text="Propriedades:", bg=cor, fg=TINTA2, font=(FONTE, 9)).pack(side="left")
-            ttk.Entry(pr, textvariable=ui["props"], width=60).pack(side="left", padx=6)
+            self.ed(ttk.Entry(pr, textvariable=ui["props"], width=60)).pack(side="left", padx=6)
             self.armas_ui.append(ui)
         self.l_duplo = Rot(c, size=9, bold=False, wraplength=980, justify="left")
         self.l_duplo.grid(row=2, column=0, sticky="w", pady=(4, 0))
@@ -864,7 +882,7 @@ class App(tk.Tk):
         for r, (n, chave) in enumerate([("Armadura", "armadura"), ("Escudo", "escudo")], start=1):
             tk.Label(c, text=n, bg=PERG, fg=TINTA, font=(FONTE, 10, "bold")).grid(row=r, column=0, sticky="w", padx=6)
             disp = tk.StringVar()
-            cb = ttk.Combobox(c, textvariable=disp, width=46, state="readonly")
+            cb = self.ed(ttk.Combobox(c, textvariable=disp, width=46, state="readonly"))
             cb.configure(postcommand=lambda cb=cb, k=chave: self._valores_protecao(cb, k))
             cb.bind("<<ComboboxSelected>>", lambda e, k=chave: self._escolher_protecao(k))
             cb.grid(row=r, column=1, padx=2, pady=3, sticky="w")
@@ -873,9 +891,9 @@ class App(tk.Tk):
             ui["l_peso"].grid(row=r, column=3, padx=8)
             ui["l_req"].grid(row=r, column=4, sticky="w", padx=6)
             self.arm_ui[chave] = ui
-        ttk.Checkbutton(c, text="Peitoral de set (não exige o nível de jogador)", variable=self.arm["peitoral_set"]).grid(row=1, column=5, sticky="w", padx=6)
+        self.ed(ttk.Checkbutton(c, text="Peitoral de set (não exige o nível de jogador)", variable=self.arm["peitoral_set"])).grid(row=1, column=5, sticky="w", padx=6)
         ttk.Label(c, text="Outros bônus de CA", style="Rot.TLabel").grid(row=3, column=0, sticky="w", padx=6, pady=(6, 0))
-        ttk.Spinbox(c, from_=-10, to=10, textvariable=self.arm["ca_extra"], width=4).grid(row=3, column=1, sticky="w", padx=2, pady=(6, 0))
+        self.ed(ttk.Spinbox(c, from_=-10, to=10, textvariable=self.arm["ca_extra"], width=4)).grid(row=3, column=1, sticky="w", padx=2, pady=(6, 0))
         self.l_ca_total = Rot(c, size=10)
         self.l_ca_total.grid(row=3, column=2, columnspan=4, sticky="w", pady=(6, 0))
 
@@ -906,8 +924,8 @@ class App(tk.Tk):
         for r, peca in enumerate(["Capacete", "Peitoral", "Manopla", "Calça", "Bota", "Arma"], start=1):
             sp = {"set": self.var(), "nome": self.var()}
             tk.Label(c, text=peca, bg=PERG, fg=TINTA, font=(FONTE, 10, "bold"), anchor="w").grid(row=r, column=0, sticky="w", padx=6)
-            ttk.Combobox(c, values=nomes_sets, textvariable=sp["set"], width=18, state="readonly").grid(row=r, column=1, padx=2, pady=2)
-            ttk.Entry(c, textvariable=sp["nome"]).grid(row=r, column=2, padx=2, pady=2, sticky="we")
+            self.ed(ttk.Combobox(c, values=nomes_sets, textvariable=sp["set"], width=18, state="readonly")).grid(row=r, column=1, padx=2, pady=2)
+            self.ed(ttk.Entry(c, textvariable=sp["nome"])).grid(row=r, column=2, padx=2, pady=2, sticky="we")
             self.set_pecas[peca] = sp
         self.l_sets = Rot(c, size=9, bold=False, wraplength=460, justify="left")
         self.l_sets.grid(row=8, column=0, columnspan=3, sticky="w", pady=(6, 0))
@@ -947,6 +965,7 @@ class App(tk.Tk):
         self.l_enc_contra, _ = self.caixa(c, "Contra-encantos", C_ATR, 0, 3, sub=False, larg=16, big=15)
 
         add = self.secao(p, "Filtros", row=1, column=0, columnspan=2, pady=(4, 2))
+        self.sec_filtros = add.master
         tiers = sorted({v["tier"] for e in self.dados["encantamentos"] for v in e["versoes"]})
         self.f_enc = {"dom": tk.StringVar(value="Todos"), "cat": tk.StringVar(value="Todas"), "tipo": tk.StringVar(value="Todos"),
                       "nv_min": tk.StringVar(value="1"), "nv_max": tk.StringVar(value="10"), "mana": tk.StringVar(value=""),
@@ -983,6 +1002,8 @@ class App(tk.Tk):
                   style="Sub.TLabel").grid(row=2, column=0, columnspan=9, sticky="w", pady=(4, 0))
 
         cat = self.secao(p, "Catálogo", row=2, column=0, pady=(6, 0))
+        self.sec_catalogo = cat.master
+        self.pag_enc = p
         cat.rowconfigure(0, weight=1)
         cat.columnconfigure(0, weight=1)
         cols = ("st", "dom", "esc", "tipo", "nv", "mana", "esp", "mot")
@@ -1028,8 +1049,8 @@ class App(tk.Tk):
         bts = ttk.Frame(lf)
         bts.grid(row=1, column=0, sticky="w", pady=6)
         ttk.Button(bts, text="Equipar", command=self._toggle_equip_enc, style="Peq.TButton").pack(side="left", padx=(0, 4))
-        ttk.Button(bts, text="Próxima versão", command=self._aprender_versao, style="Peq.TButton").pack(side="left", padx=4)
-        ttk.Button(bts, text="Remover", command=self._remover_enc, style="Peq.TButton").pack(side="left", padx=4)
+        self.ed(ttk.Button(bts, text="Próxima versão", command=self._aprender_versao, style="Peq.TButton")).pack(side="left", padx=4)
+        self.ed(ttk.Button(bts, text="Remover", command=self._remover_enc, style="Peq.TButton")).pack(side="left", padx=4)
         ttk.Button(bts, text="🎲 Conjurar", command=lambda: self.conjurar_menu(self._sel_enc()["familia"] if self._sel_enc() else None),
                    style="Peq.TButton").pack(side="left", padx=4)
 
@@ -1070,7 +1091,7 @@ class App(tk.Tk):
             ct.grid(row=2 * r - 1, column=2, padx=3, pady=3, sticky="nw")
             le = Rot(c, size=9, bold=False, wraplength=420, justify="left")
             le.grid(row=2 * r - 1, column=3, sticky="nw", padx=6, pady=3)
-            ttk.Button(c, text="✕", width=3, command=lambda sl=s: self._limpar_talento(sl), style="Peq.TButton").grid(row=2 * r - 1, column=4, sticky="n", pady=3)
+            self.ed(ttk.Button(c, text="✕", width=3, command=lambda sl=s: self._limpar_talento(sl), style="Peq.TButton")).grid(row=2 * r - 1, column=4, sticky="n", pady=3)
             ui["ativo"] = self.var(False, tk.BooleanVar)
             sw = ttk.Checkbutton(c, text="ativo agora", variable=ui["ativo"])
             sw.grid(row=2 * r - 1, column=5, sticky="nw", padx=(6, 0), pady=3)
@@ -1127,7 +1148,43 @@ class App(tk.Tk):
             d["mana"] = manual["mana"]
         return d
 
+    def _so_edicao(self, oque="Isso"):
+        """No Modo Jogo, avisa e devolve True (quem chamou deve parar)."""
+        if self.modo == "edicao":
+            return False
+        messagebox.showinfo(APP_NOME, f"{oque} só pode ser mudado no Modo Edição.\n\nUse o botão \"✎ Modo Edição\" no topo.")
+        return True
+
+    def alternar_modo(self):
+        self.modo = "jogo" if self.modo == "edicao" else "edicao"
+        self._aplicar_modo()
+        self.recalc()
+
+    def _aplicar_modo(self):
+        """Modo Jogo: só o que se usa na mesa. Modo Edição: criar, subir de nível, escolher e aprender."""
+        ed = self.modo == "edicao"
+        for w in self.so_edicao:
+            try:
+                if isinstance(w, tk.Text):
+                    w.configure(state="normal" if ed else "disabled")
+                elif isinstance(w, ttk.Combobox):
+                    w.state(["!disabled", "readonly"] if ed else ["disabled"])
+                else:
+                    w.state(["!disabled"] if ed else ["disabled"])
+            except tk.TclError:
+                pass
+        for sec in (getattr(self, "sec_filtros", None), getattr(self, "sec_catalogo", None)):
+            if sec is not None:
+                (sec.grid if ed else sec.grid_remove)()
+        if getattr(self, "pag_enc", None) is not None:
+            self.pag_enc.columnconfigure(0, weight=5 if ed else 0)
+        self.bt_modo.configure(text="⚔ Modo Jogo" if ed else "✎ Modo Edição")
+        self.lbl_modo.configure(text="✎ MODO EDIÇÃO — criar, subir de nível, escolher e aprender" if ed else
+                                "⚔ MODO JOGO — use na mesa; para mudar a ficha, Modo Edição")
+
     def editar_manual(self, chave):
+        if self._so_edicao("O valor manual"):
+            return
         """Janela para digitar um valor que substitui o calculado (atributo, Vida máx. ou Mana máx.)."""
         nomes = dict(R.NOMES_ATR, vida="Vida máxima", mana="Mana máxima")
         if chave in R.ATRIBUTOS:
@@ -1342,7 +1399,8 @@ class App(tk.Tk):
         txt = f"Pontos de nível: {gastos}/{disp} gastos" + ("  (sem alma: +2 por nível)" if self.sem_alma else "")
         if resto > 0:
             txt += f"  —  FALTAM {resto} pontos para distribuir"
-            avisos.append(("erro", f"Faltam {resto} pontos de atributo para distribuir (nível {nivel})."))
+            avisos.append(("erro", f"Faltam {resto} pontos de atributo para distribuir (nível {nivel})"
+                                   + (" — use o Modo Edição." if self.modo == "jogo" else ".")))
         elif resto < 0:
             txt += f"  —  EXCEDEU em {-resto} pontos"
             avisos.append(("erro", f"Você gastou {-resto} pontos de atributo a mais do que tem."))
@@ -1422,7 +1480,7 @@ class App(tk.Tk):
             avisos.append(("erro", f"Talismãs: {n_tal} equipados, limite {d['talismas']}."))
         for i, t in enumerate(self.talismas):
             for w in t["widgets"]:
-                w.state(["!disabled", "readonly"] if i < d["talismas"] or t["nome"].get() else ["disabled"])
+                w.state(["!disabled", "readonly"] if (i < d["talismas"] or t["nome"].get()) and self.modo == "edicao" else ["disabled"])
             info = self.tal_info.get(t["nome"].get())
             t["l_efeito"].configure(text=(info or {}).get("efeito", t["efeito"].get()) if t["nome"].get() else "",
                                     style="Erro.TLabel" if (t["nome"].get() and i >= d["talismas"]) else "TLabel")
@@ -1516,6 +1574,9 @@ class App(tk.Tk):
                     for v in [e_.get(k_, 0)] if v]
             bits += [f"+{v} {p_}" for p_, v in e_.get("pericia", {}).items()]
             partes.append(f"{nome}{' (ativo)' if e_['tipo'] == 'sit' else ''}: {', '.join(bits)}")
+        self.l_ef_mestre.configure(text=("Do mestre — " + "  ·  ".join(
+            f"{e['nome']} ({e['rodadas']} rodada(s))" if e.get("rodadas") else f"{e['nome']} (sem fim)" for e in self.efeitos_mestre))
+            if self.efeitos_mestre else "")
         self.l_ef_ativos.configure(text=("Efeitos de talento em uso — " + "  ·  ".join(partes)) if partes else
                                    "Nenhum efeito de talento em uso. Talentos situacionais são ligados na aba Talentos (\"ativo agora\").")
 
@@ -2044,7 +2105,7 @@ class App(tk.Tk):
                 ativo = "Versátil" in tal
             else:
                 ativo = int(s) <= nivel
-            st = ["!disabled", "readonly"] if ativo else ["disabled"]
+            st = ["!disabled", "readonly"] if ativo and self.modo == "edicao" else ["disabled"]
             ui["cb"].state(st)
             ui["cb_cat"].state(st)
             nome = ui["nome"].get()
@@ -2270,11 +2331,14 @@ class App(tk.Tk):
         aplicar_tema(novo_tema)
         gravar_pref(tema=novo_tema)
         for w in list(self.winfo_children()):
-            w.destroy()
+            if w is not self.janela_sessao:   # a sessão em rede continua aberta durante a troca de tema
+                w.destroy()
         self.caixas = {}
+        self.so_edicao = []
         self._estilo()
         self._menu()
         self._montar()
+        self._aplicar_modo()
         self.aplicar(estado)
         self.arquivo, self.alterado, self.inicializado = arq, alt, ini
         self._atualizar_capa()
@@ -2767,7 +2831,9 @@ class App(tk.Tk):
 
     def criar_de_assistente(self, estado):
         self.arquivo = None
+        self.modo = "edicao"          # ficha recém-criada: ainda falta equipar e ajustar
         self.aplicar(estado)
+        self._aplicar_modo()
         self.alterado = True
         self._titulo()
         self.after(100, lambda: self.salvar(como=True))
@@ -2785,7 +2851,9 @@ class App(tk.Tk):
             messagebox.showerror(APP_NOME, f"Não consegui abrir o arquivo:\n{e}")
             return
         self.arquivo = fn
+        self.modo = "jogo"            # ficha salva abre pronta para a mesa
         self.aplicar(s)
+        self._aplicar_modo()
         self.alterado = False
         self._titulo()
 
@@ -2865,7 +2933,8 @@ class App(tk.Tk):
                 return
             except tk.TclError:
                 pass
-        cores = dict(FUNDO=FUNDO, CAMPO=CAMPO, VINHO=VINHO, OURO=OURO, OURO2=OURO2, VERDE=VERDE,
+        cores = dict(FUNDO=FUNDO, CAMPO=CAMPO, VINHO=VINHO, OURO=OURO, OURO2=OURO2, VERDE=VERDE, PERG=PERG, PERG2=PERG2,
+                     TINTA=TINTA, TINTA2=TINTA2, FAIXA=FAIXA, LINHA=LINHA, C_VIDA=C_VIDA, C_MANA=C_MANA, C_VIGOR=C_VIGOR,
                      ALERTA=ALERTA, TINTA2_FUNDO=MESA_TXT, FONTE=FONTE, ULTIMO_IP=ler_pref().get("sessao_ip", ""))
 
         def ao_fechar(ip):
@@ -2873,7 +2942,8 @@ class App(tk.Tk):
             if ip:
                 gravar_pref(sessao_ip=ip)
 
-        self.janela_sessao = sessao.JanelaSessao(self, cores, self.v_nome.get().strip(), ao_fechar)
+        ponte = PonteSessao(self) if self.inicializado else None
+        self.janela_sessao = sessao.JanelaSessao(self, cores, self.v_nome.get().strip(), ao_fechar, ponte)
 
     def mostrar_regras(self):
         w = tk.Toplevel(self)
@@ -2882,6 +2952,49 @@ class App(tk.Tk):
         t.pack(fill="both", expand=True)
         t.insert("1.0", REGRAS_TXT)
         t.configure(state="disabled")
+
+
+class PonteSessao:
+    """Liga a ficha aberta à sessão: manda o resumo ao mestre e recebe dano e condições."""
+
+    def __init__(self, app):
+        self.app = app
+
+    def resumo(self):
+        a = self.app
+        if not a.inicializado:
+            return None
+        d = a.d
+        return {"personagem": a.v_nome.get().strip(), "especie": a.v_especie.get().strip(), "nivel": a.nivel(),
+                "vida": a._atual(a.v_vida_atual, d["vida"]), "vida_max": d["vida"],
+                "mana": a._atual(a.v_mana_atual, d["mana"]), "mana_max": d["mana"],
+                "vigor": a._atual(a.v_vigor_atual, d["vigor"]), "vigor_max": d["vigor"],
+                "ca": d["ca"], "movimento": d["movimento"], "iniciativa": d["iniciativa_bonus"],
+                "portao": [sum(v.get() for v in a.portao["Sucessos"]), sum(v.get() for v in a.portao["Falhas"])],
+                "condicoes": [[n, to_int(c["atual"].get()), to_int(c["max"].get(), 100)] for n, c in a.cond.items() if to_int(c["atual"].get())],
+                "sem_alma": a.sem_alma}
+
+    def aplicar_dano(self, valor, tipo, desc):
+        """valor > 0 tira Vida; valor < 0 cura (sem passar do máximo). Devolve o texto do resultado."""
+        a = self.app
+        a.recalc()
+        maximo = a.d["vida"]
+        antes = a._atual(a.v_vida_atual, maximo)
+        depois = max(0, min(maximo, antes - valor))
+        a.v_vida_atual.set(str(depois))
+        txt = f"Vida: {antes} → {depois}"
+        if depois == 0 and antes > 0:
+            txt += "  — INCAPAZ: role o Portão da Morte no início do seu turno."
+        oque = f"Cura de {-valor}" if valor < 0 else f"{valor} de dano" + (f" ({tipo})" if tipo else "")
+        a.registrar("📣 Do mestre", [oque + (f" — {desc}" if desc else ""), txt])
+        return txt
+
+    def efeitos(self, lista, rodada):
+        self.app.efeitos_mestre = list(lista)
+        self.app.recalc()
+
+    def aviso(self, texto):
+        pass   # o próprio diário já registra o dano; condições aparecem na aba Combate
 
 
 REGRAS_TXT = """Fórmulas (PREVA 3.1)

@@ -1,6 +1,6 @@
 # Ficha Prevalecentes 3.1
 
-Ficha de personagem automatizada para o RPG Prevalecentes (PREVA 3.1), com modo de sessão em rede local para os jogadores levantarem a mão sem interromper a cena.
+Ficha de personagem automatizada para o RPG Prevalecentes (PREVA 3.1), com sessão em rede local: painel do mestre com a Vida, Mana e Vigor dos jogadores em tempo real, dano e condições enviados pela mesa, e mão levantada.
 
 ## Uso
 
@@ -27,18 +27,24 @@ Execute `GERAR_EXE.bat`. O script instala PyInstaller, reportlab e segno, compil
 - Comparação entre duas fichas.
 - Exportação da ficha em PDF.
 - Modo noturno.
+- **Modo Edição e Modo Jogo.** Criar ou subir de nível, escolher talentos, armas, encantamentos e equipamento só no Modo Edição (ficha nova abre nele). No Modo Jogo, usado na mesa, essas escolhas ficam travadas e continuam liberados Vida/Mana/Vigor, rolagens, condições, Portão da Morte, inventário e anotações. Troque pelo botão no topo da ficha. Fichas abertas do disco começam no Modo Jogo.
 
 As fórmulas utilizadas estão em Ajuda > Regras usadas nos cálculos.
 
-## Sessão: levantar a mão
+## Sessão na rede local
 
-Permite que os jogadores sinalizem ao mestre que querem falar. Funciona na mesma rede local (Wi-Fi ou cabo). Existe uma única sessão por rede.
+Liga o mestre aos jogadores na mesma rede local (Wi-Fi ou cabo). Existe uma única sessão por rede.
 
-**Mestre:** abra Sessão e selecione "Entrar como mestre". A tela mostra a fila de mãos levantadas, na ordem. "Dar a palavra" (ou duplo clique no nome) avisa o jogador e baixa a mão dele.
+**Mestre:** abra Sessão e selecione "Entrar como mestre". Abre o painel do mestre:
 
-**Jogador no computador:** abra Sessão e selecione "Entrar como jogador". O programa localiza o mestre automaticamente. Se não localizar, informe o IP exibido na tela do mestre.
+- Um cartão por jogador com o personagem, barras de Vida, Mana e Vigor, nível, CA, movimento, iniciativa, Portão da Morte (quando a Vida chega a 0), acúmulos de condição e se está no celular ou sem sinal. Atualiza sozinho quando o jogador muda a ficha.
+- **Dano / Cura:** valor, tipo de dano e descrição. É aplicado direto na Vida do personagem e o jogador recebe o aviso (também fica no diário dele). Marque vários jogadores para enviar a todos de uma vez.
+- **Condição:** nome, duração em rodadas (0 = até o mestre remover) e descrição. Aparece na ficha do jogador, na aba Combate. "Próxima rodada ▶" conta as rodadas e retira as condições que terminam, avisando o jogador. O ✕ no cartão remove uma condição antes da hora.
+- À direita, a fila de mãos levantadas ("Dar a palavra" avisa o jogador e baixa a mão dele) e o registro de tudo que o mestre enviou.
 
-**Jogador no celular:** aponte a câmera para o QR code da tela do mestre, ou abra o endereço exibido nela (`http://IP:5760`), informe o nome e toque em "Levantar a mão". Não requer instalação.
+**Jogador no computador:** abra a ficha, depois Sessão → "Entrar como jogador". O programa localiza o mestre automaticamente; se não localizar, informe o IP exibido na tela do mestre. A ficha aberta é enviada ao painel do mestre e recebe dano e condições.
+
+**Jogador no celular:** aponte a câmera para o QR code da tela do mestre, ou abra o endereço exibido nela (`http://IP:5760`). O PC do mestre entrega a ficha completa do celular: informe seu nome, abra ou crie a ficha e jogue. A barra acima das abas mostra a rodada, as condições do mestre e o botão ✋. Não requer instalação nem internet. As fichas desse endereço ficam guardadas no celular separadas das do app instalado: use Exportar/Abrir .json para passar de um para o outro. (A página antiga, só com o botão de mão, continua em `http://IP:5760/mao`.)
 
 Observações:
 
@@ -47,21 +53,21 @@ Observações:
 - Na primeira execução como mestre, o Firewall do Windows solicita permissão. Permita o acesso em redes privadas.
 - Redes que isolam dispositivos entre si (Wi-Fi de visitantes, hotéis, escolas) impedem a conexão.
 - Portas utilizadas: 5757 (TCP), 5758 (UDP) e 5760 (HTTP).
-- A sessão troca apenas o sinal de mão levantada. Nenhum dado da ficha é transmitido.
+- A sessão envia ao mestre só o resumo da ficha (nome, espécie, nível, Vida, Mana, Vigor, CA, movimento, iniciativa, Portão da Morte e acúmulos de condição).
 - Celular com a tela bloqueada continua na mesa: o mestre vê "(sem sinal)" ao lado do nome depois de 20 segundos e a mão continua na fila. O jogador só sai da mesa depois de 10 minutos sem contato.
 - Se a conexão cair, o jogador no computador vê "Conexão perdida" e um botão para conectar de novo. Quando o mestre não é encontrado na rede, o programa sugere o último IP usado.
 
 ## App de celular (ficha de mesa)
 
-Versão para usar na mesa pelo celular: Vida, Mana e Vigor, atributos, características, perícias, armas com ações, rolagens de ataque e conjuração, grimório e talentos. Abre os mesmos arquivos `.json` do programa de PC e funciona sem internet depois de instalado.
+Versão para usar na mesa pelo celular: Vida, Mana e Vigor, atributos, características, perícias, armas com ações, rolagens de ataque e conjuração, grimório, talentos e bolsa (inventário com carga, dinheiro e peças de set com os bônus ativos). Também tem Modo Jogo e Modo Edição, como no PC. Abre os mesmos arquivos `.json` do programa de PC e funciona sem internet depois de instalado.
 
 **Instalar no Android:** abra https://grnguidi.github.io/FichaPreval/ no Chrome e toque em ⋮ → "Instalar app" (ou "Adicionar à tela inicial").
 
 - "Abrir arquivo .json" carrega uma ficha salva pelo PC. As fichas ficam guardadas no celular.
 - Para levar de volta ao PC: menu ☰ → Exportar ficha (.json).
-- O que o app de mesa não edita (alma, inventário, set, notas) é mantido ao exportar.
+- O que o app de mesa não edita (alma, notas) é mantido ao exportar.
 
-**Para desenvolver:** o código está em `celular/`. Depois de mudar algo, rode `py celular/build.py` para gerar a pasta `docs/`, que é o que o GitHub Pages publica. Os dados do livro e a tabela de efeitos de talento vêm de `dados_prevalecentes.py` e `regras.py`, então PC e celular continuam iguais. `sh celular/testes/rodar.sh` confere que as regras do celular dão os mesmos resultados que as do PC (requer Node.js).
+**Para desenvolver:** o código está em `celular/`. Depois de mudar algo, rode `py celular/build.py` para gerar a pasta `docs/`, que é o que o GitHub Pages publica, e o `pagina_celular.py`, que é a mesma ficha servida pelo PC do mestre na sessão. Os dados do livro e a tabela de efeitos de talento vêm de `dados_prevalecentes.py` e `regras.py`, então PC e celular continuam iguais. `sh celular/testes/rodar.sh` confere que as regras do celular dão os mesmos resultados que as do PC (requer Node.js).
 
 ## Dados do livro
 
@@ -79,7 +85,8 @@ As fichas são salvas manualmente em arquivos `.json` (Ctrl+S) e abertas com Ctr
 | `regras.py` | Cálculos das regras, sem interface |
 | `assistente.py` | Assistente de criação de personagem |
 | `pdf_ficha.py` | Exportação para PDF |
-| `sessao.py` | Sessão em rede e página do celular |
+| `sessao.py` | Sessão em rede e painel do mestre |
+| `pagina_celular.py` | Ficha do celular servida pelo mestre (gerado por `celular/build.py`) |
 | `dados_prevalecentes.py` | Dados do livro embutidos |
 | `dados_livro (para editar).json` | Cópia editável dos dados do livro |
 | `GERAR_EXE.bat` | Gera o executável |
