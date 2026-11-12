@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, font as tkfont
 
 import regras as R
+import sessao
 from dados_prevalecentes import DADOS as _DADOS_EMBUTIDOS
 
 APP_NOME = "Ficha Prevalecentes 3.1"
@@ -410,6 +411,9 @@ class App(tk.Tk):
         fi.add_command(label="Refazer distribuição inicial…", command=lambda: self.inicializar() if self.inicializado else self.novo())
         fi.add_command(label="Comparar duas fichas…", command=self.comparar)
         m.add_cascade(label="Ficha", menu=fi)
+        se = tk.Menu(m, tearoff=0)
+        se.add_command(label="Levantar a mão / Mesa do mestre…", command=self.abrir_sessao)
+        m.add_cascade(label="Sessão", menu=se)
         ex = tk.Menu(m, tearoff=0)
         ex.add_command(label="Alternar modo noturno", command=self.alternar_tema, accelerator="Ctrl+T")
         m.add_cascade(label="Exibir", menu=ex)
@@ -456,6 +460,7 @@ class App(tk.Tk):
         ttk.Button(ext, text="☀ Modo diurno" if NOTURNO else "☾ Modo noturno", command=self.alternar_tema).pack(fill="x", pady=1)
         ttk.Button(ext, text="⚖ Comparar fichas", command=self.comparar).pack(fill="x", pady=1)
         ttk.Button(ext, text="📜 Exportar PDF", command=self.exportar_pdf).pack(fill="x", pady=1)
+        ttk.Button(ext, text="✋ Sessão", command=self.abrir_sessao).pack(fill="x", pady=1)
         pts = tk.Frame(ban, bg=FUNDO)
         pts.pack(side="right", anchor="n")
         tk.Label(pts, text="PONTOS DE ATRIBUTO", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 8, "bold")).pack(anchor="e")
@@ -2843,7 +2848,32 @@ class App(tk.Tk):
 
     def fechar(self):
         if self._descartar_ok():
+            if getattr(self, "janela_sessao", None):
+                try:
+                    self.janela_sessao.fechar()
+                except tk.TclError:
+                    pass
             self.destroy()
+
+    def abrir_sessao(self):
+        """Janela de sessão em rede: o jogador levanta a mão, o mestre recebe o aviso."""
+        j = getattr(self, "janela_sessao", None)
+        if j is not None:
+            try:
+                j.deiconify()
+                j.lift()
+                return
+            except tk.TclError:
+                pass
+        cores = dict(FUNDO=FUNDO, CAMPO=CAMPO, VINHO=VINHO, OURO=OURO, OURO2=OURO2, VERDE=VERDE,
+                     ALERTA=ALERTA, TINTA2_FUNDO=MESA_TXT, FONTE=FONTE, ULTIMO_IP=ler_pref().get("sessao_ip", ""))
+
+        def ao_fechar(ip):
+            self.janela_sessao = None
+            if ip:
+                gravar_pref(sessao_ip=ip)
+
+        self.janela_sessao = sessao.JanelaSessao(self, cores, self.v_nome.get().strip(), ao_fechar)
 
     def mostrar_regras(self):
         w = tk.Toplevel(self)
