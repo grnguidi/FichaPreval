@@ -22,7 +22,7 @@ Execute `GERAR_EXE.bat`. O script instala PyInstaller, reportlab e segno, compil
 - Cálculo automático de Curva, Bônus de Combate, Vida, Mana, Vigor, CA, Carga, Movimento, Iniciativa, ações extras, Redução de Dano, Resistências, Descoberta, perícias, ataques, defesas e DTs.
 - Controle de pontos de atributo por nível, com painel de avisos para pendências.
 - Menus de armas, encantamentos, talentos, armaduras, escudos, talismãs e sets, indicando o que está disponível e o motivo de cada restrição.
-- Assistente de criação de personagem, seguindo o capítulo "Criando seu Personagem".
+- Assistente de criação de personagem, seguindo o capítulo "Criando seu Personagem", com nível inicial (personagem novo entra no nível do grupo) e Caminho da Meta de Vida. No celular, o mesmo passo a passo.
 - Rolagens de ataque, conjuração e perícias (1d20 a mais a cada 20 pontos do atributo, fica o maior), com consumo de Vigor e Mana e diário de rolagens.
 - Propriedades de armas: lista das 16 propriedades do livro com o limite da arma (tabela do nível + Domínio). Os efeitos entram sozinhos: Afiada, Cruel e Poderosa no dano, Pesada sobe o dado e dobra a Força exigida, Certeira e Destruidora no crítico, Equilibrada no ataque, Elemental/Sagrada/Profana rolam o 1d6 extra, Reforçada aumenta o desgaste para 4, Voraz cura no crítico e Discreta dá +5 em Furtividade.
 - Talentos com escolha (Maestria, Maestria dupla, Domínio, Matrícula, Matrícula avançada, Condição Endurecida, Mestre das Perícias): ao lado do talento você escolhe a arma, a escola, a condição ou a perícia, e o efeito vale só para ela (acerto +1 na arma da Maestria, propriedade extra na arma do Domínio, −Mana e −espaço nos encantamentos da escola, +20 na barra da condição, +2 e 1 vantagem na perícia).
@@ -30,6 +30,16 @@ Execute `GERAR_EXE.bat`. O script instala PyInstaller, reportlab e segno, compil
 - Desgaste de armas: 3 turnos afiados, o crítico reafia; a arma desgastada fica um turno parada.
 - Descanso curto e longo (Vida, Mana, Vigor e barras de condição) e Poção Espiritual.
 - Inventário com a lista de Itens Diversos do livro (peso já preenchido), quantidade e botão de usar consumíveis (poções de Mana e Vigor, antídotos…). A Mochila soma +5 de Carga; peças de set pesam 1.
+- **Turno:** Comum, Bônus, Movimento e Reação mais as ações extras da Destreza (cada uma escolhida uma vez como Comum ou Bônus). Ataques, encantamentos, itens e habilidades da Alma marcam a ação sozinhos e avisam quando não sobrava. "Novo turno" e "Novo combate" renovam; na sessão, o turno renova quando o mestre passa a vez e o combate quando ele rola a iniciativa ou encerra o combate.
+- **Ações do livro** (Agarrar, Derrubar, Esconder, Provocar, Golpe de Oportunidade…) com a rolagem certa: Atletismo, Furtividade, DT de Provocar (10 + BC de Mente + nível ÷ 3) ou ataque com a arma.
+- **Ações das armas** como botões: "Usar" marca a ação do turno e "Rolar" ataca com os ajustes lidos do texto (níveis de dano, vantagem/desvantagem, crítico garantido, multiplicador, teste do alvo com a DT). Contadores da mecânica de cada arma (Momentum, Cartuchos, Flechas, Melodias…).
+- **Defesas e Contradomínio:** rolar Fortitude, Reflexo, Vontade e Astúcia; Contradomínio com o limite por combate (+2 com Contra-encantador); Coordenação do Uso duplo contra DT 8 + maior nível de arma.
+- **Usos limitados:** talentos e talismãs "1x por combate/descanso" e os usos da Alma, recarregados no turno, no fim do combate e nos descansos.
+- **Alma:** montador de habilidades pela Tabela de valores do livro (categorias, ajustes de Facilitando e dificultando, execução), com o valor e a DT calculados; "Usar e rolar" gasta um uso e rola o dano.
+- **Metas de Vida:** os 9 Caminhos do livro com as 3 etapas em ordem e o mentor. Cada Meta concluída abre um slot de talento (M1–M5); a primeira dá +5 pontos de atributo.
+- **Dinheiro em Contos, prata, ouro e Contilha**, com conversão, e compra de itens do livro descontando o preço.
+- O diário de rolagens fica guardado na ficha (as 100 mais recentes).
+- Acerto do cajado/selo somado ao conjurar, como o acerto da arma.
 - Comparação entre duas fichas.
 - Exportação da ficha em PDF.
 - Modo noturno.
@@ -74,7 +84,7 @@ Versão para usar na mesa pelo celular: Vida, Mana e Vigor, atributos, caracter�
 
 - "Abrir arquivo .json" carrega uma ficha salva pelo PC. As fichas ficam guardadas no celular.
 - Para levar de volta ao PC: menu ☰ → Exportar ficha (.json).
-- O que o app de mesa não edita (alma, notas) é mantido ao exportar.
+- O celular tem as mesmas funções de mesa do PC (turno, usos, ações de arma, Alma com montador, Metas de Vida, dinheiro, diário) e "🖨 Imprimir / salvar PDF" no menu. A ficha vai e volta entre PC e celular sem perder nada.
 
 **Para desenvolver:** o código está em `celular/`. Depois de mudar algo, rode `py celular/build.py` para gerar a pasta `docs/`, que é o que o GitHub Pages publica, e o `pagina_celular.py`, que é a mesma ficha servida pelo PC do mestre na sessão. Os dados do livro e a tabela de efeitos de talento vêm de `dados_prevalecentes.py` e `regras.py`, então PC e celular continuam iguais. `sh celular/testes/rodar.sh` confere que as regras do celular dão os mesmos resultados que as do PC (requer Node.js).
 

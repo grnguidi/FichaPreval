@@ -45,7 +45,7 @@ class Assistente(tk.Toplevel):
         self._lista_enc = []
         sv, bv = tk.StringVar, tk.BooleanVar
         self.v = {
-            "nome": sv(), "player": sv(), "sonho": sv(),
+            "nome": sv(), "player": sv(), "sonho": sv(), "nivel": sv(value="1"), "caminho": sv(),
             "sem_alma": bv(value=False), "alma_nome": sv(), "alma_atr": sv(value="INT"),
             "alma_hist": "", "pas_nome": sv(), "pas_ef": sv(), "atv_nome": sv(), "atv_ef": sv(),
             "especie": sv(), "esp_bon": sv(), "esp_pre": sv(), "esp_val": sv(value="0"), "esp_notas": "",
@@ -182,6 +182,9 @@ class Assistente(tk.Toplevel):
             a[k] = _int(self.v["ini"][k].get()) + (n if k == bon else -n if k == pre else 0)
         return a
 
+    def nivel(self):
+        return max(1, min(R.NIVEL_MAX, _int(self.v["nivel"].get(), 1)))
+
     def max_pericias(self):
         a = self.atributos()
         return 5 + max(R.cap(a["INT"]), R.cap(a["MEN"])) // 10
@@ -196,6 +199,10 @@ class Assistente(tk.Toplevel):
         self._rot(f, "Sonho", 2)
         ttk.Entry(f, textvariable=self.v["sonho"], width=60).grid(row=2, column=1, sticky="w")
         self._dica(f, "Ex.: \"Encontrar a Intérprete para trazer meu irmão de volta\", \"Provar que minha espécie não é amaldiçoada\".", 3)
+        self._rot(f, "Nível inicial", 4)
+        ttk.Spinbox(f, from_=1, to=R.NIVEL_MAX, textvariable=self.v["nivel"], width=5).grid(row=4, column=1, sticky="w")
+        self._dica(f, "Personagem novo entra no nível do grupo. Acima do 1, a ficha abre no Modo Edição para distribuir os pontos "
+                      "de nível e escolher os talentos.", 5)
 
     def _p_alma(self):
         c, f = self.c, self.corpo
@@ -393,9 +400,12 @@ class Assistente(tk.Toplevel):
         ttk.Entry(f, textvariable=self.v["vinc_grupo"], width=60).grid(row=0, column=1, sticky="we")
         self._rot(f, "Vínculo com o mundo", 1)
         ttk.Entry(f, textvariable=self.v["vinc_mundo"], width=60).grid(row=1, column=1, sticky="we")
-        self._rot(f, "Metas de vida", 2)
-        ttk.Entry(f, textvariable=self.v["metas"], width=60).grid(row=2, column=1, sticky="we")
-        self._dica(f, "Pode deixar em branco e preencher depois na aba Talentos (seção Vínculos e metas).", 3, cols=2)
+        self._rot(f, "Caminho da Meta de Vida", 2)
+        ttk.Combobox(f, values=[""] + [f"{n} ({p})" for n, p, _ in R.CAMINHOS], textvariable=self.v["caminho"], width=30,
+                     state="readonly").grid(row=2, column=1, sticky="w")
+        self._rot(f, "Notas da Meta", 3)
+        ttk.Entry(f, textvariable=self.v["metas"], width=60).grid(row=3, column=1, sticky="we")
+        self._dica(f, "Pode deixar em branco e preencher depois na aba Talentos (seções Metas de Vida e Vínculos).", 4, cols=2)
 
     def _p_resumo(self):
         c, f = self.c, self.corpo
@@ -403,7 +413,7 @@ class Assistente(tk.Toplevel):
         d = R.derivadas(a, 1, set(), 7 * R.curva(a["VIT"]))
         per = [n for n, v in self.v["per"].items() if v.get()]
         linhas = [
-            ("Personagem", f"{self.v['nome'].get() or '—'}  (player: {self.v['player'].get() or '—'})"),
+            ("Personagem", f"{self.v['nome'].get() or '—'}  (player: {self.v['player'].get() or '—'}) · nível {self.nivel()}"),
             ("Sonho", self.v["sonho"].get() or "—"),
             ("Alma", "sem alma (+2 pontos por nível)" if self.v["sem_alma"].get() else (self.v["alma_nome"].get() or "com alma, sem nome")),
             ("Espécie", (self.v["especie"].get() or "—") + (f"  (+{self.v['esp_val'].get()} {self.v['esp_bon'].get()}, "
@@ -425,6 +435,8 @@ class Assistente(tk.Toplevel):
         self._guardar_textos()
         if i == 0 and not self.v["nome"].get().strip():
             return "Dê um nome ao personagem."
+        if i == 0 and not 1 <= _int(self.v["nivel"].get(), 0) <= R.NIVEL_MAX:
+            return f"O nível inicial vai de 1 a {R.NIVEL_MAX}."
         if i == 2:
             n = _int(self.v["esp_val"].get())
             b, p = self.v["esp_bon"].get(), self.v["esp_pre"].get()
@@ -472,7 +484,7 @@ class Assistente(tk.Toplevel):
         especie = v["especie"].get().strip()
         estado = {
             "inicializado": True, "sem_alma": v["sem_alma"].get(),
-            "identidade": {"nome": v["nome"].get().strip(), "player": v["player"].get().strip(), "nivel": 1,
+            "identidade": {"nome": v["nome"].get().strip(), "player": v["player"].get().strip(), "nivel": self.nivel(),
                            "especie": especie, "sonho": v["sonho"].get().strip(), "guilda": ""},
             "atributos": {k: {"inicial": v["ini"][k].get(), "niveis": "0", "especie": str(n if k == kb else -n if k == kp else 0) if n else "0",
                               "bonus": "0"} for k in R.ATRIBUTOS},
@@ -481,6 +493,8 @@ class Assistente(tk.Toplevel):
             "encantamentos": encs,
             "alma": {"nome": v["alma_nome"].get(), "atr": v["alma_atr"].get(), "historia": v["alma_hist"], "habilidades": hab},
             "vinculos": {"grupo": v["vinc_grupo"].get(), "mundo": v["vinc_mundo"].get(), "metas": v["metas"].get()},
+            "meta": {"caminho": v["caminho"].get().split(" (")[0], "mentor": "", "etapas": [False, False, False], "concluidas": 0,
+                     "notas": v["metas"].get()},
             "especie_notas": v["esp_notas"].strip(),
         }
         self.grab_release()
