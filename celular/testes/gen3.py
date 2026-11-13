@@ -66,6 +66,14 @@ for _ in range(500):
                    "txt": txt, "ler": R.ler_dinheiro(txt), "preco": R.preco_em_contos(txt), "metas": R.recompensa_metas(rnd.randint(-1, 7)),
                    "metas_in": None})
     extras[-1]["metas_in"] = rnd.randint(-1, 7); extras[-1]["metas"] = R.recompensa_metas(extras[-1]["metas_in"])
+sets_t = []
+for _ in range(300):
+    at = [(x["nome"], q, x["p2"], x["p4"] if q >= 4 else "") for x in rnd.sample(DADOS["sets"], rnd.randint(0, 4)) for q in [rnd.choice([2, 3, 4])]]
+    arc, tal = rnd.randint(0, 120), rnd.sample(["Mente Arcana", "Senhor das Condições", "Outro"], rnd.randint(0, 3))
+    ex = rnd.choice(["2d6 + 1", "1d8", "3d12 + 2d4 + 5", "2d10"]); cn = rnd.choice(["Morte", "Veneno", "Sono"])
+    ae = list(R.arcano_escala(arc, set(tal)))
+    sets_t.append({"at": at, "conds": R.condicoes_de_set(at), "arc": arc, "tal": tal, "ae": ae, "ex": ex, "cn": cn,
+                   "esc": R.escalar_arcano(ex, ae[0], cn, ae[1])})
 rec = [[p_, e, R.recarrega(p_, e)] for p_ in list(R.NIVEL_RECARGA) for e in R.EVENTO_RECARGA]
-json.dump({"casos": casos, "itens": DADOS["itens"], "acoes": acoes, "usos": usos, "extras": extras, "rec": rec}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
+json.dump({"casos": casos, "itens": DADOS["itens"], "acoes": acoes, "usos": usos, "extras": extras, "rec": rec, "sets": sets_t}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
 print(len(casos), "casos")

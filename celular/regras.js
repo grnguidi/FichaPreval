@@ -254,16 +254,33 @@
     }
     return out;
   }
-  function escalarArcano(expr, arcano, condicao) {
+  function escalarArcano(expr, arcano, condicao, copiasExtra = 0) {
     const arc = cap(arcano), dados = [...String(expr).matchAll(/(\d+)d(\d+)/g)].map((m) => [+m[1], +m[2]]);
     const fixo = [...String(expr).matchAll(/\+\s*(\d+)(?!\d|d)/g)].reduce((t, m) => t + +m[1], 0);
     if (!dados.length) return expr;
-    const copias = condicao === "Morte" ? 0 : Math.floor(arc / 20), inferiores = Math.floor(arc / 15), soma = {};
+    const copias = condicao === "Morte" ? 0 : Math.floor(arc / 20) + copiasExtra, inferiores = Math.floor(arc / 15), soma = {};
     for (const [q, f] of dados) soma[f] = (soma[f] || 0) + q * (1 + copias);
     const maior = Math.max(...dados.map((x) => x[1]));
     if (inferiores) { const inf = DADO_INFERIOR[maior] || 4; soma[inf] = (soma[inf] || 0) + inferiores; }
     const partes = Object.entries(soma).sort((a, b) => b[0] - a[0]).map(([f, q]) => `${q}d${f}`);
     return partes.join(" + ") + (fixo ? ` + ${fixo}` : "");
+  }
+  const arcanoEscala = (arcano, talentos) => [cap(arcano) + (talentos.has("Mente Arcana") ? 10 : 0), talentos.has("Senhor das Condições") ? 1 : 0];
+  const SET_COND = /(acertos? cr[íi]ticos?|acerto cr[íi]tico|acertos?)\b[^.]*?\baplica\S* (?:mais )?(\d+) pontos de (Veneno|Podridão|Sangramento|Congelamento|Sono|Loucura|Morte)/gi;
+  function condicoesDeSet(ativos) {
+    const out = [];
+    for (const [nome, , e2, e4] of ativos) {
+      for (const txt of [e2, e4]) {
+        for (const m of String(txt || "").matchAll(SET_COND)) {
+          const nota = [];
+          if (/1x por turno/i.test(txt)) nota.push("1x por turno");
+          const m2 = String(e4 || "").match(/dobram contra ([^.]+?)\./i);
+          if (m2) nota.push("dobra contra " + m2[1]);
+          out.push({ set: nome, pontos: +m[2], condicao: m[3].charAt(0).toUpperCase() + m[3].slice(1).toLowerCase(), critico: m[1].toLowerCase().includes("crít"), nota: nota.join(", ") });
+        }
+      }
+    }
+    return out;
   }
   const pesoPecasSet = (pecas) => PECAS_SET_PESO.filter((p) => (pecas[p] || {}).set || (pecas[p] || {}).nome).length;
   function cargaExtraItens(inv, itensLivro) {
@@ -355,7 +372,7 @@
 
   // ---------------- Ações em combate, usos, ações de arma, Alma, Metas, dinheiro (tabelas vêm de regras.py) ----------------
   const { TIPOS_ACAO, ACOES_LIVRO, NIVEL_RECARGA, EVENTO_RECARGA, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES,
-    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS } = LIVRO;
+    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO } = LIVRO;
   const dtProvocar = (d, nivel) => 10 + d.bc.MEN + Math.floor(nivel / 3);
   function acoesDoTurno(extras, tipos) {
     const q = { Comum: 1, "Bônus": 1, Movimento: 1, "Reação": 1 };
@@ -410,8 +427,28 @@
     m = tl.match(/teste de (fortitude|reflexos?|vontade|ast[úu]cia)\s*\(dt 10 \+ b[ôo]nus de combate de (\w+)/);
     if (m) { out.teste = capitaliza(m[1]); out.dt_attr = ATR_POR_NOME[capitaliza(m[2])] || ""; }
     else { m = tl.match(/(?:resist[êe]ncia com|teste de) (fortitude|reflexos?|vontade|ast[úu]cia)/); if (m) out.teste = capitaliza(m[1]); }
+    // vários disparos/golpes e munição gasta (flechas, virotes, cartuchos, frascos)
+    Object.assign(out, { golpes: 1, ate: false, um_acerto: false, municao: 0, municao_tipo: "" });
+    if (out.nota || out.passiva) return out;
+    const NUM = "(\\d+|uma?|dois|duas|três|quatro|cinco)", MUN = "(flechas?|virotes?|cartuchos?|frascos?)";
+    const nx = (q) => N_EXT[q] || parseInt(q, 10);
+    m = tl.match(new RegExp("at[ée] (?:o m[áa]ximo de )?" + NUM + " " + MUN));
+    if (m) { out.golpes = nx(m[1]); out.ate = true; }
+    else { m = tl.match(new RegExp("gast\\w* " + NUM + " " + MUN + " em uma (?:[úu]nica )?a[çc][ãa]o")); if (m) out.golpes = nx(m[1]); }
+    m = tl.match(new RegExp("(?:gast\\w*|consome|disparar?) (?:at[ée] (?:o m[áa]ximo de )?)?" + NUM + " " + MUN));
+    if (m) { out.municao = nx(m[1]); out.municao_tipo = m[2].replace(/s$/, ""); }
+    else {
+      m = tl.match(new RegExp("(?<!at[ée] )(?:gastar|gasta) (?:todas|todos)(?: os)? ?" + MUN + "?"));
+      const qualquer = tl.match(new RegExp(MUN));
+      if (m && (m[1] || qualquer)) { out.municao = -1; out.municao_tipo = (m[1] || qualquer[1]).replace(/s$/, ""); }
+    }
+    if (out.golpes > 1 && !out.municao) out.municao = out.golpes;
+    out.um_acerto = out.golpes > 1 && /[úu]nica jogada de acerto|um [úu]nico teste de acerto|mesmo acerto/.test(tl);
+    if (out.municao > 1 && /n[íi]vel de dano para cada (?:flecha|virote|cartucho|frasco)/.test(tl)) out.delta *= out.municao;
+    if (out.golpes > 1 || out.municao) out.ataque = out.ataque || (/dispar|flecha|virote|explos/.test(tl) && !out.passiva);
     return out;
   }
+  const N_EXT = { um: 1, uma: 1, dois: 2, duas: 2, "três": 3, quatro: 4, cinco: 5 };
   function linhaDanoNivel(tabela, nv, delta) {
     const alvo = Math.max(1, Math.min(10, nv + delta));
     return [tabela.find((x) => x.nivel === alvo) || tabela[tabela.length - 1], alvo];
@@ -460,10 +497,10 @@
     EFEITOS_TALENTOS, ARMADURAS_PESADAS, efeitosTalentos, rolarExpr, rolarAtaque, custoMana, danoDoEncantamento,
     TIPOS_DANO, NOMES_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS,
     receberCondicao, defesasContraDano, rolarPericia, rolarDefesa, descanso, pocaoEspiritualDados, desgasteAposAtaque,
-    condicoesDoEncantamento, escalarArcano, pesoPecasSet, cargaExtraItens, pesoInventario,
+    condicoesDoEncantamento, escalarArcano, arcanoEscala, condicoesDeSet, pesoPecasSet, cargaExtraItens, pesoInventario,
     ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
     PROPRIEDADES, NOMES_PROPRIEDADES, ELEMENTOS_PROP, lerProps, nomeProp, problemasProps, subirDado, efeitoProps, reqComProps,
-    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS,
+    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO,
     dtProvocar, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
     precoEmContos, separarMoedas, formatarDinheiro, lerDinheiro,
   };

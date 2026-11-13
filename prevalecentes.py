@@ -693,7 +693,9 @@ class App(tk.Tk):
             col0 = bloco * 6
             v = self.var(False, tk.BooleanVar)
             self.ed(ttk.Checkbutton(c, variable=v)).grid(row=r, column=col0, padx=(4, 0))
-            tk.Label(c, text=nome + ("  •" if req else ""), bg=PERG, fg=TINTA, font=(FONTE, 10), anchor="w").grid(row=r, column=col0 + 1, sticky="w", padx=6, pady=1)
+            ln = tk.Label(c, text=nome + ("  •" if req else ""), bg=PERG, fg=TINTA, font=(FONTE, 10), anchor="w", cursor="question_arrow")
+            ln.grid(row=r, column=col0 + 1, sticky="w", padx=6, pady=1)
+            ln.bind("<Button-1>", lambda e, n=nome: self.info_pericia(n))
             if atrs is None:
                 self.ed(ttk.Combobox(c, values=R.ATRIBUTOS, textvariable=self.v_prev_attr, width=5, state="readonly")).grid(row=r, column=col0 + 2, sticky="w", padx=6)
             else:
@@ -2446,9 +2448,15 @@ class App(tk.Tk):
         ok, txt_custo = self._pagar(self.v_vigor_atual, self.d["vigor"], vig, "Vigor")
         if not ok:
             return
-        at = R.rolar_ataque(bonus, R.vantagem(self.a[k]) or o.get("vant") == 1, ep["margem"], self._rng, desvantagem=o.get("vant") == -1)
-        if o.get("critico") and not at["desastre"]:
-            at["critico"] = True
+        golpes = max(1, int(o.get("golpes") or 1))
+        ataques = []   # um teste de acerto por disparo, ou um só para todos ("única jogada de acerto")
+        for g in range(golpes):
+            if g == 0 or not o.get("um_acerto"):
+                at_g = R.rolar_ataque(bonus, R.vantagem(self.a[k]) or o.get("vant") == 1, ep["margem"], self._rng, desvantagem=o.get("vant") == -1)
+                if o.get("critico") and not at_g["desastre"]:
+                    at_g["critico"] = True
+            ataques.append(at_g)
+        at = dict(ataques[0], critico=any(x["critico"] for x in ataques), desastre=all(x["desastre"] for x in ataques))
         mult = max(ep["mult"], int(o.get("mult") or 0))
         # desgaste: conta 1 turno afiado por turno em que atacou (na sessão, pelo turno do mestre; fora dela, por ataque)
         turno = self.meus_turnos if self.janela_sessao is not None and self.meus_turnos else None
@@ -2457,18 +2465,39 @@ class App(tk.Tk):
             dg["contado"] = turno if turno is not None else -1
             if gastou:
                 dg.update(desgastada=True, em=self.meus_turnos)
-        linhas = [self._txt_ataque(at)]
+        linhas = []
+        if golpes > 1:
+            linhas.append(f"{golpes} disparos/golpes, " + ("uma só jogada de acerto para todos." if o.get("um_acerto") else "um teste de acerto para cada."))
+        soma = 0
+        for g, at_g in enumerate(ataques):
+            pre = f"#{g + 1}  " if golpes > 1 else ""
+            if g == 0 or not o.get("um_acerto"):
+                linhas.append(pre + self._txt_ataque(at_g))
+            if at_g["desastre"]:
+                continue
+            total, partes = R.rolar_expr(ep["dano"], self._rng, dobrar=at_g["critico"], mult=mult)
+            soma += total
+            linhas.append(pre + self._txt_dano(total, partes) + f"  · {linha_dano['tipo']}" + (f"  · dano de nível {nv_dano}" if nv_dano != nv else "")
+                          + (f"  · crítico ×{mult}" if at_g["critico"] and mult > 2 else ""))
+            for x, tipo, cnd in ep["extras"]:
+                t2, p2 = R.rolar_expr(x, self._rng, dobrar=at_g["critico"], mult=mult)
+                soma += t2
+                linhas.append(pre + self._txt_dano(t2, p2).replace("Dano:", f"+ {tipo}:") + (f"  ({cnd})" if cnd else ""))
+        if not at["desastre"]:
+            linhas += self._linhas_set(at["critico"])
+        if golpes > 1 and not at["desastre"]:
+            linhas.append(f"Dano somado dos que acertarem — todos: {soma}. Desconte os disparos que errarem a CA do alvo.")
         if o.get("critico"):
             linhas.append("Crítico garantido por esta ação.")
         if o.get("acerto"):
             linhas.append("Acerto garantido por esta ação.")
+        if o.get("municao"):
+            linhas.append(self._gastar_municao(i, o.get("municao_tipo", ""), int(o["municao"])))
+        else:   # ataque comum de arco/besta gasta 1 flecha, se a aljava estiver sendo contada
+            n_m = self._recurso_municao(arma["nome"], "flecha")
+            if n_m and to_int(self.recursos.get(self._chave_recurso(i), {}).get(n_m), 0) > 0:
+                linhas.append(self._gastar_municao(i, "flecha", 1))
         if not at["desastre"]:
-            total, partes = R.rolar_expr(ep["dano"], self._rng, dobrar=at["critico"], mult=mult)
-            linhas.append(self._txt_dano(total, partes) + f"  · {linha_dano['tipo']}" + (f"  · dano de nível {nv_dano}" if nv_dano != nv else "")
-                          + (f"  · crítico ×{mult}" if at["critico"] and mult > 2 else ""))
-            for x, tipo, cnd in ep["extras"]:
-                t2, p2 = R.rolar_expr(x, self._rng, dobrar=at["critico"], mult=mult)
-                linhas.append(self._txt_dano(t2, p2).replace("Dano:", f"+ {tipo}:") + (f"  ({cnd})" if cnd else ""))
             if ep["voraz"] and at["critico"]:
                 cura, _ = R.rolar_expr("1d10", self._rng)
                 mx = self.d["vida"]
@@ -2565,10 +2594,14 @@ class App(tk.Tk):
         for ce, cn in conds:
             if at["desastre"]:
                 break
-            esc = R.escalar_arcano(ce, self.a["ARC"], cn)
+            arc, extra_c = R.arcano_escala(self.a["ARC"], self.talentos_escolhidos())
+            esc = R.escalar_arcano(ce, arc, cn, extra_c)
             total, partes = R.rolar_expr(esc, self._rng, dobrar=at["critico"])
             linhas.append(self._txt_dano(total, partes).replace("Dano:", f"{cn}:") + " pontos"
-                          + (f"  · {ce} → {esc} por {R.cap(self.a['ARC'])} de Arcano" if esc != ce else ""))
+                          + (f"  · {ce} → {esc} por {arc} de Arcano" if esc != ce else "")
+                          + (" (Mente Arcana +10)" if arc != R.cap(self.a["ARC"]) else "") + (" + 1 cópia (Senhor das Condições)" if extra_c and cn != "Morte" else ""))
+        if not at["desastre"]:
+            linhas += self._linhas_set(at["critico"])
         if expr and not at["desastre"]:
             extra = self.d["dados_extra_magia"] if k == "INT" else self.d["dados_extra_feitico"]
             total, partes = R.rolar_expr(R.dano_com_dados(expr, extra), self._rng, dobrar=at["critico"])
@@ -2889,6 +2922,31 @@ class App(tk.Tk):
         r.setdefault("bonus", b)
         self.registrar(f"🛡 {n}", [self._txt_d20(n, dict(r, bonus=b)), "Compare com a DT do efeito ou da habilidade do inimigo."])
 
+    def info_pericia(self, n):
+        """O que a perícia faz (clique no nome). No Modo Edição dá para treinar dali; no Modo Jogo, rolar."""
+        self.recalc()
+        resumo, usada = R.PERICIAS_RESUMO.get(n, ("", ""))
+        p = next((x for x in R.PERICIAS if x[0] == n), None)
+        atrs, req = (p[1], p[2]) if p else (None, False)
+        at = " ou ".join(R.NOMES_ATR[k] for k in atrs) if atrs else f"à escolha do jogador (agora {R.NOMES_ATR.get(self.v_prev_attr.get(), 'Arcano')})"
+        w, f = self._janela(n)
+        self._tit(f, n)
+        self._txt(f, f"Atributo: {at}" + (" · exige treino (sem treino, só um sucesso crítico passa)" if req else "")
+                  + (f" · Usada em: {usada}" if usada else ""), sub=True, pady=(0, 6))
+        self._txt(f, resumo, pady=(0, 6))
+        pi = self.per.get(n)
+        if pi and "calc" in pi:
+            b, dados = pi["calc"]
+            self._txt(f, f"Seu teste: {dados}d20 (fica o maior) +{b}. Treinada soma a Curva do atributo; todas somam nível ÷ 2.", sub=True)
+        self._txt(f, "DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80", sub=True, pady=(2, 0))
+        bf = tk.Frame(f, bg=PERG)
+        bf.pack(anchor="e", pady=(10, 0))
+        if pi and self.modo == "edicao":
+            ttk.Button(bf, text="Tirar o treino" if pi["var"].get() else "Treinar",
+                       command=lambda: (pi["var"].set(not pi["var"].get()), w.destroy())).pack(side="left", padx=(0, 6))
+        if pi:
+            ttk.Button(bf, text="🎲 Rolar", command=lambda: (w.destroy(), self.rolar_pericia(n))).pack(side="left")
+
     def rolar_pericia_ataque(self, n):
         self.recalc()
         atrs = next(x[1] for x in R.PERICIAS_ATAQUE if x[0] == n)
@@ -3035,6 +3093,37 @@ class App(tk.Tk):
         self._sig_armas_acoes = None
         self.agendar()
 
+    def _linhas_set(self, critico):
+        """Pontos de condição dos sets equipados ao acertar. Os números dos sets são fixos: o Arcano não escala."""
+        out = []
+        for c in R.condicoes_de_set(self.sets_ativos()[1]):
+            if c["critico"] and not critico:
+                continue
+            out.append(f"Set {c['set']}: +{c['pontos']} pontos de {c['condicao']} se acertar{' (crítico)' if c['critico'] else ''}"
+                       f" — valor fixo, o Arcano não escala sets{'; ' + c['nota'] if c['nota'] else ''}.")
+        return out
+
+    def _recurso_municao(self, grupo, tipo):
+        nomes = [n for n, _ in R.RECURSOS_ARMA.get(grupo, [])]
+        alvo = {"flecha": ("Flechas", "Virotes"), "virote": ("Virotes", "Flechas"), "cartucho": ("Cartuchos",), "frasco": ("Frascos",)}.get(tipo, ())
+        return next((n for n in alvo if n in nomes), None)
+
+    def _gastar_municao(self, i, tipo, qtd):
+        """Desconta a munição da ação (qtd −1 = todas) do contador da arma."""
+        g = self.armas_ui[i]["grupo"].get()
+        n = self._recurso_municao(g, tipo)
+        if not n:
+            return f"Gasta {'toda a' if qtd < 0 else qtd} {tipo or 'munição'}{'s' if qtd != 1 else ''}."
+        r = self.recursos.setdefault(self._chave_recurso(i), {})
+        tem = to_int(r.get(n), 0)
+        gasto = tem if qtd < 0 else qtd
+        r[n] = max(0, tem - gasto)
+        self._sig_armas_acoes = None
+        self.alterado = True
+        if qtd > tem:
+            return f"{n}: o contador tinha só {tem} (ficou 0). Ajuste no − / + da arma, na aba Combate."
+        return f"{n}: {tem} → {r[n]}."
+
     def _desenhar_armas_acoes(self):
         f = self.f_armas_acoes
         sig = repr([(ui["grupo"].get(), ui["nivel"].get()) for ui in self.armas_ui]) + repr(self.recursos)
@@ -3117,14 +3206,24 @@ class App(tk.Tk):
             if v is vd and not v.get().startswith("-") and v.get() != "0":
                 v.set("+" + v.get())
             ttk.Combobox(g, values=vals, textvariable=v, width=12, state="readonly").grid(row=1, column=j, sticky="w", padx=(0, 10))
+        vg = tk.StringVar(value=str(p["golpes"]))
+        if p["golpes"] > 1:
+            tk.Label(g, text="Disparos/golpes", bg=PERG, fg=TINTA2, font=(FONTE, 9)).grid(row=0, column=3, sticky="w")
+            ttk.Combobox(g, values=[str(x) for x in range(1, p["golpes"] + 1)] if p["ate"] else [str(p["golpes"])], textvariable=vg,
+                         width=6, state="readonly").grid(row=1, column=3, sticky="w")
         dt = 10 + self.d["bc"][p["dt_attr"] or arma["ataque"]] + self.nivel() // 3 if p["teste"] else 0
         self._txt(f, "Os ajustes vêm do texto da ação; confira antes de rolar." + (f" Crítico ×{p['mult']}." if p["mult"] else "")
+                  + (f" {p['golpes']} disparos/golpes{' (até)' if p['ate'] else ''}, "
+                     + ("uma jogada de acerto para todos." if p["um_acerto"] else "um teste de acerto para cada.") if p["golpes"] > 1 else "")
+                  + (f" Gasta {'todas as' if p['municao'] < 0 else p['municao']} {p['municao_tipo']}(s)." if p["municao"] else "")
                   + (f" O alvo faz {p['teste']} contra DT {dt}." if p["teste"] else ""), sub=True, pady=(8, 0))
 
         def rolar():
             o = {"delta": to_int(vd.get().replace("+", ""), 0), "vant": {"vantagem": 1, "desvantagem": -1}.get(vv.get(), 0),
                  "critico": vc.get() == "garantido", "acerto": p["acerto_garantido"], "mult": p["mult"],
-                 "rotulo": f"{arma['nome']}: {a['nome']}", "acao": p["acao"] or "Comum", "teste": p["teste"], "dt_attr": p["dt_attr"]}
+                 "rotulo": f"{arma['nome']}: {a['nome']}", "acao": p["acao"] or "Comum", "teste": p["teste"], "dt_attr": p["dt_attr"],
+                 "golpes": to_int(vg.get(), 1), "um_acerto": p["um_acerto"], "municao_tipo": p["municao_tipo"],
+                 "municao": to_int(vg.get(), 1) if p["golpes"] > 1 and p["municao"] == p["golpes"] else p["municao"]}
             w.destroy()
             self.rolar_arma(i, o)
         ttk.Button(f, text="🎲 Rolar ataque", command=rolar).pack(anchor="e", pady=(10, 0))

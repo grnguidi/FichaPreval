@@ -240,7 +240,7 @@ function pPericias() {
       const bonus = bonus0 + (C.ef.pericia[nome] || 0) + (mestre ? 2 : 0) + discreta;
       return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados + (mestre ? 1 : 0)}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
         <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados + (mestre ? 1 : 0)}d20${mestre ? " · Mestre" : ""}</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
-    }).join("")}</div><p class="sub">Toque na perícia para rolar (${"1d20 a mais a cada 20 pontos do atributo, fica o maior"}). A caixa marca o treino (Modo Edição). • exige treino.</p>`;
+    }).join("")}</div><p class="sub">${banco.modo === "edicao" ? "Toque na perícia para ver o que ela faz" : "Toque na perícia para rolar (1d20 a mais a cada 20 pontos do atributo, fica o maior)"}. A caixa marca o treino (Modo Edição). • exige treino.</p>`;
   h += secao("Perícia de ataque treinada") + `<div>${R.PERICIAS_ATAQUE.map(([nn]) => `<span class="chip ${S.pericia_ataque === nn ? "on" : ""}" data-a="per-atk" data-n="${nn}">${nn}</span>`).join("")}</div>`;
   h += secao("Atributo da Prevalência") + `<div>${R.ATRIBUTOS.map((k) => `<span class="chip ${S.prevalencia_attr === k ? "on" : ""}" data-a="prev-attr" data-k="${k}">${k}</span>`).join("")}</div>`;
   return h;

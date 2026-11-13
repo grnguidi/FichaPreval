@@ -25,6 +25,40 @@ PERICIAS = [
     ("Sorte", ["ARC"], False), ("Tática", ["ARC"], False),
     ("Tecnologia", ["INT"], True),
 ]
+# O que cada perícia faz (resumo do capítulo de Perícias e das regras que pedem o teste) e onde o livro a usa.
+PERICIAS_RESUMO = {
+    "Acrobacia": ("Equilíbrio, saltos, quedas, piruetas e escapar de situações que pedem agilidade do corpo, como pular uma barreira com segurança.", ""),
+    "Agricultura": ("Plantar, colher, cuidar de animais de criação e tirar sustento da terra.", "Agricultura & Pasto"),
+    "Artes": ("Pintura, escultura, escrita e qualquer ofício artístico; também criar e sustentar um disfarce (o teste é contra quem observa e se repete a cada interação).", "Disfarce"),
+    "Atletismo": ("Força física aplicada: escalar, nadar, empurrar, arrombar, segurar ou se soltar. Agarrar e Derrubar são Atletismo contra o Atletismo da criatura.", ""),
+    "Ciências": ("Conhecimento acadêmico e natural: alquimia, matemática, astronomia, criaturas e fenômenos estudados.", ""),
+    "Costura": ("Confeccionar e consertar as cinco peças de armadura dos sets com os materiais da receita; a DT é a da raridade do item e uma falha perde materiais.", "Sets"),
+    "Crime": ("Abrir fechaduras, desarmar armadilhas, furtar, falsificar e circular no submundo.", "Infiltração"),
+    "Furtividade": ("Mover-se sem ser visto ou ouvido. Esconder é Furtividade contra a Percepção de quem pode ver você; cada falha numa infiltração sobe o Alerta.", "Infiltração"),
+    "Gastronomia": ("Cozinhar refeições que dão bônus ao grupo e conservar alimentos na estrada; a DT sobe com o nível da receita.", "Alimentos/Expedição"),
+    "História": ("Saber sobre o passado, reinos, guerras, linhagens e lendas; argumento de peso num conflito social.", "Conflito Social"),
+    "Intuição": ("Perceber intenções, mentiras e o clima de uma conversa; sentir quando algo está errado.", ""),
+    "Investigação": ("Procurar pistas, examinar cenas e documentos e ligar os fatos; encontrar o que está escondido numa expedição.", "Expedição"),
+    "Medicina": ("Tratar ferimentos, doenças e venenos. No Portão da Morte, um aliado faz Medicina (DT 15) para dar 1 sucesso a quem está Incapaz.", "Portão da Morte"),
+    "Navegação": ("Orientar-se e guiar o grupo em viagens por terra e mar; define o tempo da viagem e evita se perder.", "Viagens"),
+    "Percepção": ("Notar o que está à volta: emboscadas, criaturas escondidas, sons e detalhes. É contra ela que os outros testam Furtividade.", ""),
+    "Performance": ("Cantar, tocar, atuar e discursar para uma plateia; impressionar ou distrair num conflito social.", "Conflito Social"),
+    "Persuasão": ("Convencer, negociar, barganhar e acalmar pela conversa; a principal perícia do conflito social.", "Conflito Social"),
+    "Prevalência": ("A força da vontade do personagem ligada à alma, com o atributo que o jogador escolher; usada por almas e por técnicas como a Dedicação da Katana (Prevalência contra Vontade).", "Almas"),
+    "Religião": ("Deuses, cultos, ritos e criaturas sagradas ou profanas; alguns Feitiços pedem este teste.", "Alguns Feitiços"),
+    "Sorte": ("O acaso a seu favor: achar o que precisa, escapar por pouco, encontros e espólios na expedição.", "Expedição"),
+    "Tática": ("Ler o campo de batalha, prever o inimigo e planejar o grupo; algumas habilidades e o clima adverso nas viagens pedem este teste.", "Algumas Habilidades"),
+    "Tecnologia": ("Mecanismos, ferramentas, forja e engenhocas: consertar, montar e operar; serviços de ferraria pedem este teste.", ""),
+    "Luta": ("Ataques corpo a corpo: 1d20 + BC do atributo da arma + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque corpo a corpo"),
+    "Pontaria": ("Ataques à distância (Arco, Besta): 1d20 + BC de Destreza + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque a distância"),
+    "Feitiçaria": ("Conjurar Magias: 1d20 + BC de Inteligência + nível ÷ 3 + acerto do cajado; também lê idiomas arcanos e anula magias inimigas (Contradomínio).", "Magias"),
+    "Desejo": ("Conjurar Feitiços: 1d20 + BC de Fé + nível ÷ 3 + acerto do selo; também lê idiomas mortos e anula feitiços inimigos (Contradomínio).", "Feitiços"),
+    "Fortitude": ("Defesa do corpo (Tenacidade): resistir a Veneno, Podridão, Sangramento, Congelamento, empurrões e efeitos físicos.", "Defesa"),
+    "Reflexo": ("Defesa por agilidade (Destreza): esquivar de áreas, armadilhas e quedas.", "Defesa"),
+    "Astúcia": ("Defesa da mente (Mente): perceber truques, ilusões e enganações.", "Defesa"),
+    "Vontade": ("Defesa do espírito (Fé): resistir a Sono, Loucura, Morte, medo, provocação e controle mental.", "Defesa"),
+}
+
 PERICIAS_ATAQUE = [("Luta", ["FOR", "DES"]), ("Pontaria", ["DES"]),
                    ("Feitiçaria", ["INT"]), ("Desejo", ["FE"])]
 PERICIAS_DEFESA = [("Fortitude", "TEN", "Fortitude de Ferro"), ("Reflexo", "DES", "Reflexos de Gato"),
@@ -471,15 +505,16 @@ def condicoes_do_encantamento(descricao):
     return out
 
 
-def escalar_arcano(expr, arcano, condicao):
+def escalar_arcano(expr, arcano, condicao, copias_extra=0):
     """A cada 20 de ARC, uma cópia dos dados de condição; a cada 15, mais 1 dado um tamanho abaixo do
-    maior dado (d12→d10→…→d4). Morte só recebe os dados inferiores. Valores fixos não copiam."""
+    maior dado (d12→d10→…→d4). Morte só recebe os dados inferiores. Valores fixos não copiam.
+    copias_extra: cópias a mais do talento Senhor das Condições (não valem para Morte)."""
     arc = cap(arcano)
     dados = [(int(q), int(f)) for q, f in re.findall(r"(\d+)d(\d+)", expr)]
     fixo = sum(int(x) for x in re.findall(r"\+\s*(\d+)(?!\d|d)", expr))
     if not dados:
         return expr
-    copias = 0 if condicao == "Morte" else arc // 20
+    copias = 0 if condicao == "Morte" else arc // 20 + copias_extra
     inferiores = arc // 15
     soma = {}
     for q, f in dados:
@@ -490,6 +525,33 @@ def escalar_arcano(expr, arcano, condicao):
         soma[inf] = soma.get(inf, 0) + inferiores
     partes = [f"{q}d{f}" for f, q in sorted(soma.items(), key=lambda x: -x[0])]
     return " + ".join(partes) + (f" + {fixo}" if fixo else "")
+
+
+def arcano_escala(arcano, talentos):
+    """Arcano usado no escalonamento e cópias extras: Mente Arcana conta +10; Senhor das Condições dá 1 cópia."""
+    return cap(arcano) + (10 if "Mente Arcana" in talentos else 0), (1 if "Senhor das Condições" in talentos else 0)
+
+
+_SET_COND = re.compile(r"(acertos? cr[íi]ticos?|acerto cr[íi]tico|acertos?)\b[^.]*?\baplica\w* (?:mais )?(\d+) pontos de "
+                       r"(Veneno|Podridão|Sangramento|Congelamento|Sono|Loucura|Morte)", re.I)
+
+
+def condicoes_de_set(ativos):
+    """Pontos de condição que os sets aplicam ao acertar. ativos: [(nome, peças, efeito2, efeito4)].
+    Devolve [{set, pontos, condicao, critico, nota}]. Os números dos sets são fixos: o Arcano não escala."""
+    out = []
+    for nome, _, e2, e4 in ativos:
+        for txt in (e2, e4):
+            for m in _SET_COND.finditer(txt or ""):
+                nota = []
+                if re.search(r"1x por turno", txt, re.I):
+                    nota.append("1x por turno")
+                m2 = re.search(r"dobram contra ([^.]+?)\.", e4 or "", re.I)
+                if m2:
+                    nota.append("dobra contra " + m2.group(1))
+                out.append({"set": nome, "pontos": int(m.group(2)), "condicao": m.group(3).capitalize(),
+                            "critico": "crít" in m.group(1).lower(), "nota": ", ".join(nota)})
+    return out
 
 
 # ---------------- Carga extra ----------------
@@ -808,7 +870,37 @@ def acao_arma(nome, texto):
         m = re.search(r"(?:resist[êe]ncia com|teste de) (fortitude|reflexos?|vontade|ast[úu]cia)", tl)
         if m:
             out["teste"] = m.group(1).capitalize()
+    # vários disparos/golpes e munição gasta (flechas, virotes, cartuchos, frascos)
+    out.update(golpes=1, ate=False, um_acerto=False, municao=0, municao_tipo="")
+    if out["nota"] or out["passiva"]:
+        return out
+    num = r"(\d+|uma?|dois|duas|três|quatro|cinco)"
+    mun = r"(flechas?|virotes?|cartuchos?|frascos?)"
+    m = re.search(r"at[ée] (?:o m[áa]ximo de )?" + num + r" " + mun, tl)
+    if m:
+        out.update(golpes=_N_EXT.get(m.group(1)) or int(m.group(1)), ate=True)
+    else:
+        m = re.search(r"gast\w* " + num + r" " + mun + r" em uma (?:[úu]nica )?a[çc][ãa]o", tl)
+        if m:
+            out["golpes"] = _N_EXT.get(m.group(1)) or int(m.group(1))
+    m = re.search(r"(?:gast\w*|consome|disparar?) (?:at[ée] (?:o m[áa]ximo de )?)?" + num + r" " + mun, tl)
+    if m:
+        out.update(municao=_N_EXT.get(m.group(1)) or int(m.group(1)), municao_tipo=m.group(2).rstrip("s"))
+    else:
+        m = re.search(r"(?<!at[ée] )(?:gastar|gasta) (?:todas|todos)(?: os)? ?" + mun + r"?", tl)
+        if m and (m.group(1) or re.search(mun, tl)):
+            out.update(municao=-1, municao_tipo=(m.group(1) or re.search(mun, tl).group(1)).rstrip("s"))
+    if out["golpes"] > 1 and not out["municao"]:
+        out["municao"] = out["golpes"]
+    out["um_acerto"] = out["golpes"] > 1 and bool(re.search(r"[úu]nica jogada de acerto|um [úu]nico teste de acerto|mesmo acerto", tl))
+    if out["municao"] > 1 and re.search(r"n[íi]vel de dano para cada (?:flecha|virote|cartucho|frasco)", tl):
+        out["delta"] *= out["municao"]
+    if out["golpes"] > 1 or out["municao"]:
+        out["ataque"] = out["ataque"] or bool(re.search(r"dispar|flecha|virote|explos", tl)) and not out["passiva"]
     return out
+
+
+_N_EXT = {"um": 1, "uma": 1, "dois": 2, "duas": 2, "três": 3, "quatro": 4, "cinco": 5}
 
 
 RECURSOS_ARMA = {  # contadores da mecânica de cada arma: (nome, máximo; 0 = sem máximo)

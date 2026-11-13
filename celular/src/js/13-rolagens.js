@@ -45,6 +45,18 @@ A["desfazer"] = () => {
 /* Ataque com a arma i. o: {delta (níveis de dano), vant (1 vantagem, -1 desvantagem), critico (garantido), acerto (garantido),
    mult (multiplicador do crítico), rotulo, acao (tipo de ação gasta), teste e dtAttr (resistência do alvo), extra (linhas)} */
 let ataquePendente = null;
+function recursoMunicao(grupo, tipo) {
+  const nomes = (R.RECURSOS_ARMA[grupo] || []).map((r) => r[0]);
+  const alvo = { flecha: ["Flechas", "Virotes"], virote: ["Virotes", "Flechas"], cartucho: ["Cartuchos"], frasco: ["Frascos"] }[tipo] || [];
+  return alvo.find((n) => nomes.includes(n)) || null;
+}
+function gastarMunicao(i, tipo, qtd) {
+  const w = S.armas[i], n = recursoMunicao(w.grupo, tipo);
+  if (!n) return `Gasta ${qtd < 0 ? "toda a" : qtd} ${tipo || "munição"}${qtd !== 1 ? "s" : ""}.`;
+  const chave = `${i}:${w.grupo}`, r = S.recursos[chave] = S.recursos[chave] || {}, tem = int(r[n]);
+  r[n] = Math.max(0, tem - (qtd < 0 ? tem : qtd));
+  return qtd > tem ? `${n}: o contador tinha só ${tem} (ficou 0). Ajuste no − / + da arma.` : `${n}: ${tem} → ${r[n]}.`;
+}
 function atacar(i, o = {}) {
   const w = S.armas[i], ar = ARMAS[w.grupo]; if (!ar) return;
   const nv = int(w.nivel, 1), k = ar.ataque;
@@ -62,9 +74,17 @@ function atacar(i, o = {}) {
     return;
   }
   pagar("vigor_atual", C.d.vigor, vig, "Vigor", (custo) => {
-    const at = R.rolarAtaque(bonus, R.vantagem(C.a[k]) || o.vant === 1, ep.margem, rng, o.vant === -1);
-    if (o.critico && !at.desastre) at.critico = true;
-    const linhas = [txtAtaque(at)];
+    const golpes = Math.max(1, int(o.golpes, 1)), ataques = [];
+    for (let g = 0; g < golpes; g++) {
+      if (g === 0 || !o.umAcerto) {
+        const a = R.rolarAtaque(bonus, R.vantagem(C.a[k]) || o.vant === 1, ep.margem, rng, o.vant === -1);
+        if (o.critico && !a.desastre) a.critico = true;
+        ataques.push(a);
+      } else ataques.push(ataques[0]);
+    }
+    const at = Object.assign({}, ataques[0], { critico: ataques.some((a) => a.critico), desastre: ataques.every((a) => a.desastre) });
+    const linhas = golpes > 1 ? [`<span class="sub">${golpes} disparos/golpes, ${o.umAcerto ? "uma só jogada de acerto para todos" : "um teste de acerto para cada"}.</span>`] : [];
+    if (golpes === 1) linhas.push(txtAtaque(at));
     if (o.critico) linhas.push(`<span class="ok">Crítico garantido por esta ação.</span>`);
     if (o.acerto) linhas.push(`<span class="ok">Acerto garantido por esta ação.</span>`);
     const turno = sessao.ativa && sessao.meusTurnos ? sessao.meusTurnos : null;
@@ -74,13 +94,28 @@ function atacar(i, o = {}) {
       if (gastou) { dg.desgastada = true; dg.em = sessao.meusTurnos || 0; }
     }
     const mult = Math.max(ep.mult, int(o.mult) || 0);
-    if (!at.desastre) {
-      const [tot, partes] = R.rolarExpr(ep.dano, rng, at.critico, mult);
-      linhas.push(txtDano(tot, partes) + ` · ${esc(lD.tipo)}` + (nvD !== nv ? ` · dano de nível ${nvD}` : "") + (at.critico && mult > 2 ? ` · crítico ×${mult}` : ""));
+    let soma = 0;
+    ataques.forEach((a, g) => {
+      const pre = golpes > 1 ? `<b>#${g + 1}</b> ` : "";
+      if (golpes > 1 && (g === 0 || !o.umAcerto)) linhas.push(pre + txtAtaque(a));
+      if (a.desastre) return;
+      const [tot, partes] = R.rolarExpr(ep.dano, rng, a.critico, mult);
+      soma += tot;
+      linhas.push(pre + txtDano(tot, partes) + ` · ${esc(lD.tipo)}` + (nvD !== nv ? ` · dano de nível ${nvD}` : "") + (a.critico && mult > 2 ? ` · crítico ×${mult}` : ""));
       for (const [x, tipo, cnd] of ep.extras) {
-        const [t2, p2] = R.rolarExpr(x, rng, at.critico, mult);
-        linhas.push(txtDano(t2, p2, `+ ${esc(tipo)}`) + (cnd ? ` <span class="sub">(${esc(cnd)})</span>` : ""));
+        const [t2, p2] = R.rolarExpr(x, rng, a.critico, mult);
+        soma += t2;
+        linhas.push(pre + txtDano(t2, p2, `+ ${esc(tipo)}`) + (cnd ? ` <span class="sub">(${esc(cnd)})</span>` : ""));
       }
+    });
+    if (!at.desastre) linhas.push(...linhasSet(at.critico));
+    if (golpes > 1 && !at.desastre) linhas.push(`Dano somado se todos acertarem: <b>${soma}</b> <span class="sub">— desconte os que errarem a CA do alvo.</span>`);
+    if (o.municao) linhas.push(gastarMunicao(i, o.municaoTipo || "", int(o.municao)));
+    else {
+      const nm = recursoMunicao(w.grupo, "flecha"), r = S.recursos[`${i}:${w.grupo}`] || {};
+      if (nm && int(r[nm]) > 0) linhas.push(gastarMunicao(i, "flecha", 1));
+    }
+    if (!at.desastre) {
       if (ep.voraz && at.critico) {
         const cura = R.rolarExpr("1d10", rng)[0], mx = C.d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? mx : int(S.vida.atual, mx);
         S.vida.atual = String(Math.min(mx, antes + cura));
@@ -106,6 +141,7 @@ A["rolar-ini"] = () => {
   mostrarRolagem("⏳ Iniciativa", [`Iniciativa: <b style="font-size:20px">${Math.max(...d) + b}</b> <span class="sub">[d20 ${d.join(", ")} → ${Math.max(...d)} +${b}]</span>`]);
 };
 A["rolar-per"] = (el) => {
+  if (banco.modo === "edicao" && !el.dataset.rolar) return infoPericia(el);
   const r = R.rolarPericia(int(el.dataset.b), int(el.dataset.d, 1), rng);
   mostrarRolagem(`🎲 ${esc(el.dataset.n)}`, [`${esc(el.dataset.n)}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${r.bonus}]</span>`,
     `<span class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</span>`]);
@@ -191,10 +227,12 @@ A["conjurar"] = (el, ev) => {
     let expr = R.danoDoEncantamento(v.descricao);
     const conds = R.condicoesDoEncantamento(v.descricao);
     if (expr && conds.length && expr.replace(/\s+/g, " ") === conds[0][0]) expr = null;
+    const [arc, extraC] = R.arcanoEscala(C.a.ARC, talentos());
     if (!at.desastre) for (const [ce, cn] of conds) {
-      const escl = R.escalarArcano(ce, C.a.ARC, cn), [tot, partes] = R.rolarExpr(escl, rng, at.critico);
-      linhas.push(txtDano(tot, partes, cn) + " pontos" + (escl !== ce ? ` <span class="sub">· ${ce} → ${escl} por ${R.cap(C.a.ARC)} de Arcano</span>` : ""));
+      const escl = R.escalarArcano(ce, arc, cn, extraC), [tot, partes] = R.rolarExpr(escl, rng, at.critico);
+      linhas.push(txtDano(tot, partes, cn) + " pontos" + (escl !== ce ? ` <span class="sub">· ${ce} → ${escl} por ${arc} de Arcano${arc !== R.cap(C.a.ARC) ? " (Mente Arcana +10)" : ""}${extraC && cn !== "Morte" ? " + 1 cópia (Senhor das Condições)" : ""}</span>` : ""));
     }
+    if (!at.desastre) linhas.push(...linhasSet(at.critico));
     if (expr && !at.desastre) {
       const extra = k === "INT" ? C.d.dados_extra_magia : C.d.dados_extra_feitico;
       const [tot, partes] = R.rolarExpr(R.danoComDados(expr, extra), rng, at.critico);
@@ -219,7 +257,17 @@ A["rolar-vida"] = () => {
   mudar((s) => { s.vida.rolagens = s.vida.rolagens.concat(novos); });
   toast(`🎲 ${falta}d12: ${novos.join(", ")} → +${novos.reduce((a, b) => a + b, 0)} de Vida`);
 };
-A["treinar"] = (el) => mudar((s) => { const n = el.dataset.n; s.pericias = s.pericias.includes(n) ? s.pericias.filter((x) => x !== n) : s.pericias.concat([n]); });
+function infoPericia(el) {
+  const n = el.dataset.n, [resumo, usada] = R.PERICIAS_RESUMO[n] || ["", ""];
+  const p = R.PERICIAS.find((x) => x[0] === n), atrs = p ? p[1] : null, req = p ? p[2] : false, tr = C.treinadas.has(n);
+  const at = atrs ? atrs.map((k) => R.NOMES_ATR[k]).join(" ou ") : `à escolha do jogador (agora ${R.NOMES_ATR[S.prevalencia_attr || "ARC"]})`;
+  folha(esc(n), `<p class="meta">Atributo: ${at}${req ? " · exige treino (sem treino, só um sucesso crítico passa)" : ""}${usada ? ` · Usada em: ${esc(usada)}` : ""}</p>
+    <div class="desc">${esc(resumo)}</div>
+    <p class="sub">Teste: ${el.dataset.d}d20 (1 a mais a cada 20 pontos do atributo, fica o maior) +${el.dataset.b}. Treinada soma a Curva do atributo; todas somam nível ÷ 2.</p>
+    <p class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</p>`,
+  `<button class="botao leve" data-a="treinar" data-n="${esc(n)}" data-fechar="1">${tr ? "Tirar o treino" : "Treinar"}</button><button class="botao prim" data-a="rolar-per" data-rolar="1" data-n="${esc(n)}" data-b="${el.dataset.b}" data-d="${el.dataset.d}">🎲 Rolar</button>`);
+}
+A["treinar"] = (el) => { if (el.dataset.fechar) fecharFolha(); mudar((s) => { const n = el.dataset.n; s.pericias = s.pericias.includes(n) ? s.pericias.filter((x) => x !== n) : s.pericias.concat([n]); }); };
 A["per-atk"] = (el) => mudar((s) => { s.pericia_ataque = el.dataset.n; });
 A["prev-attr"] = (el) => mudar((s) => { s.prevalencia_attr = el.dataset.k; });
 A["portao"] = (el) => mudar((s) => { const v = s.portao[el.dataset.n]; v[int(el.dataset.i)] = !v[int(el.dataset.i)]; });

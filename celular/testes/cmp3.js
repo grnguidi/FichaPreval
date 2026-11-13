@@ -1,6 +1,6 @@
 // Compara as regras novas do celular com as do PC (casos de gen3.py).
 const R = require("./regras_montado.js");
-const { casos, itens, acoes, usos, extras, rec } = require("./casos3.json");
+const dados = require("./casos3.json"), { casos, itens, acoes, usos, extras, rec } = dados;
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 let erros = 0;
 const falha = (c, oque, js, py) => { if (erros++ < 8) console.log("DIFERENTE:", oque, JSON.stringify(js), "≠", JSON.stringify(py)); };
@@ -28,6 +28,11 @@ for (const c of casos) {
   if (!igual(esc, c.esc)) falha(c, "escolhas", esc, c.esc);
   const desc = R.descontoMatricula(esc, c.escola, c.mana, c.esp);
   if (!igual(desc, c.desconto)) falha(c, "matrícula", desc, c.desconto);
+}
+for (const x of (dados.sets || [])) {
+  const c = R.condicoesDeSet(x.at); if (!igual(c, x.conds)) falha(null, "sets", c, x.conds);
+  const ae = R.arcanoEscala(x.arc, new Set(x.tal)); if (!igual(ae, x.ae)) falha(null, "arcanoEscala", ae, x.ae);
+  const e = R.escalarArcano(x.ex, ae[0], x.cn, ae[1]); if (!igual(e, x.esc)) falha(null, "escalar", e, x.esc);
 }
 for (const [n, t, esp] of acoes) { const r = R.acaoArma(n, t); if (!igual(r, esp)) falha(null, "ação de arma " + n, r, esp); }
 for (const [t, esp] of usos) { const r = R.usosLimitados(t); if (!igual(r, esp)) falha(null, "usos", r, esp); }

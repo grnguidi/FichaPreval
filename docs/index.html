@@ -492,7 +492,7 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   }
 
   // ---------------- Livro: tipos de dano, efeitos e condições (gerado de regras.py pelo build) ----------------
-  const LIVRO = {"TIPOS_DANO": [["Impacto", "Físico", ""], ["Cortante", "Físico", ""], ["Perfurante", "Físico", ""], ["Fogo", "Elemental", ""], ["Veneno", "Elemental", ""], ["Magia", "Elemental", ""], ["Magia Pura", "Elemental", "ignora RD"], ["Sagrado", "Elemental", ""], ["Relâmpago", "Elemental", "não tem RD"], ["Elétrico", "Elemental", ""], ["Necrótico", "Elemental", ""], ["Glacial", "Elemental", ""], ["Psíquico", "Mental", ""], ["Êxtase", "Mental", ""], ["Melódico", "Mental", ""], ["Radiante", "Mental", ""], ["Direto", "Outro", "ignora RD e resistências (perda de Vida de condição, quedas…)"]], "DANO_SEM_RD": ["Direto", "Magia Pura", "Relâmpago"], "EFEITOS_LIVRO": [["Abalado", "Fraco", "−2 em jogadas de ataque e testes de perícia."], ["Caído", "Fraco", "−2 em ataques corpo a corpo; move 4,5 m rastejando ou usa ação de movimento para levantar. −2 de CA contra corpo a corpo, +2 contra à distância."], ["Amedrontado", "Médio", "Desvantagem em jogadas de ataque e testes de perícia."], ["Confuso", "Médio", "Move-se ao acaso (1d4 de direção a cada 1,5 m); −2 em Fortitude e Atletismo para ficar de pé."], ["Agarrado", "Médio", "Desprevenido (−2 de CA) e imóvel; ataques à distância contra o agarrão podem acertar o alvo errado (1–5 em 1d10)."], ["Enredado", "Médio", "Deslocamento pela metade; −2 de CA e em jogadas de ataque."], ["Lento", "Médio", "Toda forma de movimento reduzida à metade."], ["Condenado", "Forte", "Custos de Mana e de Vigor aumentam em 50%."], ["Aterrorizado", "Forte", "Não pode se aproximar da criatura que causou o efeito."], ["Exposto", "Forte", "Ataques contra a criatura têm +2 e, se acertarem, +1 dado de dano do maior dado."], ["Fragilizado", "Forte", "Redução de Dano zerada e resistências anuladas (imunidades não)."], ["Atordoado", "Extremo", "Não pode realizar ações."], ["Inconsciente", "Extremo", "Não age, fica caído, larga o que segura, não fala; falha em todos os testes e é acertado sem jogada de ataque."], ["Paralisado", "Extremo", "Não age; ataques contra ele têm vantagem e todo acerto corpo a corpo é crítico."]], "NOTA_EFEITOS": "Salvo indicação contrária, um efeito dura 1 turno. Se durar mais, o afetado faz um teste de resistência no fim de cada turno (Fortitude para físicos, Vontade para mentais) contra a DT de quem causou.", "CONDICAO_TESTE": {"Veneno": "Fortitude", "Podridão": "Fortitude", "Sangramento": "Fortitude", "Congelamento": "Fortitude", "Sono": "Vontade", "Loucura": "Vontade", "Morte": "Vontade"}, "CONDICAO_ATIVA": {"Veneno": {"turnos": 5, "pct_turno": 5, "desc": "Sofre 5% da Vida máxima por turno, por 5 turnos."}, "Podridão": {"turnos": 0, "pct_turno": 3, "desc": "Sofre 3% da Vida máxima por turno até o fim do combate."}, "Sangramento": {"pct_ja": 25, "desc": "Perde 25% da Vida máxima na hora, ignorando resistências e RD."}, "Congelamento": {"turnos": 2, "pct_ja": 10, "desc": "Perde 10% da Vida máxima na hora e fica com a CA pela metade por 2 turnos."}, "Sono": {"turnos": 1, "desc": "Fica Inconsciente por 1 turno; nada remove esse efeito."}, "Loucura": {"turnos": 0, "desc": "Recebe o dobro de dano mental e falha em todo teste de Vontade até o fim do combate."}, "Morte": {"desc": "Morre na hora, consumido pelas raízes da Intérprete."}}, "CONDICAO_DESCANSO_CURTO": 25, "DESCANSOS_CURTOS_MAX": 2, "DESGASTE_TURNOS": 3, "PECAS_SET_PESO": ["Capacete", "Manopla", "Calça", "Bota"], "DADO_INFERIOR": {"12": 10, "10": 8, "8": 6, "6": 4, "4": 4, "20": 12}, "ESCOLHA_TALENTO": {"Maestria": "arma", "Maestria dupla": "arma", "Domínio": "arma", "Matrícula": "escola", "Matrícula avançada": "escola_ou_mana", "Condição Endurecida": "condicao", "Mestre das Perícias": "pericia"}, "ROTULO_ESCOLHA": {"arma": "Arma", "escola": "Escola", "escola_ou_mana": "Escola ou −2 de mana", "condicao": "Condição", "pericia": "Perícia"}, "MATRICULA_MANA2": "−2 de mana", "PROPRIEDADES": [["Afiada", "+1 dado de dano, do maior dado da arma."], ["Canalizada", "Ação bônus: vantagem no próximo golpe."], ["Certeira", "Margem de crítico da arma −1."], ["Cruel", "+3 de dano."], ["Destruidora", "O crítico vira ×3 (triplica os dados)."], ["Discreta", "+5 em Furtividade com a arma equipada."], ["Longa", "Alcance da arma +1,5 m."], ["Penetrante", "Ignora redução de dano do tipo da arma igual ao nível da arma."], ["Poderosa", "+2 de dano. Exige Cruel."], ["Equilibrada", "+1 nos testes de ataque com a arma."], ["Pesada", "Dado de dano um nível acima (d8→d10; com d12, +1 dado), mas exige o dobro da Força da arma."], ["Sagrada", "+1d6 de dano Sagrado contra profanos, mortos-vivos ou de Podridão."], ["Profana", "+1d6 de dano Necrótico contra sagrados ou celestiais."], ["Elemental", "+1d6 de dano do elemento escolhido (Fogo, Glacial, Elétrico ou Veneno)."], ["Reforçada", "Desgaste só depois de 4 turnos afiados."], ["Voraz", "No crítico, recupera 1d10 de Vida."]], "ELEMENTOS_PROP": ["Fogo", "Glacial", "Elétrico", "Veneno"], "TIPOS_ACAO": ["Comum", "Bônus", "Movimento", "Reação"], "ACOES_LIVRO": [["Atacar", "Comum", "ataque", "Golpe com arma ou encantamento contra a CA do alvo."], ["Agarrar", "Comum", "Atletismo", "O alvo fica imóvel enquanto você vencer testes de ataque ou Atletismo; seu movimento cai à metade."], ["Derrubar", "Comum", "Atletismo", "Atletismo contra o Atletismo do alvo; numa vitória ele fica Caído."], ["Preparar", "Comum", "", "Prepara uma ação para um evento que você define; ela gasta a sua Reação."], ["Apoiar", "Comum", "", "A criatura apoiada tem vantagem no próximo teste."], ["Trocar de arma", "Comum", "", "Guarda uma arma e saca outra. Armas de Vigor gastam também a ação bônus; entre arma e cajado/selo custa só 3 m de movimento."], ["Usar item", "Comum", "", "Beber uma poção, comer uma refeição pronta, usar um item ou entregá-lo a 1,5 m."], ["Esconder", "Comum", "Furtividade", "Furtividade contra a Percepção de quem vê você; fica escondido até atacar, conjurar ou ser achado."], ["Mirar", "Bônus", "", "Vantagem na próxima jogada de ataque contra o alvo declarado."], ["Provocar", "Bônus", "provocar", "Alvo a 9 m faz Vontade contra a sua DT; se falhar, tem desvantagem contra quem não for você até o fim do próximo turno dele."], ["Movimentar", "Movimento", "", "Anda até o seu valor de movimento."], ["Levantar", "Movimento", "", "Sai da condição Caído."], ["Desengajar", "Movimento", "", "Anda metade do movimento sem provocar golpe de oportunidade."], ["Golpe de Oportunidade", "Reação", "ataque", "Ataque contra quem cruza o espaço de 1,5 m em volta de você."], ["Incentivar", "Reação", "", "Um aliado a 1,5 m age logo antes de você neste turno."]], "NIVEL_RECARGA": {"turno": 0, "rodada": 0, "combate": 1, "cena": 1, "descanso curto": 2, "descanso longo": 3, "dia": 3}, "EVENTO_RECARGA": {"turno": 0, "combate": 1, "curto": 2, "longo": 3}, "RECURSOS_ARMA": {"Adaga": [["Fragmentos de Combo", 0]], "Espada Grande": [["Momentum", 5]], "Machado Grande": [["Impacto preparado", 3]], "Lança-Arma": [["Cartuchos", 5]], "Lâmina-Dínamo": [["Cargas", 5], ["Frascos", 5]], "Arco": [["Flechas", 30]], "Besta Pesada": [["Virotes", 20]], "Lira": [["Paz", 5], ["Calma", 5], ["Melancolia", 5]]}, "ALMA_TABELAS": {"Dano em alvo único": ["1d4", "1d6", "2d4", "2d6", "2d8", "3d8", "4d8", "5d8", "6d8", "6d10", "8d10", "9d12"], "Dano em múltiplos alvos": ["1d4 (desvantagem)", "1d4", "1d6", "1d8", "1d10", "2d8", "3d6", "3d8", "4d8", "5d8", "6d8", "7d8"], "Área": ["1,5 m", "3 m", "4,5 m", "6 m", "7,5 m", "9 m", "10,5 m", "12 m", "13,5 m", "15 m", "16,5 m", "18 m"], "Aumento de atributo": ["+1", "+2", "+2", "+3", "+3", "+3", "+4", "+4", "+4", "+5", "+6", "+7"], "Redução de dano": ["−1", "−2", "−2", "−2", "−3", "−3", "−3", "−4", "−4", "−4", "−5", "−6"], "Redução de margem de crítico": ["−1", "−1", "−1", "−1", "−2", "−2", "−2", "−2", "−3", "−3", "−3", "−3"], "Efeito negativo": ["Fraco (−5 DT)", "Fraco", "Fraco", "Fraco", "Fraco", "Médio", "Médio", "Médio", "Médio", "Forte", "Forte", "Extremo"]}, "ALMA_CATEGORIAS": ["Dano", "Benefício", "Ofuscamento", "Interlúdio"], "ALMA_EXECUCAO": ["Comum", "Bônus", "Movimento", "Reação", "Completa", "Livre"], "ALMA_AJUSTES": [[-2, "Execução como ação bônus"], [-2, "Duração de uma cena"], [-1, "+4,5 m de alcance"], [-1, "−3 na DT"], [-1, "Execução como movimento ou reação"], [-1, "Troca do teste de perícia"], [-1, "Duração de uma rodada"], [-1, "+1,5 m na área afetada"], [1, "Exige um teste extra de outra perícia"], [1, "Execução com +1 ação Comum"], [1, "Reduz um atributo do portador em −5 por rodada"], [1, "Causa dano em aliados"], [1, "+3 na DT"], [1, "Redução de dano específico"], [2, "Execução como ação completa"], [2, "Aplica um efeito negativo no portador"], [2, "Desvantagem no ataque ou vantagem para resistir"]], "CAMINHOS": [["Costureiro", "Costura", ["Costurar uma peça de um Animal do Andar diante do costureiro mentor.", "Costurar peças de 5 Animais diferentes do Andar.", "Costurar um set completo (Capacete, Peitoral, Manopla, Calça e Bota) com itens de um Prevalecente do Andar."]], ["Ferreiro", "Tecnologia", ["Subir uma arma de nível na Bigorna Portátil diante do ferreiro mentor.", "Forjar armas de 3 Animais diferentes do Andar.", "Forjar a arma de um Prevalecente do Andar."]], ["Cozinheiro", "Gastronomia", ["Preparar uma refeição de nível 2 diante de um chef.", "Criar 5 receitas novas com ingredientes do Andar.", "Preparar um Banquete de nível 4 para todo o grupo (horta e pasto S, Base nível 6 ou mais)."]], ["Cultivador", "Agricultura", ["Cuidar de uma horta por 2 semanas sem perder nenhuma planta.", "Colher 3 espécies diferentes com qualidade A.", "Colher uma planta com a qualidade máxima que a Base permite (mínimo A)."]], ["Pastor", "Agricultura", ["Adestrar um animal da Base.", "Manter 3 animais produzindo por 4 semanas, sem nenhum rejeitar o dono.", "Obter produto de pasto com a qualidade máxima que a Base permite (mínimo A) de dois animais."]], ["Explorador", "Navegação", ["Guiar o grupo em 2 viagens sem se perder.", "Registrar 3 rotas novas do Andar (cada uma vira um Mapa Regional).", "Descobrir o caminho até o covil do Prevalecente de um país do Andar."]], ["Pesquisador", "Ciências", ["Estudar 5 animais diferentes no Bestiário.", "Completar o registro de uma região (um Lacaio, um Comum, um Forte e um Animal).", "Descobrir o Coração, o Ponto Chave do Prevalecente de um país do Andar."]], ["Curandeiro", "Medicina", ["Tratar 3 aliados com uma condição ativada.", "Preparar 5 poções ou remédios.", "Curar um mal que atinge uma comunidade inteira do Andar (um contágio, por exemplo)."]], ["Diplomata", "Persuasão", ["Ganhar a confiança de uma tribo ou facção do Andar.", "Resolver 3 conflitos por negociação, sem violência.", "Unir facções do Andar em torno de uma causa, de modo que 3 NPCs com Funções diferentes aceitem acompanhar o grupo."]]], "ETAPAS_META": ["Aprendiz", "Prática", "Obra-prima"], "METAS_MAX": 5, "CONTOS_POR": {"Contilha": 1000000, "ouro": 1000, "prata": 10, "Contos": 1}, "MOEDAS": ["Contilha", "ouro", "prata", "Contos"]};
+  const LIVRO = {"TIPOS_DANO": [["Impacto", "Físico", ""], ["Cortante", "Físico", ""], ["Perfurante", "Físico", ""], ["Fogo", "Elemental", ""], ["Veneno", "Elemental", ""], ["Magia", "Elemental", ""], ["Magia Pura", "Elemental", "ignora RD"], ["Sagrado", "Elemental", ""], ["Relâmpago", "Elemental", "não tem RD"], ["Elétrico", "Elemental", ""], ["Necrótico", "Elemental", ""], ["Glacial", "Elemental", ""], ["Psíquico", "Mental", ""], ["Êxtase", "Mental", ""], ["Melódico", "Mental", ""], ["Radiante", "Mental", ""], ["Direto", "Outro", "ignora RD e resistências (perda de Vida de condição, quedas…)"]], "DANO_SEM_RD": ["Direto", "Magia Pura", "Relâmpago"], "EFEITOS_LIVRO": [["Abalado", "Fraco", "−2 em jogadas de ataque e testes de perícia."], ["Caído", "Fraco", "−2 em ataques corpo a corpo; move 4,5 m rastejando ou usa ação de movimento para levantar. −2 de CA contra corpo a corpo, +2 contra à distância."], ["Amedrontado", "Médio", "Desvantagem em jogadas de ataque e testes de perícia."], ["Confuso", "Médio", "Move-se ao acaso (1d4 de direção a cada 1,5 m); −2 em Fortitude e Atletismo para ficar de pé."], ["Agarrado", "Médio", "Desprevenido (−2 de CA) e imóvel; ataques à distância contra o agarrão podem acertar o alvo errado (1–5 em 1d10)."], ["Enredado", "Médio", "Deslocamento pela metade; −2 de CA e em jogadas de ataque."], ["Lento", "Médio", "Toda forma de movimento reduzida à metade."], ["Condenado", "Forte", "Custos de Mana e de Vigor aumentam em 50%."], ["Aterrorizado", "Forte", "Não pode se aproximar da criatura que causou o efeito."], ["Exposto", "Forte", "Ataques contra a criatura têm +2 e, se acertarem, +1 dado de dano do maior dado."], ["Fragilizado", "Forte", "Redução de Dano zerada e resistências anuladas (imunidades não)."], ["Atordoado", "Extremo", "Não pode realizar ações."], ["Inconsciente", "Extremo", "Não age, fica caído, larga o que segura, não fala; falha em todos os testes e é acertado sem jogada de ataque."], ["Paralisado", "Extremo", "Não age; ataques contra ele têm vantagem e todo acerto corpo a corpo é crítico."]], "NOTA_EFEITOS": "Salvo indicação contrária, um efeito dura 1 turno. Se durar mais, o afetado faz um teste de resistência no fim de cada turno (Fortitude para físicos, Vontade para mentais) contra a DT de quem causou.", "CONDICAO_TESTE": {"Veneno": "Fortitude", "Podridão": "Fortitude", "Sangramento": "Fortitude", "Congelamento": "Fortitude", "Sono": "Vontade", "Loucura": "Vontade", "Morte": "Vontade"}, "CONDICAO_ATIVA": {"Veneno": {"turnos": 5, "pct_turno": 5, "desc": "Sofre 5% da Vida máxima por turno, por 5 turnos."}, "Podridão": {"turnos": 0, "pct_turno": 3, "desc": "Sofre 3% da Vida máxima por turno até o fim do combate."}, "Sangramento": {"pct_ja": 25, "desc": "Perde 25% da Vida máxima na hora, ignorando resistências e RD."}, "Congelamento": {"turnos": 2, "pct_ja": 10, "desc": "Perde 10% da Vida máxima na hora e fica com a CA pela metade por 2 turnos."}, "Sono": {"turnos": 1, "desc": "Fica Inconsciente por 1 turno; nada remove esse efeito."}, "Loucura": {"turnos": 0, "desc": "Recebe o dobro de dano mental e falha em todo teste de Vontade até o fim do combate."}, "Morte": {"desc": "Morre na hora, consumido pelas raízes da Intérprete."}}, "CONDICAO_DESCANSO_CURTO": 25, "DESCANSOS_CURTOS_MAX": 2, "DESGASTE_TURNOS": 3, "PECAS_SET_PESO": ["Capacete", "Manopla", "Calça", "Bota"], "DADO_INFERIOR": {"12": 10, "10": 8, "8": 6, "6": 4, "4": 4, "20": 12}, "ESCOLHA_TALENTO": {"Maestria": "arma", "Maestria dupla": "arma", "Domínio": "arma", "Matrícula": "escola", "Matrícula avançada": "escola_ou_mana", "Condição Endurecida": "condicao", "Mestre das Perícias": "pericia"}, "ROTULO_ESCOLHA": {"arma": "Arma", "escola": "Escola", "escola_ou_mana": "Escola ou −2 de mana", "condicao": "Condição", "pericia": "Perícia"}, "MATRICULA_MANA2": "−2 de mana", "PROPRIEDADES": [["Afiada", "+1 dado de dano, do maior dado da arma."], ["Canalizada", "Ação bônus: vantagem no próximo golpe."], ["Certeira", "Margem de crítico da arma −1."], ["Cruel", "+3 de dano."], ["Destruidora", "O crítico vira ×3 (triplica os dados)."], ["Discreta", "+5 em Furtividade com a arma equipada."], ["Longa", "Alcance da arma +1,5 m."], ["Penetrante", "Ignora redução de dano do tipo da arma igual ao nível da arma."], ["Poderosa", "+2 de dano. Exige Cruel."], ["Equilibrada", "+1 nos testes de ataque com a arma."], ["Pesada", "Dado de dano um nível acima (d8→d10; com d12, +1 dado), mas exige o dobro da Força da arma."], ["Sagrada", "+1d6 de dano Sagrado contra profanos, mortos-vivos ou de Podridão."], ["Profana", "+1d6 de dano Necrótico contra sagrados ou celestiais."], ["Elemental", "+1d6 de dano do elemento escolhido (Fogo, Glacial, Elétrico ou Veneno)."], ["Reforçada", "Desgaste só depois de 4 turnos afiados."], ["Voraz", "No crítico, recupera 1d10 de Vida."]], "ELEMENTOS_PROP": ["Fogo", "Glacial", "Elétrico", "Veneno"], "TIPOS_ACAO": ["Comum", "Bônus", "Movimento", "Reação"], "ACOES_LIVRO": [["Atacar", "Comum", "ataque", "Golpe com arma ou encantamento contra a CA do alvo."], ["Agarrar", "Comum", "Atletismo", "O alvo fica imóvel enquanto você vencer testes de ataque ou Atletismo; seu movimento cai à metade."], ["Derrubar", "Comum", "Atletismo", "Atletismo contra o Atletismo do alvo; numa vitória ele fica Caído."], ["Preparar", "Comum", "", "Prepara uma ação para um evento que você define; ela gasta a sua Reação."], ["Apoiar", "Comum", "", "A criatura apoiada tem vantagem no próximo teste."], ["Trocar de arma", "Comum", "", "Guarda uma arma e saca outra. Armas de Vigor gastam também a ação bônus; entre arma e cajado/selo custa só 3 m de movimento."], ["Usar item", "Comum", "", "Beber uma poção, comer uma refeição pronta, usar um item ou entregá-lo a 1,5 m."], ["Esconder", "Comum", "Furtividade", "Furtividade contra a Percepção de quem vê você; fica escondido até atacar, conjurar ou ser achado."], ["Mirar", "Bônus", "", "Vantagem na próxima jogada de ataque contra o alvo declarado."], ["Provocar", "Bônus", "provocar", "Alvo a 9 m faz Vontade contra a sua DT; se falhar, tem desvantagem contra quem não for você até o fim do próximo turno dele."], ["Movimentar", "Movimento", "", "Anda até o seu valor de movimento."], ["Levantar", "Movimento", "", "Sai da condição Caído."], ["Desengajar", "Movimento", "", "Anda metade do movimento sem provocar golpe de oportunidade."], ["Golpe de Oportunidade", "Reação", "ataque", "Ataque contra quem cruza o espaço de 1,5 m em volta de você."], ["Incentivar", "Reação", "", "Um aliado a 1,5 m age logo antes de você neste turno."]], "NIVEL_RECARGA": {"turno": 0, "rodada": 0, "combate": 1, "cena": 1, "descanso curto": 2, "descanso longo": 3, "dia": 3}, "EVENTO_RECARGA": {"turno": 0, "combate": 1, "curto": 2, "longo": 3}, "RECURSOS_ARMA": {"Adaga": [["Fragmentos de Combo", 0]], "Espada Grande": [["Momentum", 5]], "Machado Grande": [["Impacto preparado", 3]], "Lança-Arma": [["Cartuchos", 5]], "Lâmina-Dínamo": [["Cargas", 5], ["Frascos", 5]], "Arco": [["Flechas", 30]], "Besta Pesada": [["Virotes", 20]], "Lira": [["Paz", 5], ["Calma", 5], ["Melancolia", 5]]}, "ALMA_TABELAS": {"Dano em alvo único": ["1d4", "1d6", "2d4", "2d6", "2d8", "3d8", "4d8", "5d8", "6d8", "6d10", "8d10", "9d12"], "Dano em múltiplos alvos": ["1d4 (desvantagem)", "1d4", "1d6", "1d8", "1d10", "2d8", "3d6", "3d8", "4d8", "5d8", "6d8", "7d8"], "Área": ["1,5 m", "3 m", "4,5 m", "6 m", "7,5 m", "9 m", "10,5 m", "12 m", "13,5 m", "15 m", "16,5 m", "18 m"], "Aumento de atributo": ["+1", "+2", "+2", "+3", "+3", "+3", "+4", "+4", "+4", "+5", "+6", "+7"], "Redução de dano": ["−1", "−2", "−2", "−2", "−3", "−3", "−3", "−4", "−4", "−4", "−5", "−6"], "Redução de margem de crítico": ["−1", "−1", "−1", "−1", "−2", "−2", "−2", "−2", "−3", "−3", "−3", "−3"], "Efeito negativo": ["Fraco (−5 DT)", "Fraco", "Fraco", "Fraco", "Fraco", "Médio", "Médio", "Médio", "Médio", "Forte", "Forte", "Extremo"]}, "ALMA_CATEGORIAS": ["Dano", "Benefício", "Ofuscamento", "Interlúdio"], "ALMA_EXECUCAO": ["Comum", "Bônus", "Movimento", "Reação", "Completa", "Livre"], "ALMA_AJUSTES": [[-2, "Execução como ação bônus"], [-2, "Duração de uma cena"], [-1, "+4,5 m de alcance"], [-1, "−3 na DT"], [-1, "Execução como movimento ou reação"], [-1, "Troca do teste de perícia"], [-1, "Duração de uma rodada"], [-1, "+1,5 m na área afetada"], [1, "Exige um teste extra de outra perícia"], [1, "Execução com +1 ação Comum"], [1, "Reduz um atributo do portador em −5 por rodada"], [1, "Causa dano em aliados"], [1, "+3 na DT"], [1, "Redução de dano específico"], [2, "Execução como ação completa"], [2, "Aplica um efeito negativo no portador"], [2, "Desvantagem no ataque ou vantagem para resistir"]], "CAMINHOS": [["Costureiro", "Costura", ["Costurar uma peça de um Animal do Andar diante do costureiro mentor.", "Costurar peças de 5 Animais diferentes do Andar.", "Costurar um set completo (Capacete, Peitoral, Manopla, Calça e Bota) com itens de um Prevalecente do Andar."]], ["Ferreiro", "Tecnologia", ["Subir uma arma de nível na Bigorna Portátil diante do ferreiro mentor.", "Forjar armas de 3 Animais diferentes do Andar.", "Forjar a arma de um Prevalecente do Andar."]], ["Cozinheiro", "Gastronomia", ["Preparar uma refeição de nível 2 diante de um chef.", "Criar 5 receitas novas com ingredientes do Andar.", "Preparar um Banquete de nível 4 para todo o grupo (horta e pasto S, Base nível 6 ou mais)."]], ["Cultivador", "Agricultura", ["Cuidar de uma horta por 2 semanas sem perder nenhuma planta.", "Colher 3 espécies diferentes com qualidade A.", "Colher uma planta com a qualidade máxima que a Base permite (mínimo A)."]], ["Pastor", "Agricultura", ["Adestrar um animal da Base.", "Manter 3 animais produzindo por 4 semanas, sem nenhum rejeitar o dono.", "Obter produto de pasto com a qualidade máxima que a Base permite (mínimo A) de dois animais."]], ["Explorador", "Navegação", ["Guiar o grupo em 2 viagens sem se perder.", "Registrar 3 rotas novas do Andar (cada uma vira um Mapa Regional).", "Descobrir o caminho até o covil do Prevalecente de um país do Andar."]], ["Pesquisador", "Ciências", ["Estudar 5 animais diferentes no Bestiário.", "Completar o registro de uma região (um Lacaio, um Comum, um Forte e um Animal).", "Descobrir o Coração, o Ponto Chave do Prevalecente de um país do Andar."]], ["Curandeiro", "Medicina", ["Tratar 3 aliados com uma condição ativada.", "Preparar 5 poções ou remédios.", "Curar um mal que atinge uma comunidade inteira do Andar (um contágio, por exemplo)."]], ["Diplomata", "Persuasão", ["Ganhar a confiança de uma tribo ou facção do Andar.", "Resolver 3 conflitos por negociação, sem violência.", "Unir facções do Andar em torno de uma causa, de modo que 3 NPCs com Funções diferentes aceitem acompanhar o grupo."]]], "ETAPAS_META": ["Aprendiz", "Prática", "Obra-prima"], "METAS_MAX": 5, "CONTOS_POR": {"Contilha": 1000000, "ouro": 1000, "prata": 10, "Contos": 1}, "MOEDAS": ["Contilha", "ouro", "prata", "Contos"], "PERICIAS_RESUMO": {"Acrobacia": ["Equilíbrio, saltos, quedas, piruetas e escapar de situações que pedem agilidade do corpo, como pular uma barreira com segurança.", ""], "Agricultura": ["Plantar, colher, cuidar de animais de criação e tirar sustento da terra.", "Agricultura & Pasto"], "Artes": ["Pintura, escultura, escrita e qualquer ofício artístico; também criar e sustentar um disfarce (o teste é contra quem observa e se repete a cada interação).", "Disfarce"], "Atletismo": ["Força física aplicada: escalar, nadar, empurrar, arrombar, segurar ou se soltar. Agarrar e Derrubar são Atletismo contra o Atletismo da criatura.", ""], "Ciências": ["Conhecimento acadêmico e natural: alquimia, matemática, astronomia, criaturas e fenômenos estudados.", ""], "Costura": ["Confeccionar e consertar as cinco peças de armadura dos sets com os materiais da receita; a DT é a da raridade do item e uma falha perde materiais.", "Sets"], "Crime": ["Abrir fechaduras, desarmar armadilhas, furtar, falsificar e circular no submundo.", "Infiltração"], "Furtividade": ["Mover-se sem ser visto ou ouvido. Esconder é Furtividade contra a Percepção de quem pode ver você; cada falha numa infiltração sobe o Alerta.", "Infiltração"], "Gastronomia": ["Cozinhar refeições que dão bônus ao grupo e conservar alimentos na estrada; a DT sobe com o nível da receita.", "Alimentos/Expedição"], "História": ["Saber sobre o passado, reinos, guerras, linhagens e lendas; argumento de peso num conflito social.", "Conflito Social"], "Intuição": ["Perceber intenções, mentiras e o clima de uma conversa; sentir quando algo está errado.", ""], "Investigação": ["Procurar pistas, examinar cenas e documentos e ligar os fatos; encontrar o que está escondido numa expedição.", "Expedição"], "Medicina": ["Tratar ferimentos, doenças e venenos. No Portão da Morte, um aliado faz Medicina (DT 15) para dar 1 sucesso a quem está Incapaz.", "Portão da Morte"], "Navegação": ["Orientar-se e guiar o grupo em viagens por terra e mar; define o tempo da viagem e evita se perder.", "Viagens"], "Percepção": ["Notar o que está à volta: emboscadas, criaturas escondidas, sons e detalhes. É contra ela que os outros testam Furtividade.", ""], "Performance": ["Cantar, tocar, atuar e discursar para uma plateia; impressionar ou distrair num conflito social.", "Conflito Social"], "Persuasão": ["Convencer, negociar, barganhar e acalmar pela conversa; a principal perícia do conflito social.", "Conflito Social"], "Prevalência": ["A força da vontade do personagem ligada à alma, com o atributo que o jogador escolher; usada por almas e por técnicas como a Dedicação da Katana (Prevalência contra Vontade).", "Almas"], "Religião": ["Deuses, cultos, ritos e criaturas sagradas ou profanas; alguns Feitiços pedem este teste.", "Alguns Feitiços"], "Sorte": ["O acaso a seu favor: achar o que precisa, escapar por pouco, encontros e espólios na expedição.", "Expedição"], "Tática": ["Ler o campo de batalha, prever o inimigo e planejar o grupo; algumas habilidades e o clima adverso nas viagens pedem este teste.", "Algumas Habilidades"], "Tecnologia": ["Mecanismos, ferramentas, forja e engenhocas: consertar, montar e operar; serviços de ferraria pedem este teste.", ""], "Luta": ["Ataques corpo a corpo: 1d20 + BC do atributo da arma + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque corpo a corpo"], "Pontaria": ["Ataques à distância (Arco, Besta): 1d20 + BC de Destreza + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque a distância"], "Feitiçaria": ["Conjurar Magias: 1d20 + BC de Inteligência + nível ÷ 3 + acerto do cajado; também lê idiomas arcanos e anula magias inimigas (Contradomínio).", "Magias"], "Desejo": ["Conjurar Feitiços: 1d20 + BC de Fé + nível ÷ 3 + acerto do selo; também lê idiomas mortos e anula feitiços inimigos (Contradomínio).", "Feitiços"], "Fortitude": ["Defesa do corpo (Tenacidade): resistir a Veneno, Podridão, Sangramento, Congelamento, empurrões e efeitos físicos.", "Defesa"], "Reflexo": ["Defesa por agilidade (Destreza): esquivar de áreas, armadilhas e quedas.", "Defesa"], "Astúcia": ["Defesa da mente (Mente): perceber truques, ilusões e enganações.", "Defesa"], "Vontade": ["Defesa do espírito (Fé): resistir a Sono, Loucura, Morte, medo, provocação e controle mental.", "Defesa"]}};
   const { TIPOS_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, CONDICAO_DESCANSO_CURTO,
     DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS, PECAS_SET_PESO, DADO_INFERIOR } = LIVRO;
   const NOMES_DANO = (TIPOS_DANO || []).map((t) => t[0]);
@@ -540,16 +540,33 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
     }
     return out;
   }
-  function escalarArcano(expr, arcano, condicao) {
+  function escalarArcano(expr, arcano, condicao, copiasExtra = 0) {
     const arc = cap(arcano), dados = [...String(expr).matchAll(/(\d+)d(\d+)/g)].map((m) => [+m[1], +m[2]]);
     const fixo = [...String(expr).matchAll(/\+\s*(\d+)(?!\d|d)/g)].reduce((t, m) => t + +m[1], 0);
     if (!dados.length) return expr;
-    const copias = condicao === "Morte" ? 0 : Math.floor(arc / 20), inferiores = Math.floor(arc / 15), soma = {};
+    const copias = condicao === "Morte" ? 0 : Math.floor(arc / 20) + copiasExtra, inferiores = Math.floor(arc / 15), soma = {};
     for (const [q, f] of dados) soma[f] = (soma[f] || 0) + q * (1 + copias);
     const maior = Math.max(...dados.map((x) => x[1]));
     if (inferiores) { const inf = DADO_INFERIOR[maior] || 4; soma[inf] = (soma[inf] || 0) + inferiores; }
     const partes = Object.entries(soma).sort((a, b) => b[0] - a[0]).map(([f, q]) => `${q}d${f}`);
     return partes.join(" + ") + (fixo ? ` + ${fixo}` : "");
+  }
+  const arcanoEscala = (arcano, talentos) => [cap(arcano) + (talentos.has("Mente Arcana") ? 10 : 0), talentos.has("Senhor das Condições") ? 1 : 0];
+  const SET_COND = /(acertos? cr[íi]ticos?|acerto cr[íi]tico|acertos?)\b[^.]*?\baplica\S* (?:mais )?(\d+) pontos de (Veneno|Podridão|Sangramento|Congelamento|Sono|Loucura|Morte)/gi;
+  function condicoesDeSet(ativos) {
+    const out = [];
+    for (const [nome, , e2, e4] of ativos) {
+      for (const txt of [e2, e4]) {
+        for (const m of String(txt || "").matchAll(SET_COND)) {
+          const nota = [];
+          if (/1x por turno/i.test(txt)) nota.push("1x por turno");
+          const m2 = String(e4 || "").match(/dobram contra ([^.]+?)\./i);
+          if (m2) nota.push("dobra contra " + m2[1]);
+          out.push({ set: nome, pontos: +m[2], condicao: m[3].charAt(0).toUpperCase() + m[3].slice(1).toLowerCase(), critico: m[1].toLowerCase().includes("crít"), nota: nota.join(", ") });
+        }
+      }
+    }
+    return out;
   }
   const pesoPecasSet = (pecas) => PECAS_SET_PESO.filter((p) => (pecas[p] || {}).set || (pecas[p] || {}).nome).length;
   function cargaExtraItens(inv, itensLivro) {
@@ -641,7 +658,7 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
 
   // ---------------- Ações em combate, usos, ações de arma, Alma, Metas, dinheiro (tabelas vêm de regras.py) ----------------
   const { TIPOS_ACAO, ACOES_LIVRO, NIVEL_RECARGA, EVENTO_RECARGA, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES,
-    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS } = LIVRO;
+    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO } = LIVRO;
   const dtProvocar = (d, nivel) => 10 + d.bc.MEN + Math.floor(nivel / 3);
   function acoesDoTurno(extras, tipos) {
     const q = { Comum: 1, "Bônus": 1, Movimento: 1, "Reação": 1 };
@@ -696,8 +713,28 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
     m = tl.match(/teste de (fortitude|reflexos?|vontade|ast[úu]cia)\s*\(dt 10 \+ b[ôo]nus de combate de (\w+)/);
     if (m) { out.teste = capitaliza(m[1]); out.dt_attr = ATR_POR_NOME[capitaliza(m[2])] || ""; }
     else { m = tl.match(/(?:resist[êe]ncia com|teste de) (fortitude|reflexos?|vontade|ast[úu]cia)/); if (m) out.teste = capitaliza(m[1]); }
+    // vários disparos/golpes e munição gasta (flechas, virotes, cartuchos, frascos)
+    Object.assign(out, { golpes: 1, ate: false, um_acerto: false, municao: 0, municao_tipo: "" });
+    if (out.nota || out.passiva) return out;
+    const NUM = "(\\d+|uma?|dois|duas|três|quatro|cinco)", MUN = "(flechas?|virotes?|cartuchos?|frascos?)";
+    const nx = (q) => N_EXT[q] || parseInt(q, 10);
+    m = tl.match(new RegExp("at[ée] (?:o m[áa]ximo de )?" + NUM + " " + MUN));
+    if (m) { out.golpes = nx(m[1]); out.ate = true; }
+    else { m = tl.match(new RegExp("gast\\w* " + NUM + " " + MUN + " em uma (?:[úu]nica )?a[çc][ãa]o")); if (m) out.golpes = nx(m[1]); }
+    m = tl.match(new RegExp("(?:gast\\w*|consome|disparar?) (?:at[ée] (?:o m[áa]ximo de )?)?" + NUM + " " + MUN));
+    if (m) { out.municao = nx(m[1]); out.municao_tipo = m[2].replace(/s$/, ""); }
+    else {
+      m = tl.match(new RegExp("(?<!at[ée] )(?:gastar|gasta) (?:todas|todos)(?: os)? ?" + MUN + "?"));
+      const qualquer = tl.match(new RegExp(MUN));
+      if (m && (m[1] || qualquer)) { out.municao = -1; out.municao_tipo = (m[1] || qualquer[1]).replace(/s$/, ""); }
+    }
+    if (out.golpes > 1 && !out.municao) out.municao = out.golpes;
+    out.um_acerto = out.golpes > 1 && /[úu]nica jogada de acerto|um [úu]nico teste de acerto|mesmo acerto/.test(tl);
+    if (out.municao > 1 && /n[íi]vel de dano para cada (?:flecha|virote|cartucho|frasco)/.test(tl)) out.delta *= out.municao;
+    if (out.golpes > 1 || out.municao) out.ataque = out.ataque || (/dispar|flecha|virote|explos/.test(tl) && !out.passiva);
     return out;
   }
+  const N_EXT = { um: 1, uma: 1, dois: 2, duas: 2, "três": 3, quatro: 4, cinco: 5 };
   function linhaDanoNivel(tabela, nv, delta) {
     const alvo = Math.max(1, Math.min(10, nv + delta));
     return [tabela.find((x) => x.nivel === alvo) || tabela[tabela.length - 1], alvo];
@@ -746,10 +783,10 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
     EFEITOS_TALENTOS, ARMADURAS_PESADAS, efeitosTalentos, rolarExpr, rolarAtaque, custoMana, danoDoEncantamento,
     TIPOS_DANO, NOMES_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS,
     receberCondicao, defesasContraDano, rolarPericia, rolarDefesa, descanso, pocaoEspiritualDados, desgasteAposAtaque,
-    condicoesDoEncantamento, escalarArcano, pesoPecasSet, cargaExtraItens, pesoInventario,
+    condicoesDoEncantamento, escalarArcano, arcanoEscala, condicoesDeSet, pesoPecasSet, cargaExtraItens, pesoInventario,
     ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
     PROPRIEDADES, NOMES_PROPRIEDADES, ELEMENTOS_PROP, lerProps, nomeProp, problemasProps, subirDado, efeitoProps, reqComProps,
-    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS,
+    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO,
     dtProvocar, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
     precoEmContos, separarMoedas, formatarDinheiro, lerDinheiro,
   };
@@ -1328,7 +1365,7 @@ function pPericias() {
       const bonus = bonus0 + (C.ef.pericia[nome] || 0) + (mestre ? 2 : 0) + discreta;
       return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados + (mestre ? 1 : 0)}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
         <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados + (mestre ? 1 : 0)}d20${mestre ? " · Mestre" : ""}</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
-    }).join("")}</div><p class="sub">Toque na perícia para rolar (${"1d20 a mais a cada 20 pontos do atributo, fica o maior"}). A caixa marca o treino (Modo Edição). • exige treino.</p>`;
+    }).join("")}</div><p class="sub">${banco.modo === "edicao" ? "Toque na perícia para ver o que ela faz" : "Toque na perícia para rolar (1d20 a mais a cada 20 pontos do atributo, fica o maior)"}. A caixa marca o treino (Modo Edição). • exige treino.</p>`;
   h += secao("Perícia de ataque treinada") + `<div>${R.PERICIAS_ATAQUE.map(([nn]) => `<span class="chip ${S.pericia_ataque === nn ? "on" : ""}" data-a="per-atk" data-n="${nn}">${nn}</span>`).join("")}</div>`;
   h += secao("Atributo da Prevalência") + `<div>${R.ATRIBUTOS.map((k) => `<span class="chip ${S.prevalencia_attr === k ? "on" : ""}" data-a="prev-attr" data-k="${k}">${k}</span>`).join("")}</div>`;
   return h;
@@ -1504,6 +1541,13 @@ A["hab-usar"] = (el) => {
 
 // ------------------------------------------------------------------ ações
 
+function linhasSet(critico) {
+  // pontos de condição dos sets ao acertar; os números dos sets são fixos (o Arcano não escala)
+  const cont = setsAtivos();
+  const ativos = Object.entries(cont).filter(([, q]) => q >= 2).map(([n, q]) => [n, q, SETS[n].p2, q >= 4 ? SETS[n].p4 : ""]);
+  return R.condicoesDeSet(ativos).filter((c) => !c.critico || critico).map((c) =>
+    `Set ${esc(c.set)}: <b>+${c.pontos}</b> pontos de ${c.condicao} se acertar${c.critico ? " (crítico)" : ""} <span class="sub">— valor fixo, o Arcano não escala sets${c.nota ? "; " + esc(c.nota) : ""}.</span>`);
+}
 function setsAtivos() {
   const cont = {};
   for (const p of PECAS) { const n = (S.set[p] || {}).set; if (n && SETS[n]) cont[n] = (cont[n] || 0) + 1; }
@@ -1812,14 +1856,17 @@ A["acao-arma"] = (el, ev) => {
     ${p.passiva ? "" : `<div class="secao">Ajustes do ataque</div><div class="grade g3">
       <label class="campo"><span>Nível de dano</span><select id="aa-d">${[-3, -2, -1, 0, 1, 2, 3].map((n) => op(n, n > 0 ? `+${n}` : n, n === Math.max(-3, Math.min(3, p.delta)))).join("")}</select></label>
       <label class="campo"><span>Rolagem</span><select id="aa-v">${op(0, "normal", p.vantagem === 0)}${op(1, "vantagem", p.vantagem === 1)}${op(-1, "desvantagem", p.vantagem === -1)}</select></label>
-      <label class="campo"><span>Crítico</span><select id="aa-c">${op(0, "normal", !p.critico)}${op(1, "garantido", p.critico)}</select></label></div>
-      <p class="sub">Os ajustes vêm do texto da ação; confira antes de rolar.${p.mult ? ` Crítico ×${p.mult}.` : ""}${p.teste ? ` O alvo faz ${p.teste} contra DT ${dt}.` : ""}</p>`}`,
+      <label class="campo"><span>Crítico</span><select id="aa-c">${op(0, "normal", !p.critico)}${op(1, "garantido", p.critico)}</select></label>
+      ${p.golpes > 1 ? `<label class="campo"><span>Disparos/golpes</span><select id="aa-g">${(p.ate ? [...Array(p.golpes)].map((_, n) => n + 1) : [p.golpes]).map((n) => op(n, n, n === p.golpes)).join("")}</select></label>` : ""}</div>
+      <p class="sub">Os ajustes vêm do texto da ação; confira antes de rolar.${p.mult ? ` Crítico ×${p.mult}.` : ""}${p.golpes > 1 ? ` ${p.golpes} disparos/golpes${p.ate ? " (até)" : ""}, ${p.um_acerto ? "uma jogada de acerto para todos" : "um teste de acerto para cada"}.` : ""}${p.municao ? ` Gasta ${p.municao < 0 ? "todas as" : p.municao} ${p.municao_tipo}(s).` : ""}${p.teste ? ` O alvo faz ${p.teste} contra DT ${dt}.` : ""}</p>`}`,
   `<button class="botao leve" data-a="acao-arma-usar" data-i="${i}" data-j="${j}">✓ Usar${p.acao ? ` (${p.acao})` : ""}</button>${p.passiva ? "" : `<button class="botao prim" data-a="acao-arma-rolar" data-i="${i}" data-j="${j}">🎲 Rolar ataque</button>`}`);
 };
 A["acao-arma-rolar"] = (el) => {
   const i = int(el.dataset.i), j = int(el.dataset.j), ar = ARMAS[S.armas[i].grupo], x = ar.acoes[j], p = R.acaoArma(x.nome, x.texto);
   const o = { delta: int($("#aa-d").value), vant: int($("#aa-v").value), critico: $("#aa-c").value === "1", acerto: p.acerto_garantido, mult: p.mult,
     rotulo: `${ar.nome}: ${x.nome}`, acao: p.acao || "Comum", teste: p.teste, dtAttr: p.dt_attr };
+  const g = $("#aa-g") ? int($("#aa-g").value, 1) : 1;
+  Object.assign(o, { golpes: g, umAcerto: p.um_acerto, municaoTipo: p.municao_tipo, municao: p.golpes > 1 && p.municao === p.golpes ? g : p.municao });
   fecharFolha(); atacar(i, o);
 };
 A["acao-arma-usar"] = (el) => {
@@ -2122,6 +2169,18 @@ A["desfazer"] = () => {
 /* Ataque com a arma i. o: {delta (níveis de dano), vant (1 vantagem, -1 desvantagem), critico (garantido), acerto (garantido),
    mult (multiplicador do crítico), rotulo, acao (tipo de ação gasta), teste e dtAttr (resistência do alvo), extra (linhas)} */
 let ataquePendente = null;
+function recursoMunicao(grupo, tipo) {
+  const nomes = (R.RECURSOS_ARMA[grupo] || []).map((r) => r[0]);
+  const alvo = { flecha: ["Flechas", "Virotes"], virote: ["Virotes", "Flechas"], cartucho: ["Cartuchos"], frasco: ["Frascos"] }[tipo] || [];
+  return alvo.find((n) => nomes.includes(n)) || null;
+}
+function gastarMunicao(i, tipo, qtd) {
+  const w = S.armas[i], n = recursoMunicao(w.grupo, tipo);
+  if (!n) return `Gasta ${qtd < 0 ? "toda a" : qtd} ${tipo || "munição"}${qtd !== 1 ? "s" : ""}.`;
+  const chave = `${i}:${w.grupo}`, r = S.recursos[chave] = S.recursos[chave] || {}, tem = int(r[n]);
+  r[n] = Math.max(0, tem - (qtd < 0 ? tem : qtd));
+  return qtd > tem ? `${n}: o contador tinha só ${tem} (ficou 0). Ajuste no − / + da arma.` : `${n}: ${tem} → ${r[n]}.`;
+}
 function atacar(i, o = {}) {
   const w = S.armas[i], ar = ARMAS[w.grupo]; if (!ar) return;
   const nv = int(w.nivel, 1), k = ar.ataque;
@@ -2139,9 +2198,17 @@ function atacar(i, o = {}) {
     return;
   }
   pagar("vigor_atual", C.d.vigor, vig, "Vigor", (custo) => {
-    const at = R.rolarAtaque(bonus, R.vantagem(C.a[k]) || o.vant === 1, ep.margem, rng, o.vant === -1);
-    if (o.critico && !at.desastre) at.critico = true;
-    const linhas = [txtAtaque(at)];
+    const golpes = Math.max(1, int(o.golpes, 1)), ataques = [];
+    for (let g = 0; g < golpes; g++) {
+      if (g === 0 || !o.umAcerto) {
+        const a = R.rolarAtaque(bonus, R.vantagem(C.a[k]) || o.vant === 1, ep.margem, rng, o.vant === -1);
+        if (o.critico && !a.desastre) a.critico = true;
+        ataques.push(a);
+      } else ataques.push(ataques[0]);
+    }
+    const at = Object.assign({}, ataques[0], { critico: ataques.some((a) => a.critico), desastre: ataques.every((a) => a.desastre) });
+    const linhas = golpes > 1 ? [`<span class="sub">${golpes} disparos/golpes, ${o.umAcerto ? "uma só jogada de acerto para todos" : "um teste de acerto para cada"}.</span>`] : [];
+    if (golpes === 1) linhas.push(txtAtaque(at));
     if (o.critico) linhas.push(`<span class="ok">Crítico garantido por esta ação.</span>`);
     if (o.acerto) linhas.push(`<span class="ok">Acerto garantido por esta ação.</span>`);
     const turno = sessao.ativa && sessao.meusTurnos ? sessao.meusTurnos : null;
@@ -2151,13 +2218,28 @@ function atacar(i, o = {}) {
       if (gastou) { dg.desgastada = true; dg.em = sessao.meusTurnos || 0; }
     }
     const mult = Math.max(ep.mult, int(o.mult) || 0);
-    if (!at.desastre) {
-      const [tot, partes] = R.rolarExpr(ep.dano, rng, at.critico, mult);
-      linhas.push(txtDano(tot, partes) + ` · ${esc(lD.tipo)}` + (nvD !== nv ? ` · dano de nível ${nvD}` : "") + (at.critico && mult > 2 ? ` · crítico ×${mult}` : ""));
+    let soma = 0;
+    ataques.forEach((a, g) => {
+      const pre = golpes > 1 ? `<b>#${g + 1}</b> ` : "";
+      if (golpes > 1 && (g === 0 || !o.umAcerto)) linhas.push(pre + txtAtaque(a));
+      if (a.desastre) return;
+      const [tot, partes] = R.rolarExpr(ep.dano, rng, a.critico, mult);
+      soma += tot;
+      linhas.push(pre + txtDano(tot, partes) + ` · ${esc(lD.tipo)}` + (nvD !== nv ? ` · dano de nível ${nvD}` : "") + (a.critico && mult > 2 ? ` · crítico ×${mult}` : ""));
       for (const [x, tipo, cnd] of ep.extras) {
-        const [t2, p2] = R.rolarExpr(x, rng, at.critico, mult);
-        linhas.push(txtDano(t2, p2, `+ ${esc(tipo)}`) + (cnd ? ` <span class="sub">(${esc(cnd)})</span>` : ""));
+        const [t2, p2] = R.rolarExpr(x, rng, a.critico, mult);
+        soma += t2;
+        linhas.push(pre + txtDano(t2, p2, `+ ${esc(tipo)}`) + (cnd ? ` <span class="sub">(${esc(cnd)})</span>` : ""));
       }
+    });
+    if (!at.desastre) linhas.push(...linhasSet(at.critico));
+    if (golpes > 1 && !at.desastre) linhas.push(`Dano somado se todos acertarem: <b>${soma}</b> <span class="sub">— desconte os que errarem a CA do alvo.</span>`);
+    if (o.municao) linhas.push(gastarMunicao(i, o.municaoTipo || "", int(o.municao)));
+    else {
+      const nm = recursoMunicao(w.grupo, "flecha"), r = S.recursos[`${i}:${w.grupo}`] || {};
+      if (nm && int(r[nm]) > 0) linhas.push(gastarMunicao(i, "flecha", 1));
+    }
+    if (!at.desastre) {
       if (ep.voraz && at.critico) {
         const cura = R.rolarExpr("1d10", rng)[0], mx = C.d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? mx : int(S.vida.atual, mx);
         S.vida.atual = String(Math.min(mx, antes + cura));
@@ -2183,6 +2265,7 @@ A["rolar-ini"] = () => {
   mostrarRolagem("⏳ Iniciativa", [`Iniciativa: <b style="font-size:20px">${Math.max(...d) + b}</b> <span class="sub">[d20 ${d.join(", ")} → ${Math.max(...d)} +${b}]</span>`]);
 };
 A["rolar-per"] = (el) => {
+  if (banco.modo === "edicao" && !el.dataset.rolar) return infoPericia(el);
   const r = R.rolarPericia(int(el.dataset.b), int(el.dataset.d, 1), rng);
   mostrarRolagem(`🎲 ${esc(el.dataset.n)}`, [`${esc(el.dataset.n)}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${r.bonus}]</span>`,
     `<span class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</span>`]);
@@ -2268,10 +2351,12 @@ A["conjurar"] = (el, ev) => {
     let expr = R.danoDoEncantamento(v.descricao);
     const conds = R.condicoesDoEncantamento(v.descricao);
     if (expr && conds.length && expr.replace(/\s+/g, " ") === conds[0][0]) expr = null;
+    const [arc, extraC] = R.arcanoEscala(C.a.ARC, talentos());
     if (!at.desastre) for (const [ce, cn] of conds) {
-      const escl = R.escalarArcano(ce, C.a.ARC, cn), [tot, partes] = R.rolarExpr(escl, rng, at.critico);
-      linhas.push(txtDano(tot, partes, cn) + " pontos" + (escl !== ce ? ` <span class="sub">· ${ce} → ${escl} por ${R.cap(C.a.ARC)} de Arcano</span>` : ""));
+      const escl = R.escalarArcano(ce, arc, cn, extraC), [tot, partes] = R.rolarExpr(escl, rng, at.critico);
+      linhas.push(txtDano(tot, partes, cn) + " pontos" + (escl !== ce ? ` <span class="sub">· ${ce} → ${escl} por ${arc} de Arcano${arc !== R.cap(C.a.ARC) ? " (Mente Arcana +10)" : ""}${extraC && cn !== "Morte" ? " + 1 cópia (Senhor das Condições)" : ""}</span>` : ""));
     }
+    if (!at.desastre) linhas.push(...linhasSet(at.critico));
     if (expr && !at.desastre) {
       const extra = k === "INT" ? C.d.dados_extra_magia : C.d.dados_extra_feitico;
       const [tot, partes] = R.rolarExpr(R.danoComDados(expr, extra), rng, at.critico);
@@ -2296,7 +2381,17 @@ A["rolar-vida"] = () => {
   mudar((s) => { s.vida.rolagens = s.vida.rolagens.concat(novos); });
   toast(`🎲 ${falta}d12: ${novos.join(", ")} → +${novos.reduce((a, b) => a + b, 0)} de Vida`);
 };
-A["treinar"] = (el) => mudar((s) => { const n = el.dataset.n; s.pericias = s.pericias.includes(n) ? s.pericias.filter((x) => x !== n) : s.pericias.concat([n]); });
+function infoPericia(el) {
+  const n = el.dataset.n, [resumo, usada] = R.PERICIAS_RESUMO[n] || ["", ""];
+  const p = R.PERICIAS.find((x) => x[0] === n), atrs = p ? p[1] : null, req = p ? p[2] : false, tr = C.treinadas.has(n);
+  const at = atrs ? atrs.map((k) => R.NOMES_ATR[k]).join(" ou ") : `à escolha do jogador (agora ${R.NOMES_ATR[S.prevalencia_attr || "ARC"]})`;
+  folha(esc(n), `<p class="meta">Atributo: ${at}${req ? " · exige treino (sem treino, só um sucesso crítico passa)" : ""}${usada ? ` · Usada em: ${esc(usada)}` : ""}</p>
+    <div class="desc">${esc(resumo)}</div>
+    <p class="sub">Teste: ${el.dataset.d}d20 (1 a mais a cada 20 pontos do atributo, fica o maior) +${el.dataset.b}. Treinada soma a Curva do atributo; todas somam nível ÷ 2.</p>
+    <p class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</p>`,
+  `<button class="botao leve" data-a="treinar" data-n="${esc(n)}" data-fechar="1">${tr ? "Tirar o treino" : "Treinar"}</button><button class="botao prim" data-a="rolar-per" data-rolar="1" data-n="${esc(n)}" data-b="${el.dataset.b}" data-d="${el.dataset.d}">🎲 Rolar</button>`);
+}
+A["treinar"] = (el) => { if (el.dataset.fechar) fecharFolha(); mudar((s) => { const n = el.dataset.n; s.pericias = s.pericias.includes(n) ? s.pericias.filter((x) => x !== n) : s.pericias.concat([n]); }); };
 A["per-atk"] = (el) => mudar((s) => { s.pericia_ataque = el.dataset.n; });
 A["prev-attr"] = (el) => mudar((s) => { s.prevalencia_attr = el.dataset.k; });
 A["portao"] = (el) => mudar((s) => { const v = s.portao[el.dataset.n]; v[int(el.dataset.i)] = !v[int(el.dataset.i)]; });
