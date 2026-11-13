@@ -305,11 +305,12 @@ def rolar_expr(expr, rng, dobrar=False, mult=2):
     return total, partes
 
 
-def rolar_ataque(bonus, com_vantagem, margem, rng):
-    """1d20 (2d20 com vantagem, fica o maior) + bônus. Crítico: natural >= margem (dobra dados);
-    só o 20 acerta garantido. Desastre: natural 1."""
-    d = [rng(20) for _ in range(2 if com_vantagem else 1)]
-    nat = max(d)
+def rolar_ataque(bonus, com_vantagem, margem, rng, desvantagem=False):
+    """1d20 (2d20 com vantagem, fica o maior; com desvantagem, fica o menor; as duas se anulam) + bônus.
+    Crítico: natural >= margem (dobra dados); só o 20 acerta garantido. Desastre: natural 1."""
+    dois = com_vantagem != desvantagem
+    d = [rng(20) for _ in range(2 if dois else 1)]
+    nat = min(d) if desvantagem and not com_vantagem else max(d)
     return {"d20": d, "natural": nat, "bonus": bonus, "total": nat + bonus,
             "critico": nat >= margem, "garantido": nat == 20, "desastre": nat == 1}
 
@@ -689,3 +690,263 @@ def req_com_props(reqs, props):
     if "Pesada" in [nome_prop(p) for p in props] and "FOR" in reqs:
         return dict(reqs, FOR=reqs["FOR"] * 2)
     return reqs
+
+
+
+# ---------------- Ações em combate (capítulo Combate) ----------------
+TIPOS_ACAO = ["Comum", "Bônus", "Movimento", "Reação"]
+ACOES_LIVRO = [  # (nome, tipo, teste, descrição) — teste: "ataque", uma perícia, "provocar" ou ""
+    ("Atacar", "Comum", "ataque", "Golpe com arma ou encantamento contra a CA do alvo."),
+    ("Agarrar", "Comum", "Atletismo", "O alvo fica imóvel enquanto você vencer testes de ataque ou Atletismo; seu movimento cai à metade."),
+    ("Derrubar", "Comum", "Atletismo", "Atletismo contra o Atletismo do alvo; numa vitória ele fica Caído."),
+    ("Preparar", "Comum", "", "Prepara uma ação para um evento que você define; ela gasta a sua Reação."),
+    ("Apoiar", "Comum", "", "A criatura apoiada tem vantagem no próximo teste."),
+    ("Trocar de arma", "Comum", "", "Guarda uma arma e saca outra. Armas de Vigor gastam também a ação bônus; entre arma e cajado/selo custa só 3 m de movimento."),
+    ("Usar item", "Comum", "", "Beber uma poção, comer uma refeição pronta, usar um item ou entregá-lo a 1,5 m."),
+    ("Esconder", "Comum", "Furtividade", "Furtividade contra a Percepção de quem vê você; fica escondido até atacar, conjurar ou ser achado."),
+    ("Mirar", "Bônus", "", "Vantagem na próxima jogada de ataque contra o alvo declarado."),
+    ("Provocar", "Bônus", "provocar", "Alvo a 9 m faz Vontade contra a sua DT; se falhar, tem desvantagem contra quem não for você até o fim do próximo turno dele."),
+    ("Movimentar", "Movimento", "", "Anda até o seu valor de movimento."),
+    ("Levantar", "Movimento", "", "Sai da condição Caído."),
+    ("Desengajar", "Movimento", "", "Anda metade do movimento sem provocar golpe de oportunidade."),
+    ("Golpe de Oportunidade", "Reação", "ataque", "Ataque contra quem cruza o espaço de 1,5 m em volta de você."),
+    ("Incentivar", "Reação", "", "Um aliado a 1,5 m age logo antes de você neste turno."),
+]
+
+
+def dt_provocar(d, nivel):
+    """Provocar: Vontade do alvo contra 10 + BC de Mente + nível ÷ 3."""
+    return 10 + d["bc"]["MEN"] + nivel // 3
+
+
+def acoes_do_turno(acoes_extras, tipos_extras):
+    """Ações por turno: 1 de cada + as extras da Destreza, cada uma Comum ou Bônus (escolha fixa do jogador;
+    sem escolha conta como Comum). Devolve ({tipo: quantidade}, extras sem tipo escolhido)."""
+    q = {"Comum": 1, "Bônus": 1, "Movimento": 1, "Reação": 1}
+    faltam = 0
+    for i in range(acoes_extras):
+        t = tipos_extras[i] if i < len(tipos_extras) else ""
+        if t not in ("Comum", "Bônus"):
+            faltam += 1
+            t = "Comum"
+        q[t] += 1
+    return q, faltam
+
+
+# ---------------- Usos limitados (talentos, talismãs, Alma) ----------------
+_USOS = re.compile(r"\b(\d+|uma|duas|três)\s*(?:x|vez(?:es)?)\s*por\s*(descanso curto|descanso longo|combate|cena|turno|rodada|dia)\b", re.I)
+_NUM_PT = {"uma": 1, "duas": 2, "três": 3}
+NIVEL_RECARGA = {"turno": 0, "rodada": 0, "combate": 1, "cena": 1, "descanso curto": 2, "descanso longo": 3, "dia": 3}
+EVENTO_RECARGA = {"turno": 0, "combate": 1, "curto": 2, "longo": 3}
+
+
+def usos_limitados(texto):
+    """'1x por combate' -> (1, 'combate'); sem limite -> None (vale o primeiro limite do texto)."""
+    m = _USOS.search(texto or "")
+    if not m:
+        return None
+    q = m.group(1).lower()
+    return (int(q) if q.isdigit() else _NUM_PT[q], m.group(2).lower())
+
+
+def recarrega(periodo, evento):
+    """O evento ('turno', 'combate', 'curto', 'longo') recarrega usos deste período?
+    Descanso longo recarrega tudo; o curto, o que é por descanso curto, combate e turno; o fim do combate, combate e turno."""
+    return NIVEL_RECARGA.get(periodo, 3) <= EVENTO_RECARGA[evento]
+
+
+# ---------------- Ações de arma (botão e rolagem) ----------------
+_N_TXT = {"um": 1, "uma": 1, "dois": 2, "duas": 2, "três": 3}
+_TIPO_ACAO_RE = [("Completa", r"a[çc][ãa]o completa"), ("Reação", r"\brea[çc][ãa]o\b"), ("Bônus", r"a[çc][ãa]o b[ôo]nus"),
+                 ("Comum", r"a[çc][ãa]o comum"), ("Movimento", r"a[çc][ãa]o de movimento"), ("Livre", r"a[çc][ãa]o livre")]
+_ATAQUE_RE = re.compile(r"\batac|\bataque|\bgolpe|\bestocada|\bdispar|\bcorte\b|teste de acerto|\btiro\b|explos", re.I)
+
+
+def acao_arma(nome, texto):
+    """Lê uma ação de arma do livro: tipo de ação, se rola ataque, níveis de dano a mais/menos,
+    vantagem/desvantagem, crítico garantido, multiplicador e teste de resistência do alvo."""
+    t = texto or ""
+    tl = t.lower()
+    out = {"nome": nome, "acao": "", "ataque": False, "delta": 0, "vantagem": 0, "critico": False,
+           "acerto_garantido": False, "mult": 0, "teste": "", "dt_attr": "", "passiva": False, "nota": False}
+    pos = [(m.start(), tipo) for tipo, rx in _TIPO_ACAO_RE for m in [re.search(rx, tl)] if m]
+    if pos:
+        out["acao"] = min(pos)[1]
+    automatico = tl.startswith("sempre que") and not re.search(r"pode gastar|pode,? como uma rea", tl)
+    out["passiva"] = nome.lower().startswith("passiva") or automatico or nome == "Nota"
+    # linhas que só explicam a mecânica da arma (sem nome de ação): "•", frases longas, efeitos das Melodias
+    out["nota"] = (nome.strip() in ("•", "Nota", "Acúmulos de Melodia", "Paz", "Calma", "Melancolia") or len(nome) > 34
+                   or nome[:1].islower())
+    out["ataque"] = bool(_ATAQUE_RE.search(nome + " " + t)) and not out["passiva"]
+    delta = 0
+    for m in re.finditer(r"([+\-−]?\s*\d+|um|uma|dois|duas|três)\s*n[íi]ve(?:l|is)\s*(?:de dano\s*)?(acima|a mais|abaixo|a menos|inferior)?", tl):
+        q = m.group(1).replace("−", "-").replace(" ", "")
+        n = _N_TXT.get(q, None)
+        n = abs(int(q)) if n is None else n
+        dirx = m.group(2) or ""
+        neg = dirx in ("abaixo", "a menos", "inferior") or q.startswith("-")
+        if not dirx and not q.startswith(("+", "-")):
+            ctx = tl[max(0, m.start() - 12):m.start()]
+            if "+" not in ctx and "-" not in ctx and "−" not in ctx:
+                continue
+        delta += -n if neg else n
+    out["delta"] = delta
+    if re.search(r"com vantagem", tl):
+        out["vantagem"] = 1
+    if re.search(r"com desvantagem", tl):
+        out["vantagem"] = -1
+    out["critico"] = bool(re.search(r"cr[íi]tico (?:autom[áa]tico|garantido)", tl))
+    out["acerto_garantido"] = "acerto garantido" in tl
+    m = re.search(r"multiplicador do cr[íi]tico [^.]*?para (\d+)x", tl) or re.search(r"x2\s*->\s*x(\d)", tl)
+    if m:
+        out["mult"] = int(m.group(1))
+    m = re.search(r"teste de (fortitude|reflexos?|vontade|ast[úu]cia)\s*\(dt 10 \+ b[ôo]nus de combate de (\w+)", tl)
+    if m:
+        out["teste"] = m.group(1).capitalize()
+        out["dt_attr"] = ATR_POR_NOME.get(m.group(2).capitalize(), "")
+    else:
+        m = re.search(r"(?:resist[êe]ncia com|teste de) (fortitude|reflexos?|vontade|ast[úu]cia)", tl)
+        if m:
+            out["teste"] = m.group(1).capitalize()
+    return out
+
+
+RECURSOS_ARMA = {  # contadores da mecânica de cada arma: (nome, máximo; 0 = sem máximo)
+    "Adaga": [("Fragmentos de Combo", 0)],
+    "Espada Grande": [("Momentum", 5)],
+    "Machado Grande": [("Impacto preparado", 3)],
+    "Lança-Arma": [("Cartuchos", 5)],
+    "Lâmina-Dínamo": [("Cargas", 5), ("Frascos", 5)],
+    "Arco": [("Flechas", 30)],
+    "Besta Pesada": [("Virotes", 20)],
+    "Lira": [("Paz", 5), ("Calma", 5), ("Melancolia", 5)],
+}
+
+
+def linha_dano_nivel(tabela, nv, delta):
+    """Linha da tabela da arma para o nível nv + delta (de 1 a 10). Devolve (linha, nível usado)."""
+    alvo = max(1, min(10, nv + delta))
+    linha = next((x for x in tabela if x["nivel"] == alvo), None) or tabela[-1]
+    return linha, alvo
+
+
+# ---------------- Alma: montador de habilidades (Tabela de valores) ----------------
+ALMA_TABELAS = {
+    "Dano em alvo único": ["1d4", "1d6", "2d4", "2d6", "2d8", "3d8", "4d8", "5d8", "6d8", "6d10", "8d10", "9d12"],
+    "Dano em múltiplos alvos": ["1d4 (desvantagem)", "1d4", "1d6", "1d8", "1d10", "2d8", "3d6", "3d8", "4d8", "5d8", "6d8", "7d8"],
+    "Área": ["1,5 m", "3 m", "4,5 m", "6 m", "7,5 m", "9 m", "10,5 m", "12 m", "13,5 m", "15 m", "16,5 m", "18 m"],
+    "Aumento de atributo": ["+1", "+2", "+2", "+3", "+3", "+3", "+4", "+4", "+4", "+5", "+6", "+7"],
+    "Redução de dano": ["−1", "−2", "−2", "−2", "−3", "−3", "−3", "−4", "−4", "−4", "−5", "−6"],
+    "Redução de margem de crítico": ["−1"] * 4 + ["−2"] * 4 + ["−3"] * 4,
+    "Efeito negativo": ["Fraco (−5 DT)", "Fraco", "Fraco", "Fraco", "Fraco", "Médio", "Médio", "Médio", "Médio", "Forte", "Forte", "Extremo"],
+}
+ALMA_CATEGORIAS = ["Dano", "Benefício", "Ofuscamento", "Interlúdio"]
+ALMA_EXECUCAO = ["Comum", "Bônus", "Movimento", "Reação", "Completa", "Livre"]
+ALMA_AJUSTES = [  # (nível, texto) — "Facilitando e dificultando habilidades"
+    (-2, "Execução como ação bônus"), (-2, "Duração de uma cena"),
+    (-1, "+4,5 m de alcance"), (-1, "−3 na DT"), (-1, "Execução como movimento ou reação"), (-1, "Troca do teste de perícia"),
+    (-1, "Duração de uma rodada"), (-1, "+1,5 m na área afetada"),
+    (1, "Exige um teste extra de outra perícia"), (1, "Execução com +1 ação Comum"), (1, "Reduz um atributo do portador em −5 por rodada"),
+    (1, "Causa dano em aliados"), (1, "+3 na DT"), (1, "Redução de dano específico"),
+    (2, "Execução como ação completa"), (2, "Aplica um efeito negativo no portador"), (2, "Desvantagem no ataque ou vantagem para resistir"),
+]
+
+
+def alma_nivel_efetivo(nivel_alma, ajustes, n_categorias):
+    """Nível da alma + ajustes − 1 por categoria a mais (Mesclando Habilidades), entre 0 e 11."""
+    soma = sum(v for v, t in ALMA_AJUSTES if t in set(ajustes))
+    return max(0, min(11, nivel_alma + soma - max(0, n_categorias - 1)))
+
+
+def alma_dt_ajuste(ajustes):
+    return (3 if "+3 na DT" in ajustes else 0) - (3 if "−3 na DT" in ajustes else 0)
+
+
+def alma_valor(tabela, nivel_ef):
+    vals = ALMA_TABELAS.get(tabela)
+    return vals[max(0, min(11, nivel_ef))] if vals else ""
+
+
+# ---------------- Metas de Vida (Caminhos de ofício) ----------------
+CAMINHOS = [
+    ("Costureiro", "Costura", ["Costurar uma peça de um Animal do Andar diante do costureiro mentor.",
+                               "Costurar peças de 5 Animais diferentes do Andar.",
+                               "Costurar um set completo (Capacete, Peitoral, Manopla, Calça e Bota) com itens de um Prevalecente do Andar."]),
+    ("Ferreiro", "Tecnologia", ["Subir uma arma de nível na Bigorna Portátil diante do ferreiro mentor.",
+                                "Forjar armas de 3 Animais diferentes do Andar.", "Forjar a arma de um Prevalecente do Andar."]),
+    ("Cozinheiro", "Gastronomia", ["Preparar uma refeição de nível 2 diante de um chef.", "Criar 5 receitas novas com ingredientes do Andar.",
+                                   "Preparar um Banquete de nível 4 para todo o grupo (horta e pasto S, Base nível 6 ou mais)."]),
+    ("Cultivador", "Agricultura", ["Cuidar de uma horta por 2 semanas sem perder nenhuma planta.", "Colher 3 espécies diferentes com qualidade A.",
+                                   "Colher uma planta com a qualidade máxima que a Base permite (mínimo A)."]),
+    ("Pastor", "Agricultura", ["Adestrar um animal da Base.", "Manter 3 animais produzindo por 4 semanas, sem nenhum rejeitar o dono.",
+                               "Obter produto de pasto com a qualidade máxima que a Base permite (mínimo A) de dois animais."]),
+    ("Explorador", "Navegação", ["Guiar o grupo em 2 viagens sem se perder.", "Registrar 3 rotas novas do Andar (cada uma vira um Mapa Regional).",
+                                "Descobrir o caminho até o covil do Prevalecente de um país do Andar."]),
+    ("Pesquisador", "Ciências", ["Estudar 5 animais diferentes no Bestiário.", "Completar o registro de uma região (um Lacaio, um Comum, um Forte e um Animal).",
+                                 "Descobrir o Coração, o Ponto Chave do Prevalecente de um país do Andar."]),
+    ("Curandeiro", "Medicina", ["Tratar 3 aliados com uma condição ativada.", "Preparar 5 poções ou remédios.",
+                                "Curar um mal que atinge uma comunidade inteira do Andar (um contágio, por exemplo)."]),
+    ("Diplomata", "Persuasão", ["Ganhar a confiança de uma tribo ou facção do Andar.", "Resolver 3 conflitos por negociação, sem violência.",
+                                "Unir facções do Andar em torno de uma causa, de modo que 3 NPCs com Funções diferentes aceitem acompanhar o grupo."]),
+]
+ETAPAS_META = ["Aprendiz", "Prática", "Obra-prima"]
+METAS_MAX = 5
+
+
+def recompensa_metas(concluidas):
+    """Cada Meta concluída dá 1 talento extra; a primeira dá também +5 pontos em um atributo."""
+    n = max(0, min(METAS_MAX, int(concluidas or 0)))
+    return {"talentos": n, "pontos": 5 if n >= 1 else 0}
+
+
+# ---------------- Dinheiro (Contos) ----------------
+CONTOS_POR = {"Contilha": 1000000, "ouro": 1000, "prata": 10, "Contos": 1}   # 10 Contos = 1 de prata; 100 de prata = 1 de ouro; 1000 de ouro = 1 Contilha
+MOEDAS = ["Contilha", "ouro", "prata", "Contos"]
+
+
+def preco_em_contos(texto):
+    """'4 Contos de prata' -> 40; '15 Contos' -> 15; '2 Contos de ouro' -> 2000; '1 Contilha' -> 1000000."""
+    t = (texto or "").lower()
+    m = re.search(r"(\d+)\s*contilhas?", t)
+    if m:
+        return int(m.group(1)) * CONTOS_POR["Contilha"]
+    m = re.search(r"(\d+)\s*contos?\s*de\s*(prata|ouro)", t)
+    if m:
+        return int(m.group(1)) * CONTOS_POR[m.group(2)]
+    m = re.search(r"(\d+)\s*contos?", t)
+    return int(m.group(1)) if m else None
+
+
+def separar_moedas(contos):
+    """1234 -> {'Contilha': 0, 'ouro': 1, 'prata': 23, 'Contos': 4}"""
+    resto, out = max(0, int(contos or 0)), {}
+    for k in MOEDAS:
+        out[k], resto = divmod(resto, CONTOS_POR[k])
+    return out
+
+
+def formatar_dinheiro(contos):
+    m = separar_moedas(contos)
+    partes = [f"{m['Contilha']} Contilha" + ("s" if m["Contilha"] > 1 else "")] if m["Contilha"] else []
+    partes += [f"{m[k]} de {k}" for k in ("ouro", "prata") if m[k]]
+    if m["Contos"] or not partes:
+        partes.append(f"{m['Contos']} Conto" + ("" if m["Contos"] == 1 else "s"))
+    return ", ".join(partes)
+
+
+def ler_dinheiro(texto):
+    """Lê um valor escrito à mão ('2 de ouro, 35 de prata', '35 pratas', '120 contos'). Sem número -> None."""
+    t = (texto or "").lower()
+    if not re.search(r"\d", t):
+        return None
+    total, achou = 0, False
+    for rx, mult in ((r"(\d+)\s*contilhas?", CONTOS_POR["Contilha"]), (r"(\d+)\s*(?:contos?\s*)?(?:de\s*)?ouros?", CONTOS_POR["ouro"]),
+                     (r"(\d+)\s*(?:contos?\s*)?(?:de\s*)?pratas?", CONTOS_POR["prata"])):
+        for m in re.finditer(rx, t):
+            total += int(m.group(1)) * mult
+            achou = True
+        t = re.sub(rx, " ", t)
+    for m in re.finditer(r"(\d+)\s*(?:contos?)?", t):
+        total += int(m.group(1))
+        achou = True
+    return total if achou else None

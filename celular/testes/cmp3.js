@@ -1,6 +1,6 @@
 // Compara as regras novas do celular com as do PC (casos de gen3.py).
 const R = require("./regras_montado.js");
-const { casos, itens } = require("./casos3.json");
+const { casos, itens, acoes, usos, extras, rec } = require("./casos3.json");
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 let erros = 0;
 const falha = (c, oque, js, py) => { if (erros++ < 8) console.log("DIFERENTE:", oque, JSON.stringify(js), "≠", JSON.stringify(py)); };
@@ -29,5 +29,20 @@ for (const c of casos) {
   const desc = R.descontoMatricula(esc, c.escola, c.mana, c.esp);
   if (!igual(desc, c.desconto)) falha(c, "matrícula", desc, c.desconto);
 }
+for (const [n, t, esp] of acoes) { const r = R.acaoArma(n, t); if (!igual(r, esp)) falha(null, "ação de arma " + n, r, esp); }
+for (const [t, esp] of usos) { const r = R.usosLimitados(t); if (!igual(r, esp)) falha(null, "usos", r, esp); }
+for (const e of extras) {
+  if (!igual(R.acoesDoTurno(e.n, e.tipos), e.turno)) falha(e, "turno", R.acoesDoTurno(e.n, e.tipos), e.turno);
+  if (R.almaNivelEfetivo(e.nv, e.aj, e.nc) !== e.ne) falha(e, "alma nível", R.almaNivelEfetivo(e.nv, e.aj, e.nc), e.ne);
+  if (R.almaValor(e.tab, e.ne) !== e.val) falha(e, "alma valor", R.almaValor(e.tab, e.ne), e.val);
+  if (R.almaDtAjuste(e.aj) !== e.dtaj) falha(e, "alma DT", R.almaDtAjuste(e.aj), e.dtaj);
+  if (!igual(R.separarMoedas(e.c), e.sep)) falha(e, "moedas", R.separarMoedas(e.c), e.sep);
+  if (R.formatarDinheiro(e.c) !== e.fmt) falha(e, "formatar", R.formatarDinheiro(e.c), e.fmt);
+  if (R.lerDinheiro(e.txt) !== e.ler) falha(e, "ler dinheiro " + e.txt, R.lerDinheiro(e.txt), e.ler);
+  if (R.precoEmContos(e.txt) !== e.preco) falha(e, "preço " + e.txt, R.precoEmContos(e.txt), e.preco);
+  if (!igual(R.recompensaMetas(e.metas_in), e.metas)) falha(e, "metas", R.recompensaMetas(e.metas_in), e.metas);
+}
+for (const [p, e, esp] of rec) if (R.recarrega(p, e) !== esp) falha(null, "recarga " + p + "/" + e, R.recarrega(p, e), esp);
+console.log(`ações de arma ${acoes.length}, textos de usos ${usos.length}, extras ${extras.length}`);
 console.log(`regras novas: ${casos.length} casos, ${erros} diferenças`);
 process.exit(erros ? 1 : 0);

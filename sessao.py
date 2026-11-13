@@ -651,6 +651,8 @@ class Servidor:
             ordem.sort(key=lambda o: (-o[1], -o[2], o[0]))
             self.ordem, self.vez = ordem, -1
         self._anotar("Iniciativa: " + ", ".join(f"{n} {v}" for n, v, _ in ordem))
+        for n in self.jogadores():
+            self._evento(n, {"tipo": "combate", "fase": "inicio"})
         self.passar_turno(inicio=True)
 
     def definir_iniciativa(self, nome, valor):
@@ -730,6 +732,7 @@ class Servidor:
         for n, c in fim:
             self._evento(n, {"tipo": "fim", "nome": c})
         for n in self.jogadores():
+            self._evento(n, {"tipo": "combate", "fase": "fim"})
             self._sincronizar(n)
         self._anotar("Fim do combate" + (" — terminou: " + ", ".join(f"{c} ({n})" for n, c in fim) if fim else ""))
         self.fila.put(("mudou",))
@@ -1599,6 +1602,13 @@ class JanelaSessao(tk.Toplevel):
             if self.ponte:
                 self.ponte.minha_vez()
             self._aviso_sonoro()
+        elif tipo == "combate":
+            inicio = ev.get("fase") == "inicio"
+            texto = ("⚔ Começou o combate: ações, contra-encantamentos e usos por combate renovados." if inicio
+                     else "🏳 Fim do combate: usos por combate renovados.")
+            if self.ponte and hasattr(self.ponte, "combate"):
+                self.ponte.combate(inicio)
+            self._ultima_ficha = None
         elif tipo == "fim":
             texto = f"Terminou: {ev.get('nome')}"
         else:

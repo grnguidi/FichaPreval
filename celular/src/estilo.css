@@ -178,3 +178,65 @@ body.com-mesa .toast{bottom:calc(124px + env(safe-area-inset-bottom))}
 .botao.mini{min-height:32px;padding:4px 12px;font-size:13.5px;margin-right:8px}
 .mesa.vez{background:var(--vinho)}
 .mesa.vez .info{color:#fff}
+
+/* modo noturno: botões principais legíveis (texto 6,1:1) */
+html.noite .botao.prim{background:#a5423a;border-color:#d27467;color:#fff}
+html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
+/* turno */
+.cartao.turno{padding:12px}
+.turno .tipos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.turno .tipo{border:1px solid var(--linha);background:var(--campo);border-radius:10px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--tinta);min-height:56px}
+.turno .tipo b{font-size:13px}
+.turno .tipo.cheio{background:var(--perg2);opacity:.75}
+.pts{display:inline-flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.pts i{width:11px;height:11px;border-radius:50%;border:1.5px solid var(--ouro);display:inline-block}
+.pts i.gasto{background:var(--vinho);border-color:var(--vinho)}
+.pts i.extra{border-color:var(--vinho);border-style:dashed}
+.pts.grande i{width:14px;height:14px}
+.lista .item .botao.mini{margin-left:6px}
+/* ações da arma e recursos */
+.acoes-arma{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip-acao{border:1px solid var(--ouro);background:var(--campo);color:var(--tinta);border-radius:16px;padding:6px 11px;font-size:14px;font-family:var(--serif);display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.15;min-height:40px;justify-content:center}
+.chip-acao small{font-size:11px;color:var(--tinta2);font-style:italic}
+.chip-acao.passiva{border-style:dashed;opacity:.85}
+.recursos{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.recurso{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--linha);border-radius:18px;padding:2px 4px;background:var(--campo);font-size:14px}
+.recurso button{width:32px;height:32px;border-radius:50%;border:1px solid var(--ouro);background:transparent;color:var(--vinho);font-size:18px;line-height:1}
+/* condições compactas */
+.conds{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.cond{position:relative;overflow:hidden;border:1px solid var(--linha);background:var(--campo);border-radius:10px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;color:var(--tinta);font-family:var(--serif);font-size:14px;min-height:44px}
+.cond span{font-variant-numeric:tabular-nums;color:var(--tinta2)}
+.cond.on{border-color:var(--vinho)}
+.cond.on span{color:var(--vinho);font-weight:700}
+.cond i{position:absolute;left:0;bottom:0;height:3px;background:var(--vinho)}
+/* dinheiro */
+.moedas{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0}
+/* alma */
+.cartao.hab{padding:12px 14px;margin-bottom:8px}
+.topo-hab{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.topo-hab b{font-size:17px;color:var(--vinho)}
+/* passo a passo */
+.passos-wz{display:flex;gap:4px}
+.passos-wz i{flex:1;height:4px;border-radius:2px;background:var(--linha)}
+.passos-wz i.feito{background:var(--ouro)}
+.passos-wz i.atual{background:var(--vinho)}
+/* barra de abas com Alma (7 abas) */
+.nav{grid-template-columns:none;display:flex}
+.nav button{flex:1;min-width:0}
+@media (max-width:360px){.nav button{font-size:10px}.nav button i{font-size:18px}}
+/* impressão */
+#impressao{display:none}
+@media print{
+  html.imprimindo body{background:#fff;color:#000;padding:0}
+  html.imprimindo body>*:not(#impressao){display:none!important}
+  html.imprimindo #impressao{display:block}
+  .impr{font-family:Georgia,"Times New Roman",serif;font-size:10.5pt;color:#000}
+  .impr h1{font-size:18pt;margin:0 0 2mm;color:#5a1a1a}
+  .impr h2{font-size:11pt;margin:5mm 0 1.5mm;color:#5a1a1a;border-bottom:1px solid #b39552;break-after:avoid}
+  .impr table{width:100%;border-collapse:collapse;margin:1mm 0;break-inside:avoid}
+  .impr th,.impr td{border:1px solid #c9b98f;padding:1mm 1.5mm;text-align:left;vertical-align:top}
+  .impr th{background:#efe6cf;font-size:9pt}
+  .impr .linha{margin:1mm 0}
+  .impr .rodape-impr{margin-top:6mm;font-size:8pt;color:#666}
+  @page{size:A4;margin:12mm}
+}

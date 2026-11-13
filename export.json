@@ -1,0 +1,251 @@
+{
+ "versao": 1,
+ "inicializado": true,
+ "sem_alma": false,
+ "especie_notas": "",
+ "identidade": {
+  "nome": "Lyra Vensal",
+  "player": "",
+  "nivel": 4,
+  "especie": "Elfa",
+  "sonho": "",
+  "guilda": ""
+ },
+ "atributos": {
+  "VIT": {
+   "inicial": "10",
+   "niveis": "0",
+   "especie": "0",
+   "bonus": "0"
+  },
+  "MEN": {
+   "inicial": "14",
+   "niveis": "0",
+   "especie": "0",
+   "bonus": "0"
+  },
+  "TEN": {
+   "inicial": "9",
+   "niveis": "0",
+   "especie": "0",
+   "bonus": "0"
+  },
+  "FOR": {
+   "inicial": "8",
+   "niveis": "0",
+   "especie": "-2",
+   "bonus": "0"
+  },
+  "DES": {
+   "inicial": "11",
+   "niveis": "10",
+   "especie": "0",
+   "bonus": "0"
+  },
+  "INT": {
+   "inicial": "16",
+   "niveis": "10",
+   "especie": "2",
+   "bonus": "0"
+  },
+  "FE": {
+   "inicial": "12",
+   "niveis": "0",
+   "especie": "0",
+   "bonus": "0"
+  },
+  "ARC": {
+   "inicial": "7",
+   "niveis": "0",
+   "especie": "0",
+   "bonus": "0"
+  }
+ },
+ "vida": {
+  "modo": "media",
+  "rolagens": [],
+  "atual": "38",
+  "mana_atual": "",
+  "vigor_atual": ""
+ },
+ "pericias": [
+  "Ciências",
+  "Medicina",
+  "Investigação"
+ ],
+ "prevalencia_attr": "ARC",
+ "pericia_ataque": "Luta",
+ "armas": [
+  {
+   "grupo": "Cajado",
+   "nivel": "1",
+   "props": ""
+  },
+  {
+   "grupo": "",
+   "nivel": "1",
+   "props": ""
+  }
+ ],
+ "equip": {
+  "armadura": "",
+  "escudo": "",
+  "ca_extra": "",
+  "peitoral_set": false
+ },
+ "encantamentos": [
+  {
+   "familia": "Pensar Além",
+   "versoes": [
+    1
+   ],
+   "equipado": true
+  }
+ ],
+ "talentos": {
+  "2": "Mãos Gêmeas",
+  "4": "",
+  "6": "",
+  "8": "",
+  "10": "",
+  "12": "",
+  "14": "",
+  "16": "",
+  "18": "",
+  "20": "",
+  "22": "",
+  "24": "",
+  "26": "",
+  "28": "",
+  "30": "",
+  "extra": "",
+  "meta1": "",
+  "meta2": "",
+  "meta3": "",
+  "meta4": "",
+  "meta5": ""
+ },
+ "alma": {
+  "nome": "",
+  "atr": "INT",
+  "restantes": "",
+  "historia": "",
+  "habilidades": []
+ },
+ "talismas": [
+  {
+   "nome": "",
+   "efeito": ""
+  },
+  {
+   "nome": "",
+   "efeito": ""
+  },
+  {
+   "nome": "",
+   "efeito": ""
+  },
+  {
+   "nome": "",
+   "efeito": ""
+  },
+  {
+   "nome": "",
+   "efeito": ""
+  },
+  {
+   "nome": "",
+   "efeito": ""
+  },
+  {
+   "nome": "",
+   "efeito": ""
+  }
+ ],
+ "set": {},
+ "inventario": [],
+ "dinheiro": "0 Contos",
+ "condicoes": {
+  "Veneno": {
+   "max": "100",
+   "atual": "",
+   "notas": ""
+  },
+  "Podridão": {
+   "max": "100",
+   "atual": "",
+   "notas": ""
+  },
+  "Sangramento": {
+   "max": "100",
+   "atual": "",
+   "notas": ""
+  },
+  "Congelamento": {
+   "max": "100",
+   "atual": "",
+   "notas": ""
+  },
+  "Sono": {
+   "max": "100",
+   "atual": "",
+   "notas": ""
+  },
+  "Loucura": {
+   "max": "100",
+   "atual": "",
+   "notas": ""
+  },
+  "Morte": {
+   "max": "100",
+   "atual": "",
+   "notas": ""
+  }
+ },
+ "portao": {
+  "Sucessos": [
+   false,
+   false,
+   false,
+   false,
+   false
+  ],
+  "Falhas": [
+   false,
+   false,
+   false,
+   false,
+   false
+  ]
+ },
+ "cicatrizes": "",
+ "vinculos": {
+  "grupo": "",
+  "mundo": "",
+  "metas": ""
+ },
+ "receitas": "",
+ "manual": {},
+ "talentos_ativos": [],
+ "talentos_escolha": {},
+ "desgaste": {},
+ "descansos_curtos": 0,
+ "acoes_extras_tipos": [],
+ "turno": {},
+ "usos": {},
+ "contra_usados": 0,
+ "recursos": {},
+ "dinheiro_c": 0,
+ "diario": [],
+ "meta": {
+  "caminho": "",
+  "mentor": "",
+  "etapas": [
+   false,
+   false,
+   false
+  ],
+  "concluidas": 0,
+  "notas": ""
+ }
+}

@@ -194,8 +194,9 @@
     }
     return [total, partes];
   }
-  function rolarAtaque(bonus, comVantagem, margem, rng) {
-    const d = [...Array(comVantagem ? 2 : 1)].map(() => rng(20)), nat = Math.max(...d);
+  function rolarAtaque(bonus, comVantagem, margem, rng, desvantagem = false) {
+    const dois = !!comVantagem !== !!desvantagem;
+    const d = [...Array(dois ? 2 : 1)].map(() => rng(20)), nat = desvantagem && !comVantagem ? Math.min(...d) : Math.max(...d);
     return { d20: d, natural: nat, bonus, total: nat + bonus, critico: nat >= margem, garantido: nat === 20, desastre: nat === 1 };
   }
   const custoMana = (v) => { const m = String(v.mana || "").match(/(\d+)/); return m ? +m[1] : null; };
@@ -352,6 +353,105 @@
   }
   const reqComProps = (reqs, props) => props.map(nomeProp).includes("Pesada") && "FOR" in reqs ? Object.assign({}, reqs, { FOR: reqs.FOR * 2 }) : reqs;
 
+  // ---------------- Ações em combate, usos, ações de arma, Alma, Metas, dinheiro (tabelas vêm de regras.py) ----------------
+  const { TIPOS_ACAO, ACOES_LIVRO, NIVEL_RECARGA, EVENTO_RECARGA, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES,
+    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS } = LIVRO;
+  const dtProvocar = (d, nivel) => 10 + d.bc.MEN + Math.floor(nivel / 3);
+  function acoesDoTurno(extras, tipos) {
+    const q = { Comum: 1, "Bônus": 1, Movimento: 1, "Reação": 1 };
+    let faltam = 0;
+    for (let i = 0; i < extras; i++) {
+      let t = i < tipos.length ? tipos[i] : "";
+      if (t !== "Comum" && t !== "Bônus") { faltam++; t = "Comum"; }
+      q[t]++;
+    }
+    return [q, faltam];
+  }
+  const NUM_PT = { uma: 1, duas: 2, "três": 3 };
+  function usosLimitados(texto) {
+    const m = String(texto || "").match(/\b(\d+|uma|duas|três)\s*(?:x|vez(?:es)?)\s*por\s*(descanso curto|descanso longo|combate|cena|turno|rodada|dia)\b/i);
+    if (!m) return null;
+    const q = m[1].toLowerCase();
+    return [/^\d+$/.test(q) ? +q : NUM_PT[q], m[2].toLowerCase()];
+  }
+  const recarrega = (periodo, evento) => (periodo in NIVEL_RECARGA ? NIVEL_RECARGA[periodo] : 3) <= EVENTO_RECARGA[evento];
+  const N_TXT = { um: 1, uma: 1, dois: 2, duas: 2, "três": 3 };
+  const TIPO_ACAO_RE = [["Completa", /a[çc][ãa]o completa/], ["Reação", /\brea[çc][ãa]o\b/], ["Bônus", /a[çc][ãa]o b[ôo]nus/],
+    ["Comum", /a[çc][ãa]o comum/], ["Movimento", /a[çc][ãa]o de movimento/], ["Livre", /a[çc][ãa]o livre/]];
+  const capitaliza = (x) => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase();
+  function acaoArma(nome, texto) {
+    const t = texto || "", tl = t.toLowerCase();
+    const out = { nome, acao: "", ataque: false, delta: 0, vantagem: 0, critico: false, acerto_garantido: false, mult: 0, teste: "", dt_attr: "", passiva: false, nota: false };
+    const pos = TIPO_ACAO_RE.map(([tipo, rx]) => { const m = tl.match(rx); return m ? [m.index, tipo] : null; }).filter(Boolean);
+    if (pos.length) out.acao = pos.sort((a, b) => a[0] - b[0] || (a[1] < b[1] ? -1 : 1))[0][1];
+    const automatico = tl.startsWith("sempre que") && !/pode gastar|pode,? como uma rea/.test(tl);
+    out.passiva = nome.toLowerCase().startsWith("passiva") || automatico || nome === "Nota";
+    const c0 = nome.charAt(0);
+    out.nota = ["•", "Nota", "Acúmulos de Melodia", "Paz", "Calma", "Melancolia"].includes(nome.trim()) || nome.length > 34 || (c0 !== c0.toUpperCase() && c0 === c0.toLowerCase());
+    out.ataque = /\batac|\bataque|\bgolpe|\bestocada|\bdispar|\bcorte\b|teste de acerto|\btiro\b|explos/i.test(nome + " " + t) && !out.passiva;
+    let delta = 0;
+    for (const m of tl.matchAll(/([+\-−]?\s*\d+|um|uma|dois|duas|três)\s*n[íi]ve(?:l|is)\s*(?:de dano\s*)?(acima|a mais|abaixo|a menos|inferior)?/g)) {
+      const q = m[1].replace("−", "-").replace(/ /g, "");
+      const n = q in N_TXT ? N_TXT[q] : Math.abs(parseInt(q, 10));
+      const dir = m[2] || "", neg = ["abaixo", "a menos", "inferior"].includes(dir) || q.startsWith("-");
+      if (!dir && !q.startsWith("+") && !q.startsWith("-")) {
+        const ctx = tl.slice(Math.max(0, m.index - 12), m.index);
+        if (!ctx.includes("+") && !ctx.includes("-") && !ctx.includes("−")) continue;
+      }
+      delta += neg ? -n : n;
+    }
+    out.delta = delta;
+    if (/com vantagem/.test(tl)) out.vantagem = 1;
+    if (/com desvantagem/.test(tl)) out.vantagem = -1;
+    out.critico = /cr[íi]tico (?:autom[áa]tico|garantido)/.test(tl);
+    out.acerto_garantido = tl.includes("acerto garantido");
+    let m = tl.match(/multiplicador do cr[íi]tico [^.]*?para (\d+)x/) || tl.match(/x2\s*->\s*x(\d)/);
+    if (m) out.mult = +m[1];
+    m = tl.match(/teste de (fortitude|reflexos?|vontade|ast[úu]cia)\s*\(dt 10 \+ b[ôo]nus de combate de (\w+)/);
+    if (m) { out.teste = capitaliza(m[1]); out.dt_attr = ATR_POR_NOME[capitaliza(m[2])] || ""; }
+    else { m = tl.match(/(?:resist[êe]ncia com|teste de) (fortitude|reflexos?|vontade|ast[úu]cia)/); if (m) out.teste = capitaliza(m[1]); }
+    return out;
+  }
+  function linhaDanoNivel(tabela, nv, delta) {
+    const alvo = Math.max(1, Math.min(10, nv + delta));
+    return [tabela.find((x) => x.nivel === alvo) || tabela[tabela.length - 1], alvo];
+  }
+  function almaNivelEfetivo(nivelAlma, ajustes, nCat) {
+    const sel = new Set(ajustes), soma = ALMA_AJUSTES.filter(([, t]) => sel.has(t)).reduce((s, [v]) => s + v, 0);
+    return Math.max(0, Math.min(11, nivelAlma + soma - Math.max(0, nCat - 1)));
+  }
+  const almaDtAjuste = (aj) => (aj.includes("+3 na DT") ? 3 : 0) - (aj.includes("−3 na DT") ? 3 : 0);
+  const almaValor = (tabela, nv) => { const v = ALMA_TABELAS[tabela]; return v ? v[Math.max(0, Math.min(11, nv))] : ""; };
+  function recompensaMetas(c) { const n = Math.max(0, Math.min(METAS_MAX, parseInt(c, 10) || 0)); return { talentos: n, pontos: n >= 1 ? 5 : 0 }; }
+  function precoEmContos(texto) {
+    const t = String(texto || "").toLowerCase();
+    let m = t.match(/(\d+)\s*contilhas?/); if (m) return +m[1] * CONTOS_POR.Contilha;
+    m = t.match(/(\d+)\s*contos?\s*de\s*(prata|ouro)/); if (m) return +m[1] * CONTOS_POR[m[2]];
+    m = t.match(/(\d+)\s*contos?/); return m ? +m[1] : null;
+  }
+  function separarMoedas(contos) {
+    let resto = Math.max(0, parseInt(contos, 10) || 0); const out = {};
+    for (const k of MOEDAS) { out[k] = Math.floor(resto / CONTOS_POR[k]); resto %= CONTOS_POR[k]; }
+    return out;
+  }
+  function formatarDinheiro(contos) {
+    const m = separarMoedas(contos), p = m.Contilha ? [`${m.Contilha} Contilha${m.Contilha > 1 ? "s" : ""}`] : [];
+    for (const k of ["ouro", "prata"]) if (m[k]) p.push(`${m[k]} de ${k}`);
+    if (m.Contos || !p.length) p.push(`${m.Contos} Conto${m.Contos === 1 ? "" : "s"}`);
+    return p.join(", ");
+  }
+  function lerDinheiro(texto) {
+    let t = String(texto || "").toLowerCase();
+    if (!/\d/.test(t)) return null;
+    let total = 0, achou = false;
+    for (const [rx, mult] of [[/(\d+)\s*contilhas?/g, CONTOS_POR.Contilha], [/(\d+)\s*(?:contos?\s*)?(?:de\s*)?ouros?/g, CONTOS_POR.ouro], [/(\d+)\s*(?:contos?\s*)?(?:de\s*)?pratas?/g, CONTOS_POR.prata]]) {
+      for (const m of t.matchAll(rx)) { total += +m[1] * mult; achou = true; }
+      t = t.replace(rx, " ");
+    }
+    for (const m of t.matchAll(/(\d+)\s*(?:contos?)?/g)) { total += +m[1]; achou = true; }
+    return achou ? total : null;
+  }
+
   const R = {
     ATRIBUTOS, NOMES_ATR, ATR_POR_NOME, VALORES_INICIAIS, NIVEL_MAX, PERICIAS, PERICIAS_ATAQUE, PERICIAS_DEFESA, RESISTENCIAS,
     CONDICOES, LIMIARES_ACOES, ACERTO_ARMA, GRUPOS_ARMA, BONUS_SEM_ALMA,
@@ -363,6 +463,9 @@
     condicoesDoEncantamento, escalarArcano, pesoPecasSet, cargaExtraItens, pesoInventario,
     ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
     PROPRIEDADES, NOMES_PROPRIEDADES, ELEMENTOS_PROP, lerProps, nomeProp, problemasProps, subirDado, efeitoProps, reqComProps,
+    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS,
+    dtProvocar, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
+    precoEmContos, separarMoedas, formatarDinheiro, lerDinheiro,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = R; else raiz.R = R;
 })(typeof window !== "undefined" ? window : globalThis);

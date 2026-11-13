@@ -50,5 +50,22 @@ for _ in range(3000):
                      req_props=R.req_com_props(R.req_arma(arma, linha["nivel"]), props), req_arma=R.req_arma(arma, linha["nivel"]))
     casos[-1].update(slots=slots, escolhas=escolhas, esc=esc, escola=escola, mana=mana, esp=esp,
                      desconto=list(R.desconto_matricula(esc, escola, mana, esp)))
-json.dump({"casos": casos, "itens": DADOS["itens"]}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
+acoes = [[x["nome"], x["texto"], R.acao_arma(x["nome"], x["texto"])] for a in DADOS["armas"] for x in a.get("acoes") or []]
+textos = [t["descricao"] for t in DADOS["talentos"]] + [t.get("efeito", "") for t in DADOS["talismas"]]
+usos = [[t, list(R.usos_limitados(t) or []) or None] for t in textos]
+extras = []
+for _ in range(500):
+    n = rnd.randint(0, 8); tipos = [rnd.choice(["Comum", "Bônus", "", "x"]) for _ in range(rnd.randint(0, 9))]
+    nv, aj, nc = rnd.randint(0, 10), rnd.sample([t for _, t in R.ALMA_AJUSTES], rnd.randint(0, 4)), rnd.randint(1, 4)
+    ne = R.alma_nivel_efetivo(nv, aj, nc)
+    tab = rnd.choice(list(R.ALMA_TABELAS))
+    c = rnd.choice([0, 7, 99, 1234, 56789, 2000000, 1000999])
+    txt = rnd.choice(["2 de ouro, 35 de prata", "35 pratas", "120 contos", "1 Contilha e 3 ouros", "muito", "", "12", "4 Contos de prata"])
+    extras.append({"n": n, "tipos": tipos, "turno": list(R.acoes_do_turno(n, tipos)), "nv": nv, "aj": aj, "nc": nc, "ne": ne, "tab": tab,
+                   "val": R.alma_valor(tab, ne), "dtaj": R.alma_dt_ajuste(aj), "c": c, "sep": R.separar_moedas(c), "fmt": R.formatar_dinheiro(c),
+                   "txt": txt, "ler": R.ler_dinheiro(txt), "preco": R.preco_em_contos(txt), "metas": R.recompensa_metas(rnd.randint(-1, 7)),
+                   "metas_in": None})
+    extras[-1]["metas_in"] = rnd.randint(-1, 7); extras[-1]["metas"] = R.recompensa_metas(extras[-1]["metas_in"])
+rec = [[p_, e, R.recarrega(p_, e)] for p_ in list(R.NIVEL_RECARGA) for e in R.EVENTO_RECARGA]
+json.dump({"casos": casos, "itens": DADOS["itens"], "acoes": acoes, "usos": usos, "extras": extras, "rec": rec}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
 print(len(casos), "casos")
