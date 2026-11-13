@@ -171,7 +171,12 @@ class _Pagina(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         try:
             if u.path == "/api/estado":
-                self._json(self.srv.web_estado(parse_qs(u.query).get("id", [""])[0]))
+                q = parse_qs(u.query)
+                try:
+                    ack = int(q["ack"][0]) if "ack" in q else None
+                except ValueError:
+                    ack = None
+                self._json(self.srv.web_estado(q.get("id", [""])[0], ack))
             elif u.path == "/api/sessao":
                 self._json({"sessao": True, "rodada": self.srv.rodada})
             elif u.path in ("/", "/index.html"):
@@ -322,7 +327,9 @@ class Servidor:
         self.ativo = False
         self.fichas = {}       # nome -> resumo da ficha (Vida, Mana, Vigor, CA...)
         self.efeitos = {}      # nome -> [{"id", "nome", "desc", "rodadas"}] aplicados pelo mestre
-        self.pendentes = {}    # celulares: nome -> eventos ainda não entregues
+        self.pendentes = {}    # celulares: nome -> eventos (com "seq") ainda não confirmados pelo celular
+        self._seq_ev = 0       # numera os eventos dos celulares, para a confirmação (ack)
+        self.token = "%08x" % random.getrandbits(32)   # muda quando o mestre reinicia: o celular zera a contagem
         self.rodada = 1
         self.registro = []     # (hora, texto) para o painel do mestre
         self._seq = 0
@@ -375,15 +382,22 @@ class Servidor:
         self.fila.put(("mao", ident) if novo else ("mudou",))
         return True
 
-    def web_estado(self, ident):
+    def web_estado(self, ident, ack=None):
+        """Estado para o celular. Os eventos só saem da fila quando o celular confirma (ack = último seq que
+        ele processou): se a resposta se perder (tela bloqueada, Wi-Fi caindo), o dano chega na próxima consulta.
+        Sem ack (página antiga, só com a mão), a fila é esvaziada ao entregar."""
         with self.lock:
             w = self.web.get(ident)
             if w is None:
                 return {"ok": False}
             w["visto"] = time.time()
             palavra, w["palavra"] = w["palavra"], False
-            eventos, self.pendentes[ident] = self.pendentes.get(ident, []), []
-            return {"ok": True, "mao": ident in self.maos, "palavra": palavra, "eventos": eventos,
+            fila = self.pendentes.get(ident, [])
+            if ack is None:
+                eventos, self.pendentes[ident] = fila, []
+            else:
+                eventos = self.pendentes[ident] = [e for e in fila if e["seq"] > ack]
+            return {"ok": True, "token": self.token, "mao": ident in self.maos, "palavra": palavra, "eventos": eventos,
                     "efeitos": list(self.efeitos.get(ident, [])), "rodada": self.rodada,
                     "vez": self._quem_age(), "turno": self.turno, "ordem": [o[0] for o in self.ordem]}
 
@@ -400,6 +414,14 @@ class Servidor:
                 del self.web[n]
                 if n in self.maos:
                     self.maos.remove(n)
+                # quem saiu da mesa não deixa rastro: eventos, efeitos, resumo e lugar na iniciativa
+                self.pendentes.pop(n, None)
+                self.efeitos.pop(n, None)
+                self.fichas.pop(n, None)
+                if any(o[0] == n for o in self.ordem):
+                    atual = self._quem_age()
+                    self.ordem = [o for o in self.ordem if o[0] != n]
+                    self.vez = next((i for i, o in enumerate(self.ordem) if o[0] == atual), min(self.vez, len(self.ordem) - 1))
         if sumidos or mudou_sinal:
             self.fila.put(("mudou",))
 
@@ -520,7 +542,10 @@ class Servidor:
         with self.lock:
             c = self.clientes.get(nome)
             if c is None and nome in self.web:
-                self.pendentes.setdefault(nome, []).append(ev)
+                self._seq_ev += 1
+                fila = self.pendentes.setdefault(nome, [])
+                fila.append(dict(ev, seq=self._seq_ev))
+                del fila[:-200]   # celular sumido não faz a fila crescer sem fim
         if c:
             _enviar(c, {"t": "evento", "ev": ev})
 

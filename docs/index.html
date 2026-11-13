@@ -1086,13 +1086,116 @@ function render() {
 }
 function aplicarTema() { document.documentElement.classList.toggle("noite", banco.tema === "noite"); }
 
+// ------------------------------------------------------------------ levar a ficha do app (https) para a mesa do mestre (http)
+// Um site https não pode falar com http://IP (o navegador bloqueia), mas pode ABRIR o endereço. A ficha vai no
+// "#f=" do endereço (só o navegador vê, nada passa por servidor) e a página do mestre a guarda como ficha sua.
+const PAGINA_APP = "https://grnguidi.github.io/FichaPreval/";
+const b64u = (u8) => { let s = ""; for (const b of u8) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
+const deB64u = (t) => { const s = atob(t.replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(s, (c) => c.charCodeAt(0)); };
+async function viaStream(bytes, Cls, modo) {
+  const st = new Blob([bytes]).stream().pipeThrough(new Cls(modo));
+  return new Uint8Array(await new Response(st).arrayBuffer());
+}
+async function empacotarFicha(ficha) {
+  const copia = Object.assign({}, ficha); delete copia._salvo;
+  const bytes = new TextEncoder().encode(JSON.stringify(copia));
+  if (typeof CompressionStream === "function") return "z" + b64u(await viaStream(bytes, CompressionStream, "deflate-raw"));
+  return "j" + b64u(bytes);
+}
+async function desempacotarFicha(txt) {
+  let bytes = deB64u(txt.slice(1));
+  if (txt[0] === "z") bytes = await viaStream(bytes, DecompressionStream, "deflate-raw");
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+let mesaAlvo = "";   // endereço da mesa (http://IP:5760) quando a página foi aberta pelo QR/botão do mestre
+const mesaValida = (u) => /^http:\/\/[\w.\-]+(:\d{1,5})?$/.test(u);
+function lerHash() {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get("mesa") && mesaValida(h.get("mesa"))) mesaAlvo = h.get("mesa");
+  return h.get("f") || "";
+}
+async function receberFichaDaUrl(txt) {
+  try {
+    const s = normalizar(await desempacotarFicha(txt));
+    if (!s.identidade) throw new Error();
+    const nome = (s.identidade.nome || "").trim();
+    let id = nome && Object.keys(banco.fichas).find((k) => (banco.fichas[k].identidade.nome || "").trim() === nome);
+    const atualizou = !!id;
+    if (!id) id = "ficha-" + Date.now().toString(36);
+    banco.fichas[id] = s; banco.atual = id; banco.modo = "jogo"; gravarLocal();
+    S = normalizar(s);
+    try { history.replaceState(null, "", location.pathname); } catch (e) { /* sem history */ }
+    return { nome: nome || "sem nome", atualizou };
+  } catch (e) { return null; }
+}
+async function enviarParaMesa(id, alvo) {
+  alvo = alvo || mesaAlvo;
+  if (!alvo || !mesaValida(alvo)) { toast("Endereço da mesa inválido. Use o formato http://192.168.0.10:5760"); return; }
+  try {
+    const t = await empacotarFicha(banco.fichas[id]);
+    toast("Abrindo a mesa do mestre…");
+    location.href = alvo + "/#f=" + t;
+  } catch (e) { toast("Não consegui preparar a ficha para enviar."); }
+}
+A["enviar-mesa"] = (el) => enviarParaMesa(el.dataset.id);
+A["mesa-endereco"] = () => folha("Entrar na mesa", `<p class="sub">Digite o endereço que aparece na tela do mestre (ou aponte a câmera para o QR code). Depois toque na ficha que vai jogar.</p>
+  <label class="campo"><span>Endereço da mesa</span><input id="m-end" inputmode="url" placeholder="http://192.168.0.10:5760" value="${esc(mesaAlvo || localStorage.getItem("prevalecentes.mesa.alvo") || "")}"></label>`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="mesa-endereco-ok">Usar</button>`);
+A["mesa-endereco-ok"] = () => {
+  let u = $("#m-end").value.trim().replace(/\/+$/, "");
+  if (u && !/^https?:\/\//.test(u)) u = "http://" + u;
+  if (u && !/:\d+$/.test(u)) u += ":5760";
+  if (!mesaValida(u)) { toast("Endereço inválido."); return; }
+  mesaAlvo = u; try { localStorage.setItem("prevalecentes.mesa.alvo", u); } catch (e) { /* sem storage */ }
+  fecharFolha(); render();
+};
+// iPhone: o app da Tela de Início e o Safari guardam fichas em lugares separados, e o link de "voltar ao app" abre no Safari.
+const iosNaTela = () => { try { return /iP(hone|ad|od)/.test(navigator.userAgent) && navigator.standalone === true; } catch (e) { return false; } };
+const avisoIos = () => {
+  let visto = false; try { visto = localStorage.getItem("prevalecentes.ios.aviso") === "1"; } catch (e) { /* sem storage */ }
+  if (!iosNaTela() || visto) return "";
+  return `<div class="item" style="border-color:var(--ouro,#b8860b);display:block"><div class="tx"><b>📱 iPhone: guarde uma cópia</b>
+    <small>No iPhone, este app e o Safari guardam as fichas separadas, e o iOS pode apagar dados de sites. O botão “Levar de volta ao app” da mesa abre o Safari, não este app.
+    Para não perder nada, faça um backup de vez em quando (ou use o app direto pelo Safari).</small></div>
+    <div class="linhabts" style="margin-top:8px"><button class="botao prim" data-a="backup-todas">⬇ Backup de todas as fichas</button><button class="botao leve" data-a="aviso-ios-ok">Entendi</button></div></div>`;
+};
+A["aviso-ios-ok"] = () => { try { localStorage.setItem("prevalecentes.ios.aviso", "1"); } catch (e) { /* sem storage */ } render(); };
+A["backup-todas"] = async () => {
+  const fichas = {}; for (const [id, f] of Object.entries(banco.fichas)) { const c = Object.assign({}, f); delete c._salvo; fichas[id] = c; }
+  if (!Object.keys(fichas).length) { toast("Nenhuma ficha para guardar."); return; }
+  const texto = JSON.stringify({ prevalecentes_backup: 1, em: new Date().toISOString(), fichas });
+  const nome = "prevalecentes-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+  try {
+    const arq = new File([texto], nome, { type: "application/json" });
+    if (navigator.canShare && navigator.canShare({ files: [arq] })) { await navigator.share({ files: [arq], title: nome }); return; }   // iPhone: abre "Salvar em Arquivos"
+  } catch (e) { if (e && e.name === "AbortError") return; /* cai para o download comum */ }
+  try {
+    const url = URL.createObjectURL(new Blob([texto], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000); toast(`Backup salvo: ${esc(nome)}`);
+  } catch (e) { toast("Não consegui salvar o backup neste navegador."); }
+};
+A["levar-app"] = async () => {
+  if (!S || !banco.atual) { toast("Abra a ficha que quer levar de volta ao app."); return; }
+  salvar();
+  try {
+    const t = await empacotarFicha(banco.fichas[banco.atual] || S);
+    toast("Abrindo o app com a sua ficha…");
+    location.href = PAGINA_APP + "#f=" + t;
+  } catch (e) { toast("Não consegui preparar a ficha."); }
+};
+A["trazer-ficha"] = () => { location.href = PAGINA_APP + "#mesa=" + encodeURIComponent(location.origin); };
+
 function telaInicial() {
   const ids = Object.keys(banco.fichas);
   return `<div class="capa"><div class="orn">❦</div><h1>Prevalecentes</h1><p class="sub">Ficha de mesa · edição 3.1</p></div>
+    ${avisoIos()}
     ${secao("Suas fichas")}
-    ${ids.length ? `<div class="lista">${ids.map((id) => { const f = banco.fichas[id]; return `<div class="item" data-a="abrir" data-id="${id}"><div class="tx"><b>${esc(f.identidade.nome || "Sem nome")}</b><small>Nível ${f.identidade.nivel} · ${esc(f.identidade.especie || "—")}${f.sem_alma ? " · sem alma" : ""}</small></div><span class="sub">›</span></div>`; }).join("")}</div>`
+    ${ids.length ? `<div class="lista">${ids.map((id) => { const f = banco.fichas[id]; return `<div class="item" data-a="abrir" data-id="${id}"><div class="tx"><b>${esc(f.identidade.nome || "Sem nome")}</b><small>Nível ${f.identidade.nivel} · ${esc(f.identidade.especie || "—")}${f.sem_alma ? " · sem alma" : ""}</small></div>${mesaAlvo && !sessao.ativa ? `<button class="botao prim" data-a="enviar-mesa" data-id="${id}" style="min-height:36px">Enviar</button>` : `<span class="sub">›</span>`}</div>`; }).join("")}</div>`
       : `<div class="vazio-msg">Nenhuma ficha neste aparelho ainda.</div>`}
+    ${mesaAlvo && !sessao.ativa ? `<div class="item" style="border-color:var(--ouro,#b8860b)"><div class="tx"><b>🛡 Mesa do mestre</b><small>${esc(mesaAlvo)} · toque em “Enviar” na ficha que vai jogar</small></div></div>` : ""}
     <div class="linhabts"><button class="botao prim" data-a="nova">✦ Nova ficha</button><button class="botao leve" data-a="importar">Abrir arquivo .json</button></div>
+    ${sessao.ativa ? `<div class="linhabts"><button class="botao prim" data-a="trazer-ficha">📲 Trazer minha ficha do app</button></div><p class="sub">Atualizou a ficha em casa no app instalado? Toque acima: ela vem para esta mesa já atualizada.</p>` : `<div class="linhabts"><button class="botao leve" data-a="mesa-endereco">🛡 Entrar na mesa do mestre</button></div>`}
     <p class="sub" style="margin-top:14px">Abra aqui o mesmo arquivo .json do programa de PC. As fichas ficam guardadas neste aparelho; use “Exportar” no menu para levar de volta ao PC.</p>`;
 }
 
@@ -2314,6 +2417,7 @@ A["menu"] = () => {
     <div class="item" data-a="nova"><div class="tx"><b>Nova ficha</b><small>Criação rápida</small></div></div>
     <div class="item" data-a="lista"><div class="tx"><b>Trocar de ficha</b><small>${Object.keys(banco.fichas).length} ficha(s) neste aparelho</small></div></div>
     ${S ? `<div class="item" data-a="modo"><div class="tx"><b>${banco.modo === "edicao" ? "⚔ Ir para o Modo Jogo" : "✎ Ir para o Modo Edição"}</b><small>${banco.modo === "edicao" ? "Usar a ficha na mesa" : "Subir de nível, escolher talentos, armas e encantamentos"}</small></div></div>` : ""}
+    ${sessao.ativa && S ? `<div class="item" data-a="levar-app"><div class="tx"><b>📲 Levar esta ficha de volta ao app</b><small>Vida, Mana, Vigor e condições de agora vão para o app instalado (substitui a ficha de mesmo nome)</small></div></div>` : ""}
     ${sessao.ativa ? `<div class="item" data-a="sessao-nome"><div class="tx"><b>🛡 Sessão do mestre</b><small>Você está como “${esc(sessao.id || "—")}” · toque para trocar o nome</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
@@ -2391,7 +2495,19 @@ function importarArquivo(arq) {
   const rd = new FileReader();
   rd.onload = () => {
     try {
-      const s = normalizar(JSON.parse(rd.result));
+      const bruto = JSON.parse(rd.result);
+      if (bruto && bruto.prevalecentes_backup && bruto.fichas) {   // backup de todas as fichas (veja "backup-todas")
+        let n = 0;
+        for (const f of Object.values(bruto.fichas)) {
+          const s = normalizar(f); if (!s.identidade) continue;
+          const nome = (s.identidade.nome || "").trim();
+          const id = (nome && Object.keys(banco.fichas).find((k) => (banco.fichas[k].identidade.nome || "").trim() === nome)) || "ficha-" + Date.now().toString(36) + "-" + (n++);
+          banco.fichas[id] = s;
+        }
+        gravarLocal(); render(); toast(`Backup restaurado: <b>${Object.keys(bruto.fichas).length}</b> ficha(s).`);
+        return;
+      }
+      const s = normalizar(bruto);
       if (!s.identidade) throw new Error();
       const id = "ficha-" + Date.now().toString(36);
       banco.fichas[id] = s; banco.atual = id; abrirFicha(id); salvar();
@@ -2403,9 +2519,9 @@ function importarArquivo(arq) {
 
 
 // ------------------------------------------------------------------ sessão do mestre (quando o PC do mestre serve esta página)
-const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0 };
+const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0, ackEv: 0, token: "" };
 const durEfeito = (e) => e.rodadas ? `${e.rodadas} turno(s)` : e.fim_combate ? "até o fim do combate" : "até o mestre remover";
-const CH_SESSAO = "prevalecentes.sessao.id";
+const CH_SESSAO = "prevalecentes.sessao.id", CH_ACK = "prevalecentes.sessao.ack";
 async function api(url, corpo) {
   const r = await fetch(url, corpo === undefined ? { cache: "no-store" } : { method: "POST", body: JSON.stringify(corpo) });
   if (!r.ok) throw new Error(r.status);
@@ -2418,8 +2534,12 @@ async function detectarSessao() {
     if (!r || !r.sessao) return;
   } catch (e) { return; }
   sessao.ativa = true;
-  try { sessao.id = localStorage.getItem(CH_SESSAO) || ""; } catch (e) { /* sem storage */ }
-  if (sessao.id) entrarSessao(sessao.id); else pedirNomeSessao();
+  try {
+    sessao.id = localStorage.getItem(CH_SESSAO) || "";
+    const [tk, n] = JSON.parse(localStorage.getItem(CH_ACK) || "[]");   // recarregou a página: não repete o que já aplicou
+    if (tk) { sessao.token = tk; sessao.ackEv = int(n); }
+  } catch (e) { /* sem storage */ }
+  if (sessao.id) entrarSessao(sessao.id); else if (!window.__fichaChegou) pedirNomeSessao();
   pintarSessao();
 }
 function pedirNomeSessao() {
@@ -2458,13 +2578,18 @@ function resumoSessao() {
 async function consultarSessao() {
   if (!sessao.id) return;
   let r;
-  try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id)); }
+  try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id) + "&ack=" + sessao.ackEv); }
   catch (e) { if (sessao.conectado) { sessao.conectado = false; pintarSessao(); } return; }
   if (!r.ok) { entrarSessao(sessao.id); return; }   // o mestre reiniciou: entra de novo com o mesmo nome
   const mudou = !sessao.conectado || sessao.mao !== r.mao || sessao.rodada !== r.rodada || sessao.vez !== (r.vez || "") || JSON.stringify(sessao.efeitos) !== JSON.stringify(r.efeitos || []);
   sessao.conectado = true; sessao.mao = r.mao; sessao.rodada = r.rodada; sessao.vez = r.vez || ""; sessao.turno = r.turno || 0;
   sessao.efeitos = r.efeitos || [];
-  const avisos = (r.eventos || []).map(receberEvento).filter(Boolean);
+  if (r.token && r.token !== sessao.token) { sessao.token = r.token; sessao.ackEv = 0; }   // o mestre reiniciou: a contagem recomeça
+  // O mestre repete o evento até receber o ack, então ignora o que já foi processado (dano nunca vale duas vezes).
+  const novos = (r.eventos || []).filter((e) => !(e.seq <= sessao.ackEv));
+  const avisos = novos.map(receberEvento).filter(Boolean);
+  novos.forEach((e) => { sessao.ackEv = Math.max(sessao.ackEv, e.seq || 0); });
+  if (novos.length) { try { localStorage.setItem(CH_ACK, JSON.stringify([sessao.token, sessao.ackEv])); } catch (e) { /* sem storage */ } }
   if (r.palavra) { avisos.push("🎤 <b>O mestre te deu a palavra!</b>"); vibrar([300, 120, 300]); }
   if (avisos.length) toast(avisos.join("<hr>"));
   if (mudou) { if (S && (aba === "combate")) render(); else pintarSessao(); }
@@ -2499,7 +2624,7 @@ function receberEvento(ev) {
     return itemDoMestre(ev, hora);
   } else if (ev.tipo === "combate" && S) {
     novoCombate(true); render();
-    return ev.fase === "inicio" ? "⚔ <b>Começou o combate!</b> Ações e usos por combate renovados." : "🕊 <b>Fim do combate.</b> Usos por combate renovados.";
+    return ev.fase === "inicio" ? "⚔ <b>Começou o combate!</b> Ações e usos por combate renovados." : "🕊 <b>Fim do combate.</b> Usos por combate renovados. <button class=\"botao leve\" data-a=\"levar-app\" style=\"min-height:32px;padding:4px 10px\">📲 Levar ficha ao app</button>";
   } else if (ev.tipo === "vez") {
     sessao.meusTurnos += 1;
     if (S) novoTurno(true);
@@ -2601,14 +2726,20 @@ document.addEventListener("click", (ev) => {
   }
   f(el, ev);
 });
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   lerLocal();
   if (banco.atual && banco.fichas[banco.atual]) S = normalizar(banco.fichas[banco.atual]);
+  const recebida = lerHash();
+  let chegou = null;
+  if (recebida) chegou = await receberFichaDaUrl(recebida);
   $("#veu").addEventListener("click", fecharFolha);
   $("#arquivo").addEventListener("change", (e) => { if (e.target.files[0]) importarArquivo(e.target.files[0]); e.target.value = ""; });
   render();
   setTimeout(ligarNuvem, 50);
-  detectarSessao();
+  window.__fichaChegou = !!chegou;
+  if (recebida) toast(chegou ? `Ficha <b>${esc(chegou.nome)}</b> ${chegou.atualizou ? "atualizada" : "recebida"}.` : "Não consegui ler a ficha enviada. Tente de novo ou use Abrir arquivo .json.", 5000);
+  await detectarSessao();
+  if (chegou && sessao.ativa && !sessao.id) entrarSessao((S.identidade.nome || "").trim() || "Jogador", true);
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost") && !window.claude) navigator.serviceWorker.register("sw.js").catch(() => {});
 });
 </script>

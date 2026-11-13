@@ -1,7 +1,7 @@
 """Gera o app de celular em ../docs (publicado pelo GitHub Pages).
 
 Uso:  py celular/build.py
-Junta estilo, dados do livro (de dados_prevalecentes.py), regras.js e app.js num index.html só,
+Junta estilo, dados do livro (de dados_prevalecentes.py), regras.js e src/js/*.js (o app) num index.html só,
 e copia manifest, service worker e ícones. Também gera ../pagina_celular.py: a mesma ficha, que o
 PC do mestre serve aos celulares da mesa durante a sessão (sessao.py). Os efeitos de talento vêm de regras.py, para que
 PC e celular usem a mesma tabela.
@@ -25,6 +25,12 @@ from dados_prevalecentes import DADOS  # noqa: E402
 def ler(*p):
     with open(os.path.join(AQUI, *p), encoding="utf-8") as f:
         return f.read()
+
+
+def app_js():
+    """Junta celular/src/js/*.js (em ordem numérica) no app.js: tudo no mesmo escopo, como antes da divisão."""
+    pasta = os.path.join(AQUI, "src", "js")
+    return "".join(ler("src", "js", n) for n in sorted(os.listdir(pasta)) if n.endswith(".js"))
 
 
 def regras_js():
@@ -58,7 +64,7 @@ def main():
     pwa = ('<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" href="icone-192.png">\n'
            '<link rel="apple-touch-icon" href="icone-192.png">')
     base = (ler("src", "index.tpl.html").replace("/*CSS*/", ler("src", "estilo.css"))
-            .replace("/*DADOS*/", dj).replace("/*REGRAS*/", js_regras).replace("/*APP*/", ler("src", "app.js")))
+            .replace("/*DADOS*/", dj).replace("/*REGRAS*/", js_regras).replace("/*APP*/", app_js()))
     html = base.replace("<!--PWA-->", pwa)
     os.makedirs(SAIDA, exist_ok=True)
     with open(os.path.join(SAIDA, "index.html"), "w", encoding="utf-8", newline="\n") as f:

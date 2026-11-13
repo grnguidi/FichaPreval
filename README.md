@@ -63,7 +63,14 @@ Liga o mestre aos jogadores na mesma rede local (Wi-Fi ou cabo). Existe uma úni
 
 **Jogador no computador:** abra a ficha, depois Sessão → "Entrar como jogador". O programa localiza o mestre automaticamente; se não localizar, informe o IP exibido na tela do mestre. A ficha aberta é enviada ao painel do mestre e recebe dano e condições.
 
-**Jogador no celular:** aponte a câmera para o QR code da tela do mestre, ou abra o endereço exibido nela (`http://IP:5760`). O PC do mestre entrega a ficha completa do celular: informe seu nome, abra ou crie a ficha e jogue. A barra acima das abas mostra a rodada, as condições do mestre e o botão ✋. Não requer instalação nem internet. As fichas desse endereço ficam guardadas no celular separadas das do app instalado: use Exportar/Abrir .json para passar de um para o outro. (A página antiga, só com o botão de mão, continua em `http://IP:5760/mao`.)
+**Jogador no celular:** aponte a câmera para o QR code da tela do mestre, ou abra o endereço exibido nela (`http://IP:5760`). O PC do mestre entrega a ficha completa do celular: informe seu nome, abra ou crie a ficha e jogue. A barra acima das abas mostra a rodada, as condições do mestre e o botão ✋. Não requer instalação nem internet. (A página antiga, só com o botão de mão, continua em `http://IP:5760/mao`.)
+
+**Levar a ficha do app para a mesa (e de volta):** o jogador mantém e atualiza a ficha no app instalado (GitHub Pages), em casa. Como um site `https` não pode enviar dados a `http://IP`, a ficha viaja no endereço (o trecho `#f=` da URL, comprimido, que só o navegador lê), sem servidor no meio:
+- *Do app para a mesa:* na página do mestre (`http://IP:5760`), toque em **📲 Trazer minha ficha do app**. O app abre com a lista de fichas; toque em **Enviar** na que vai jogar. A página do mestre guarda a ficha (substitui a de mesmo nome) e entra na mesa com o nome do personagem. Também dá para abrir o app e usar **🛡 Entrar na mesa do mestre** digitando o endereço.
+- *Da mesa para o app:* no menu da página do mestre, **📲 Levar esta ficha de volta ao app** (o botão também aparece no aviso de fim de combate). A ficha de mesmo nome no app é substituída pela atual (Vida, Mana, Vigor, condições, inventário, dinheiro).
+- Durante a sessão, a ficha da mesa recebe dano, cura, condições e itens do mestre; o app instalado só é atualizado pelo botão acima.
+- O mestre recebe o resumo da ficha a cada ~1,5 s e não edita a ficha do jogador diretamente: envia dano, cura, condições e itens.
+- O app instalado e a página da mesa guardam fichas em lugares separados (origens diferentes do navegador). No iPhone isso vai além: o app da Tela de Início e o Safari também têm armazenamento separado, e o link "de volta ao app" abre no Safari. Por isso, no iPhone o app mostra um aviso na tela inicial (só quando aberto pela Tela de Início) com o botão **⬇ Backup de todas as fichas**, que salva um único `.json` (no iPhone abre "Salvar em Arquivos"); "Abrir arquivo .json" restaura esse backup. Recomenda-se usar o app direto pelo Safari e fazer o backup de vez em quando.
 
 Observações:
 
@@ -73,6 +80,7 @@ Observações:
 - Redes que isolam dispositivos entre si (Wi-Fi de visitantes, hotéis, escolas) impedem a conexão.
 - Portas utilizadas: 5757 (TCP), 5758 (UDP) e 5760 (HTTP).
 - A sessão envia ao mestre só o resumo da ficha (nome, espécie, nível, Vida, Mana, Vigor, CA, movimento, iniciativa, defesas, RD, resistências, Portão da Morte, barras de condição, inventário, carga e dinheiro).
+- Os eventos do mestre (dano, condições, itens) são repetidos até o celular confirmar o recebimento, então não se perdem se a tela bloquear ou o Wi-Fi cair; o celular ignora repetições. Quem sai da mesa (10 min sem contato) perde também a vez na iniciativa, os efeitos e o resumo.
 - Celular com a tela bloqueada continua na mesa: o mestre vê "(sem sinal)" ao lado do nome depois de 20 segundos e a mão continua na fila. O jogador só sai da mesa depois de 10 minutos sem contato.
 - Se a conexão cair, o jogador no computador vê "Conexão perdida" e um botão para conectar de novo. Quando o mestre não é encontrado na rede, o programa sugere o último IP usado.
 
@@ -86,7 +94,7 @@ Versão para usar na mesa pelo celular: Vida, Mana e Vigor, atributos, caracter�
 - Para levar de volta ao PC: menu ☰ → Exportar ficha (.json).
 - O celular tem as mesmas funções de mesa do PC (turno, usos, ações de arma, Alma com montador, Metas de Vida, dinheiro, diário) e "🖨 Imprimir / salvar PDF" no menu. A ficha vai e volta entre PC e celular sem perder nada.
 
-**Para desenvolver:** o código está em `celular/`. Depois de mudar algo, rode `py celular/build.py` para gerar a pasta `docs/`, que é o que o GitHub Pages publica, e o `pagina_celular.py`, que é a mesma ficha servida pelo PC do mestre na sessão. Os dados do livro e a tabela de efeitos de talento vêm de `dados_prevalecentes.py` e `regras.py`, então PC e celular continuam iguais. `sh celular/testes/rodar.sh` confere que as regras do celular dão os mesmos resultados que as do PC (requer Node.js).
+**Para desenvolver:** o código do app está em `celular/src/js/` (arquivos numerados por área: armazenamento, cálculo, telas, ações, mesa, rolagens, menu, sessão, eventos; o `build.py` junta todos no mesmo escopo, na ordem do nome). Depois de mudar algo, rode `py celular/build.py` para gerar a pasta `docs/`, que é o que o GitHub Pages publica, e o `pagina_celular.py`, que é a mesma ficha servida pelo PC do mestre na sessão. Os dados do livro e a tabela de efeitos de talento vêm de `dados_prevalecentes.py` e `regras.py`, então PC e celular continuam iguais. `sh celular/testes/rodar.sh` confere que as regras do celular dão os mesmos resultados que as do PC (requer Node.js). `python testes/test_sessao.py` testa a entrega e a confirmação dos eventos da sessão e a limpeza de quem sai.
 
 ## Dados do livro
 
@@ -105,9 +113,12 @@ As fichas são salvas manualmente em arquivos `.json` (Ctrl+S) e abertas com Ctr
 | `assistente.py` | Assistente de criação de personagem |
 | `pdf_ficha.py` | Exportação para PDF |
 | `sessao.py` | Sessão em rede e painel do mestre |
+| `ponte_sessao.py` | Liga a ficha do PC aberta à sessão (resumo e eventos do mestre) |
+| `regras_texto.py` | Texto da janela "Regras usadas nos cálculos" |
+| `testes/` | Testes da sessão (`python testes/test_sessao.py`) |
 | `pagina_celular.py` | Ficha do celular servida pelo mestre (gerado por `celular/build.py`) |
 | `dados_prevalecentes.py` | Dados do livro embutidos |
 | `dados_livro (para editar).json` | Cópia editável dos dados do livro |
 | `GERAR_EXE.bat` | Gera o executável |
-| `celular/` | Código do app de celular (`build.py` gera a pasta `docs/`) |
+| `celular/` | Código do app de celular (`src/js/` e `build.py`, que gera a pasta `docs/`) |
 | `docs/` | App de celular pronto, publicado pelo GitHub Pages |
