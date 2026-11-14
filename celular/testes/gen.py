@@ -33,6 +33,7 @@ for i in range(3000):
                               ganho=R.ganho_no_nivel(nivel, sem), duplo=sorted(R.req_uso_duplo(rq, R.req_arma(DADOS["armas"][0], 1)).items()))})
     # pericias with fixed treinadas flags
     casos[-1]["out"]["per"] = [list(R.pericia_fora(a, nivel, atrs or ["ARC"], f)) for (_, atrs, _), f in zip(R.PERICIAS, casos[-1]["in"]["pers"])]
+    casos[-1]["out"]["efa"] = [R.efeitos_atributo(k, a, d) for k in R.ATRIBUTOS]
     casos[-1]["out"]["dano"] = R.dano_com_dados(casos[-1]["in"]["dano"], casos[-1]["in"]["extra"])
 json.dump(casos, open('casos.json', 'w'), ensure_ascii=False)
 json.dump(DADOS, open('dados.json', 'w'), ensure_ascii=False)

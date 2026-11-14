@@ -47,7 +47,7 @@ def regras_js():
         "EVENTO_RECARGA": regras.EVENTO_RECARGA, "RECURSOS_ARMA": regras.RECURSOS_ARMA, "ALMA_TABELAS": regras.ALMA_TABELAS,
         "ALMA_CATEGORIAS": regras.ALMA_CATEGORIAS, "ALMA_EXECUCAO": regras.ALMA_EXECUCAO, "ALMA_AJUSTES": regras.ALMA_AJUSTES,
         "CAMINHOS": regras.CAMINHOS, "ETAPAS_META": regras.ETAPAS_META, "METAS_MAX": regras.METAS_MAX,
-        "CONTOS_POR": regras.CONTOS_POR, "MOEDAS": regras.MOEDAS, "PERICIAS_RESUMO": regras.PERICIAS_RESUMO,
+        "CONTOS_POR": regras.CONTOS_POR, "MOEDAS": regras.MOEDAS, "PERICIAS_RESUMO": regras.PERICIAS_RESUMO, "ATRIBUTOS_RESUMO": regras.ATRIBUTOS_RESUMO,
     }.items()}, ensure_ascii=False)
     js = re.sub(r"const EFEITOS_TALENTOS = \{.*?\};", lambda m: f"const EFEITOS_TALENTOS = {efeitos};", ler("regras.js"), count=1, flags=re.S)
     return js.replace("const LIVRO = {};", f"const LIVRO = {livro};", 1)

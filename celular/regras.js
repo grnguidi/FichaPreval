@@ -372,7 +372,25 @@
 
   // ---------------- Ações em combate, usos, ações de arma, Alma, Metas, dinheiro (tabelas vêm de regras.py) ----------------
   const { TIPOS_ACAO, ACOES_LIVRO, NIVEL_RECARGA, EVENTO_RECARGA, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES,
-    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO } = LIVRO;
+    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO } = LIVRO;
+  function efeitosAtributo(k, a, d) {
+    const v = cap(a[k]);
+    const out = [`Curva ${d.curva[k]} fora de combate (perícias: ${1 + Math.floor(v / 20)}d20) · Bônus de Combate +${d.bc[k]}` + (vantagem(a[k]) ? " · vantagem em combate" : "")];
+    if (k === "VIT") out.push(`${d.vida_dados} dados de vida · Vida máxima ${d.vida}`);
+    else if (k === "MEN") out.push(`Mana ${d.mana} · Astúcia +${d.bc.MEN} · até ${d.pericias_treinadas_max} perícias treinadas`);
+    else if (k === "TEN") {
+      out.push(`CA +${d.ca_ten} · Redução de Dano ${d.rd ? d.rd + "d4" : "—"} · Carga ${d.carga}`);
+      out.push("Resistências: " + (d.resistencias.length ? d.resistencias.join(", ") : "nenhuma ainda (a primeira vem com 20)"));
+    } else if (k === "FOR") out.push(`Vigor ${d.vigor} · recupera ${d.vigor_regen} por turno`);
+    else if (k === "DES") {
+      out.push(`${d.acoes_extras} ação(ões) extra(s) · Movimento ${d.movimento} m · Iniciativa ${d.iniciativa_dados}d20 +${d.iniciativa_bonus}`);
+      const prox = LIMIARES_ACOES.find((t) => v < t);
+      if (prox) out.push(`Próxima ação extra com ${prox} de Destreza.`);
+    } else if (k === "INT") out.push(`DT de Feitiçaria ${d.dt_feiticaria} · +${d.dados_extra_magia} dado(s) nas Magias · ${d.espacos_encant} espaços de encantamento · ${d.contra_encant} contra-encantamento(s) por combate`);
+    else if (k === "FE") out.push(`DT de Desejo ${d.dt_desejo} · +${d.dados_extra_feitico} dado(s) nos Feitiços · ${d.espacos_encant} espaços de encantamento · Vontade +${d.bc.FE}`);
+    else if (k === "ARC") out.push(`Condições dos encantamentos: +${Math.floor(v / 20)} cópia(s) dos dados e +${Math.floor(v / 15)} dado(s) inferior(es) · Descoberta ${d.descoberta}`);
+    return out;
+  }
   const dtProvocar = (d, nivel) => 10 + d.bc.MEN + Math.floor(nivel / 3);
   function acoesDoTurno(extras, tipos) {
     const q = { Comum: 1, "Bônus": 1, Movimento: 1, "Reação": 1 };
@@ -500,7 +518,7 @@
     condicoesDoEncantamento, escalarArcano, arcanoEscala, condicoesDeSet, pesoPecasSet, cargaExtraItens, pesoInventario,
     ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
     PROPRIEDADES, NOMES_PROPRIEDADES, ELEMENTOS_PROP, lerProps, nomeProp, problemasProps, subirDado, efeitoProps, reqComProps,
-    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO,
+    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO, efeitosAtributo,
     dtProvocar, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
     precoEmContos, separarMoedas, formatarDinheiro, lerDinheiro,
   };

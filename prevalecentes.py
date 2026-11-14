@@ -633,7 +633,9 @@ class App(tk.Tk):
             row = {"inicial": self.var(), "niveis": self.var("0"), "especie": self.var("0"), "bonus": self.var("0")}
             f = tk.Frame(grade, bg=CAMPO, highlightbackground=OURO, highlightthickness=1)
             f.grid(row=i // 4, column=i % 4, padx=4, pady=4, sticky="nsew")
-            tk.Label(f, text=versalete(R.NOMES_ATR[k]), bg=C_ATR, fg=OURO2, font=(FONTE, 8, "bold"), pady=3).pack(fill="x")
+            ln = tk.Label(f, text=versalete(R.NOMES_ATR[k]), bg=C_ATR, fg=OURO2, font=(FONTE, 8, "bold"), pady=3, cursor="question_arrow")
+            ln.pack(fill="x")
+            ln.bind("<Button-1>", lambda e, k=k: self.info_atributo(k))
             row["l_total"] = Rot(f, bg=CAMPO, size=22, anchor="center", cursor="hand2")
             row["l_total"].pack(fill="x", pady=(2, 0))
             row["l_total"].bind("<Button-1>", lambda e, k=k: self.editar_manual(k))
@@ -2921,6 +2923,22 @@ class App(tk.Tk):
         r = R.rolar_defesa(b, R.vantagem(self.a[k]), self._rng)
         r.setdefault("bonus", b)
         self.registrar(f"🛡 {n}", [self._txt_d20(n, dict(r, bonus=b)), "Compare com a DT do efeito ou da habilidade do inimigo."])
+
+    def info_atributo(self, k):
+        """O que o atributo representa e o que o valor atual dá na ficha (clique no nome do atributo)."""
+        self.recalc()
+        desc, afeta = R.ATRIBUTOS_RESUMO[k]
+        w, f = self._janela(R.NOMES_ATR[k])
+        self._tit(f, f"{R.NOMES_ATR[k]}  ·  {self.a[k]}")
+        self._txt(f, desc, pady=(0, 8))
+        tk.Label(f, text="Com o valor atual", bg=PERG, fg=VINHO, font=(FONTE, 10, "bold")).pack(anchor="w")
+        for x in R.efeitos_atributo(k, self.a, self.d):
+            self._txt(f, "• " + x)
+        tk.Label(f, text="O que ele move", bg=PERG, fg=VINHO, font=(FONTE, 10, "bold")).pack(anchor="w", pady=(8, 0))
+        for x in afeta:
+            self._txt(f, "• " + x, sub=True)
+        self._txt(f, "10 é o início da jornada, 50 é maestria, 90 é talento extraordinário. Acima de 99 conta como 99.", sub=True, pady=(8, 0))
+        ttk.Button(f, text="Fechar", command=w.destroy).pack(anchor="e", pady=(10, 0))
 
     def info_pericia(self, n):
         """O que a perícia faz (clique no nome). No Modo Edição dá para treinar dali; no Modo Jogo, rolar."""

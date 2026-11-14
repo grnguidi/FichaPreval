@@ -131,7 +131,7 @@ function pFicha() {
     ${caixa("Descoberta", d.descoberta, "por Arcano")}${caixa("Talismãs", `${S.talismas.filter((t) => t.nome).length}/${d.talismas}`, "espaços", "var(--c-tal)")}</div>`;
   h += secao("Atributos", `${C.gastos}/${C.disp} pontos de nível`) + `<div class="grade g2 g4m">${R.ATRIBUTOS.map((k) => {
     const val = C.a[k], x = S.atributos[k];
-    return `<div class="cartao atr"><div class="faixa" style="background:var(--c-atr);color:var(--ouro2)">${R.NOMES_ATR[k]}</div>
+    return `<div class="cartao atr"><div class="faixa" data-a="info-atr" data-k="${k}" style="background:var(--c-atr);color:var(--ouro2);cursor:pointer">${R.NOMES_ATR[k]} <span style="opacity:.7">ⓘ</span></div>
       <div class="total ${val > 99 ? "erro" : ""}" data-a="manual" data-k="${k}">${val}${S.manual[k] != null ? `<span style="font-size:14px;color:var(--vinho)"> ✎</span>` : ""}</div><div class="info">Curva ${d.curva[k]} · BC +${d.bc[k]} · ${1 + Math.floor(R.cap(val) / 20)}d20${R.vantagem(val) ? ` · <span class="vant">vant.</span>` : ""}</div>
       <div class="info" style="font-size:11px">ini ${x.inicial || "—"} · esp ${int(x.especie) >= 0 ? "+" : ""}${int(x.especie)}${C.tb[k] ? ` · talismã +${C.tb[k]}` : ""}${int(x.bonus) ? ` · bôn ${int(x.bonus)}` : ""}</div>
       <div class="ctrl so-ed"><button data-a="pts" data-k="${k}" data-d="-1">−</button><span>nível +${int(x.niveis)}</span><button data-a="pts" data-k="${k}" data-d="1">+</button></div></div>`;

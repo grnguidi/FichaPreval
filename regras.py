@@ -59,6 +59,68 @@ PERICIAS_RESUMO = {
     "Vontade": ("Defesa do espírito (Fé): resistir a Sono, Loucura, Morte, medo, provocação e controle mental.", "Defesa"),
 }
 
+# O que cada atributo representa (capítulo Atributos) e o que ele move na ficha (Características Derivadas).
+ATRIBUTOS_RESUMO = {
+    "VIT": ("A força que mantém o corpo de pé: suportar ferimentos e continuar lutando.",
+            ["Vida: rola 1d12 por ponto de Curva da Vitalidade (ou 7 por dado)", "Dados da Poção Espiritual"]),
+    "MEN": ("O reservatório de energia interior que alimenta habilidades: quanto de mana o personagem canaliza.",
+            ["Mana = 2 × Mente + 2 × Curva da Mente", "Astúcia (defesa)", "Artes, Performance e Persuasão",
+             "Perícias treinadas: +1 a cada 10 pontos (a maior entre Mente e Inteligência)"]),
+    "TEN": ("O vigor físico para correr, esquivar, bloquear e aguentar o peso: o porte do corpo em combate.",
+            ["CA: +1 a cada 20 pontos (máx. +4)", "Redução de Dano: 1d4 a cada 20 pontos (máx. 4d4)",
+             "Resistências: Fogo 20, Cortante 30, Impacto 40, Veneno 50, Sangramento 60, Magia 70, Magia Pura 80, Sagrado 90",
+             "Carga = 10 + 2 × Tenacidade + Força ÷ 2 + Curva da Tenacidade", "Fortitude (defesa)"]),
+    "FOR": ("O poder bruto para erguer armas pesadas e desferir golpes devastadores.",
+            ["Vigor = 20 + Força + Curva da Força; recupera Curva ÷ 4 por turno", "Ataque e requisitos das armas de Força",
+             "Atletismo", "Metade da Força entra na Carga"]),
+    "DES": ("Precisão, velocidade e controle: armas leves, flexíveis e à distância.",
+            ["Ações extras (Comum ou Bônus) com 15, 30, 45, 55, 65, 75, 85 e 95", "Movimento: +3 m com 30 e a cada 15 acima",
+             "Iniciativa: 1d20 a mais a cada 20 pontos", "Reflexo (defesa)", "Ataque das armas de Destreza e Pontaria",
+             "Acrobacia, Crime e Furtividade"]),
+    "INT": ("A chave para compreender e manipular forças místicas pelo estudo: conjura as Magias.",
+            ["Feitiçaria: acerto e DT das Magias", "+1 dado nas Magias a cada 30 pontos",
+             "Espaços de encantamento: 1 + (Inteligência + Fé) ÷ 6", "Contradomínio: 1 por combate a cada 10 pontos (a maior entre INT e Fé)",
+             "Perícias treinadas: +1 a cada 10 pontos", "Ciências, Investigação, Medicina e Tecnologia"]),
+    "FE": ("A conexão com forças sagradas, divinas ou espirituais: conjura os Feitiços (curas, bênçãos, proteções e ataques).",
+           ["Desejo: acerto e DT dos Feitiços", "+1 dado nos Feitiços a cada 30 pontos",
+            "Espaços de encantamento: 1 + (Inteligência + Fé) ÷ 6", "Contradomínio: 1 por combate a cada 10 pontos", "Vontade (defesa)",
+            "História, Intuição e Religião"]),
+    "ARC": ("A afinidade com mistérios ocultos e energias sutis: perceber o extraordinário e mexer com as condições dos inimigos.",
+            ["Escalonamento das condições dos encantamentos: 1 cópia dos dados a cada 20 e 1 dado inferior a cada 15",
+             "Descoberta: +10 a cada 15 pontos", "Percepção, Sorte e Tática", "Coordenação do Uso duplo ao conjurar"]),
+}
+
+
+def efeitos_atributo(k, a, d):
+    """O que o valor atual do atributo dá agora na ficha (a: atributos efetivos, d: derivadas)."""
+    v = cap(a[k])
+    out = [f"Curva {d['curva'][k]} fora de combate (perícias: {1 + v // 20}d20) · Bônus de Combate +{d['bc'][k]}"
+           + (" · vantagem em combate" if vantagem(a[k]) else "")]
+    if k == "VIT":
+        out.append(f"{d['vida_dados']} dados de vida · Vida máxima {d['vida']}")
+    elif k == "MEN":
+        out.append(f"Mana {d['mana']} · Astúcia +{d['bc']['MEN']} · até {d['pericias_treinadas_max']} perícias treinadas")
+    elif k == "TEN":
+        out.append(f"CA +{d['ca_ten']} · Redução de Dano {str(d['rd']) + 'd4' if d['rd'] else '—'} · Carga {d['carga']}")
+        out.append("Resistências: " + (", ".join(d["resistencias"]) if d["resistencias"] else "nenhuma ainda (a primeira vem com 20)"))
+    elif k == "FOR":
+        out.append(f"Vigor {d['vigor']} · recupera {d['vigor_regen']} por turno")
+    elif k == "DES":
+        out.append(f"{d['acoes_extras']} ação(ões) extra(s) · Movimento {d['movimento']} m · Iniciativa {d['iniciativa_dados']}d20 +{d['iniciativa_bonus']}")
+        prox = next((t for t in LIMIARES_ACOES if v < t), None)
+        if prox:
+            out.append(f"Próxima ação extra com {prox} de Destreza.")
+    elif k == "INT":
+        out.append(f"DT de Feitiçaria {d['dt_feiticaria']} · +{d['dados_extra_magia']} dado(s) nas Magias · {d['espacos_encant']} espaços de encantamento"
+                   f" · {d['contra_encant']} contra-encantamento(s) por combate")
+    elif k == "FE":
+        out.append(f"DT de Desejo {d['dt_desejo']} · +{d['dados_extra_feitico']} dado(s) nos Feitiços · {d['espacos_encant']} espaços de encantamento"
+                   f" · Vontade +{d['bc']['FE']}")
+    elif k == "ARC":
+        out.append(f"Condições dos encantamentos: +{v // 20} cópia(s) dos dados e +{v // 15} dado(s) inferior(es) · Descoberta {d['descoberta']}")
+    return out
+
+
 PERICIAS_ATAQUE = [("Luta", ["FOR", "DES"]), ("Pontaria", ["DES"]),
                    ("Feitiçaria", ["INT"]), ("Desejo", ["FE"])]
 PERICIAS_DEFESA = [("Fortitude", "TEN", "Fortitude de Ferro"), ("Reflexo", "DES", "Reflexos de Gato"),

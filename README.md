@@ -29,6 +29,7 @@ Execute `GERAR_EXE.bat`. O script instala PyInstaller, reportlab e segno, compil
 - Encantamentos com dados de condição já escalados pelo Arcano (cópias a cada 20, dados inferiores a cada 15), com Mente Arcana (+10 de Arcano) e Senhor das Condições (+1 cópia).
 - Sets que aplicam pontos de condição (Sangria, Peçonha, Miasma, Geada, Delírio, Torpor, Gume) mostram os pontos em cada acerto ou crítico, com valor fixo: como diz o livro, os números dos sets não escalam com o Arcano.
 - Clicar no nome de uma perícia (no celular, tocar nela no Modo Edição) mostra o que ela faz, o atributo, se exige treino e onde o livro a usa.
+- Clicar no nome de um atributo (no celular, tocar na faixa com o nome) mostra o que ele representa, o que o valor atual dá na ficha (Vida, Mana, CA, RD, resistências, ações, DTs, escalonamento…) e o que ele move segundo o livro.
 - Desgaste de armas: 3 turnos afiados, o crítico reafia; a arma desgastada fica um turno parada.
 - Descanso curto e longo (Vida, Mana, Vigor e barras de condição) e Poção Espiritual.
 - Inventário com a lista de Itens Diversos do livro (peso já preenchido), quantidade e botão de usar consumíveis (poções de Mana e Vigor, antídotos…). A Mochila soma +5 de Carga; peças de set pesam 1.

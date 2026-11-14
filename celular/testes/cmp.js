@@ -14,6 +14,7 @@ for (const [i, c] of casos.entries()) {
     st: R.statusTalento(D.talentos[I.tal_nome], I.slot, new Set(I.antes), I.a, new Set(I.trein), I.armas_eq, new Set(I.ja)),
     pts: R.pontosDeNivel(I.nivel, I.sem), ganho: R.ganhoNoNivel(I.nivel, I.sem), duplo: ord(R.reqUsoDuplo(rq, R.reqArma(D.armas[0], 1))),
     per: R.PERICIAS.map(([, atrs], j) => R.periciaFora(I.a, I.nivel, atrs || ['ARC'], I.pers[j])), dano: R.danoComDados(I.dano, I.extra),
+    efa: R.ATRIBUTOS.map((k) => R.efeitosAtributo(k, I.a, d)),
   };
   for (const k of Object.keys(O)) {
     if (JSON.stringify(got[k]) !== JSON.stringify(O[k])) {

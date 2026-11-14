@@ -257,6 +257,14 @@ A["rolar-vida"] = () => {
   mudar((s) => { s.vida.rolagens = s.vida.rolagens.concat(novos); });
   toast(`🎲 ${falta}d12: ${novos.join(", ")} → +${novos.reduce((a, b) => a + b, 0)} de Vida`);
 };
+A["info-atr"] = (el) => {
+  const k = el.dataset.k, [desc, afeta] = R.ATRIBUTOS_RESUMO[k];
+  folha(`${R.NOMES_ATR[k]} · ${C.a[k]}`, `<div class="desc">${esc(desc)}</div>
+    <div class="secao">Com o valor atual</div><ul class="avisos">${R.efeitosAtributo(k, C.a, C.d).map((x) => `<li class="ok">${esc(x)}</li>`).join("")}</ul>
+    <div class="secao">O que ele move</div><ul class="avisos">${afeta.map((x) => `<li class="info">${esc(x)}</li>`).join("")}</ul>
+    <p class="sub">10 é o início da jornada, 50 é maestria, 90 é talento extraordinário. Acima de 99 conta como 99.</p>`,
+  `<button class="botao prim" data-a="fechar">OK</button>`);
+};
 function infoPericia(el) {
   const n = el.dataset.n, [resumo, usada] = R.PERICIAS_RESUMO[n] || ["", ""];
   const p = R.PERICIAS.find((x) => x[0] === n), atrs = p ? p[1] : null, req = p ? p[2] : false, tr = C.treinadas.has(n);
