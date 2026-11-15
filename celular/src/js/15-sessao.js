@@ -1,20 +1,30 @@
 // ------------------------------------------------------------------ sessão do mestre (quando o PC do mestre serve esta página)
-const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0, ackEv: 0, token: "", grupo: null, gv: 0 };
+const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0, ackEv: 0, token: "", grupo: null, gv: 0, chave: "", senha: "", pedeSenha: false, sig: "", laco: 0 };
 const durEfeito = (e) => e.rodadas ? `${e.rodadas} turno(s)` : e.fim_combate ? "até o fim do combate" : "até o mestre remover";
-const CH_SESSAO = "prevalecentes.sessao.id", CH_ACK = "prevalecentes.sessao.ack";
-async function api(url, corpo) {
-  const r = await fetch(url, corpo === undefined ? { cache: "no-store" } : { method: "POST", body: JSON.stringify(corpo) });
+const CH_SESSAO = "prevalecentes.sessao.id", CH_ACK = "prevalecentes.sessao.ack", CH_CHAVE = "prevalecentes.sessao.chave", CH_SENHA = "prevalecentes.sessao.senha";
+async function api(url, corpo, limite = 15000) {
+  // toda chamada leva a chave deste aparelho (ninguém age em nome de outro) e tem prazo, para o sinal ruim não travar a fila
+  const ctl = typeof AbortController === "function" ? new AbortController() : null, prazo = ctl && setTimeout(() => ctl.abort(), limite);
+  const op = corpo === undefined ? { cache: "no-store" } : { method: "POST", body: JSON.stringify(corpo && corpo.id ? Object.assign({ chave: sessao.chave }, corpo) : corpo) };
+  if (ctl) op.signal = ctl.signal;
+  let r;
+  try { r = await fetch(url, op); } finally { clearTimeout(prazo); }
   if (!r.ok) throw new Error(r.status);
   return r.json();
 }
 async function detectarSessao() {
-  if (!/^https?:$/.test(location.protocol) || location.protocol === "https:") return;
+  if (!/^https?:$/.test(location.protocol)) return;   // http na rede do mestre ou https pelo link da internet
   try {
     const r = await api("/api/sessao");
     if (!r || !r.sessao) return;
+    sessao.pedeSenha = !!r.senha;
   } catch (e) { return; }
   sessao.ativa = true;
   try {
+    const daUrl = (location.hash.match(/(?:^#|&)s=([^&]+)/) || [])[1];   // o link do mestre traz a senha
+    if (daUrl) { localStorage.setItem(CH_SENHA, decodeURIComponent(daUrl)); history.replaceState(null, "", location.pathname + location.search); }
+    sessao.senha = localStorage.getItem(CH_SENHA) || "";
+    sessao.chave = localStorage.getItem(CH_CHAVE) || "";
     sessao.id = localStorage.getItem(CH_SESSAO) || "";
     const [tk, n] = JSON.parse(localStorage.getItem(CH_ACK) || "[]");   // recarregou a página: não repete o que já aplicou
     if (tk) { sessao.token = tk; sessao.ackEv = int(n); }
@@ -25,22 +35,45 @@ async function detectarSessao() {
 function pedirNomeSessao() {
   const sug = S ? (S.identidade.player || S.identidade.nome || "") : "";
   folha("Entrar na mesa", `<p class="sub">Esta página veio do PC do mestre. Com uma ficha aberta, o mestre vê sua Vida, Mana e Vigor e pode mandar dano e condições.</p>
-    <label class="campo"><span>Seu nome na mesa</span><input id="ss-n" value="${esc(sessao.id || sug)}" maxlength="30"></label>`,
+    <label class="campo"><span>Seu nome na mesa</span><input id="ss-n" value="${esc(sessao.id || sug)}" maxlength="30"></label>
+    ${sessao.pedeSenha ? `<label class="campo"><span>Senha da mesa</span><input id="ss-s" value="${esc(sessao.senha)}" maxlength="20" inputmode="numeric" autocomplete="off"></label>` : ""}`,
   `<button class="botao leve" data-a="fechar">Agora não</button><button class="botao prim" data-a="sessao-ok">Entrar</button>`);
 }
 A["sessao-nome"] = () => pedirNomeSessao();
-A["sessao-ok"] = () => { const n = $("#ss-n").value.trim(); if (!n) { $("#ss-n").focus(); return; } fecharFolha(); entrarSessao(n, true); };
+A["sessao-ok"] = () => {
+  const n = $("#ss-n").value.trim(); if (!n) { $("#ss-n").focus(); return; }
+  if ($("#ss-s")) { sessao.senha = $("#ss-s").value.trim(); try { localStorage.setItem(CH_SENHA, sessao.senha); } catch (e) { /* sem storage */ } }
+  fecharFolha(); entrarSessao(n, true);
+};
 async function entrarSessao(nome, novo = false) {
   try {
     if (novo && sessao.id && sessao.id !== nome) sessao.id = "";
-    sessao.id = await api("/api/oi", { nome, id: novo ? "" : sessao.id }).then((r) => r.id);
-    try { localStorage.setItem(CH_SESSAO, sessao.id); } catch (e) { /* sem storage */ }
+    const r = await api("/api/oi", { nome, id: novo ? "" : sessao.id, senha: sessao.senha });
+    if (r.erro === "senha") {   // senha errada ou faltando: pede de novo, sem ficar tentando
+      sessao.pedeSenha = true; sessao.conectado = false; sessao.laco += 1; pintarSessao();
+      toast(sessao.senha ? "Senha da mesa incorreta." : "Esta mesa tem senha: peça ao mestre."); pedirNomeSessao(); return;
+    }
+    if (!r.id) throw new Error("mesa");
+    sessao.id = r.id; sessao.chave = r.chave || "";
+    try { localStorage.setItem(CH_SESSAO, sessao.id); localStorage.setItem(CH_CHAVE, sessao.chave); } catch (e) { /* sem storage */ }
     sessao.conectado = true; sessao.ultimo = "";
     if (novo) toast(`Na mesa como <b>${esc(sessao.id)}</b>.`);
-  } catch (e) { sessao.conectado = false; toast("Não consegui falar com o mestre. Você está na mesma rede?"); }
-  clearInterval(sessao.timer); sessao.timer = setInterval(consultarSessao, 1500);
-  consultarSessao(); pintarSessao();
+  } catch (e) { sessao.conectado = false; toast("Não consegui falar com o mestre. Confira a internet ou o Wi-Fi."); }
+  pintarSessao(); lacoSessao();
 }
+// Consulta que espera: o mestre segura a resposta até haver novidade, então dano e vez chegam na hora
+// e o celular não fica perguntando o tempo todo. Se a rede falhar, tenta de novo com intervalos.
+async function lacoSessao() {
+  const meu = ++sessao.laco;
+  let falhas = 0;
+  while (meu === sessao.laco && sessao.id) {
+    const ok = await consultarSessao(document.hidden ? 0 : 20);
+    if (meu !== sessao.laco) return;
+    falhas = ok ? 0 : falhas + 1;
+    await new Promise((f) => setTimeout(f, ok ? (document.hidden ? 1500 : 120) : Math.min(1500 + falhas * 700, 6000)));
+  }
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && sessao.id) consultarSessao(); });
 function resumoSessao() {
   if (!S) return null;
   const c = calcular(), d = c.d, at = (ch, max) => (S.vida[ch] === "" || S.vida[ch] == null ? max : int(S.vida[ch], max));
@@ -55,12 +88,15 @@ function resumoSessao() {
     dinheiro: R.formatarDinheiro(S.dinheiro_c), carga: [Math.round(c.carga * 10) / 10, d.carga],
     sem_alma: !!S.sem_alma };
 }
-async function consultarSessao() {
-  if (!sessao.id) return;
+async function consultarSessao(espera = 0) {
+  if (!sessao.id) return false;
   let r;
-  try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id) + "&ack=" + sessao.ackEv + "&gv=" + sessao.gv); }
-  catch (e) { if (sessao.conectado) { sessao.conectado = false; pintarSessao(); } return; }
-  if (!r.ok) { entrarSessao(sessao.id); return; }   // o mestre reiniciou: entra de novo com o mesmo nome
+  try {
+    r = await api("/api/estado?id=" + encodeURIComponent(sessao.id) + "&k=" + sessao.chave + "&ack=" + sessao.ackEv + "&gv=" + sessao.gv
+      + (espera ? "&espera=" + espera + "&sig=" + sessao.sig : ""), undefined, (espera + 15) * 1000);
+  } catch (e) { if (sessao.conectado) { sessao.conectado = false; pintarSessao(); } return false; }
+  if (!r.ok) { entrarSessao(sessao.id); return false; }   // o mestre reiniciou: entra de novo com o mesmo nome
+  sessao.sig = r.sig || "";
   const mudou = !sessao.conectado || sessao.mao !== r.mao || sessao.rodada !== r.rodada || sessao.vez !== (r.vez || "") || JSON.stringify(sessao.efeitos) !== JSON.stringify(r.efeitos || []);
   sessao.conectado = true; sessao.mao = r.mao; sessao.rodada = r.rodada; sessao.vez = r.vez || ""; sessao.turno = r.turno || 0;
   sessao.efeitos = r.efeitos || [];
@@ -75,11 +111,20 @@ async function consultarSessao() {
   let gmudou = false;
   if (r.grupo) { grupoChegou(r.grupo); sessao.gv = r.gv; gmudou = true; }
   if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && (aba === "combate")) render(); else pintarSessao(); }
-  const res = resumoSessao(), txt = JSON.stringify(res);
-  if (res && txt !== sessao.ultimo) {
-    try { await api("/api/ficha", { id: sessao.id, dados: res }); sessao.ultimo = txt; } catch (e) { /* tenta na próxima */ }
-  }
+  enviarFichaSessao();
+  return true;
 }
+// O resumo da ficha vai ao mestre sempre que muda (conferido a cada 1,5 s; só usa a rede quando mudou).
+let enviandoFicha = false;
+async function enviarFichaSessao() {
+  if (!sessao.id || !sessao.conectado || enviandoFicha) return;
+  const res = resumoSessao(), txt = JSON.stringify(res);
+  if (!res || txt === sessao.ultimo) return;
+  enviandoFicha = true;
+  try { const r = await api("/api/ficha", { id: sessao.id, dados: res }); if (r.ok) sessao.ultimo = txt; } catch (e) { /* tenta na próxima */ }
+  enviandoFicha = false;
+}
+setInterval(enviarFichaSessao, 1500);
 const vibrar = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* sem vibração */ } };
 function receberEvento(ev) {
   const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });

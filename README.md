@@ -87,6 +87,17 @@ Observações:
 - Celular com a tela bloqueada continua na mesa: o mestre vê "(sem sinal)" ao lado do nome depois de 20 segundos e a mão continua na fila. O jogador só sai da mesa depois de 10 minutos sem contato.
 - Se a conexão cair, o jogador no computador vê "Conexão perdida" e um botão para conectar de novo. Quando o mestre não é encontrado na rede, o programa sugere o último IP usado.
 
+### Jogar de longe e conexão
+
+Botão "🌐 Convidar" na mesa do mestre.
+
+- **Mesa pela internet:** "Abrir a mesa para a internet" cria um link (túnel da Cloudflare, sem conta e sem mexer no roteador). No celular é só abrir o link; no PC, o jogador cola o link em "link ou IP do mestre" e entra. Na primeira vez o programa pede para baixar o `cloudflared` (cerca de 65 MB) para `~/.prevalecentes`; se preferir, baixe à mão e deixe `cloudflared.exe` ao lado do programa. O link muda a cada sessão.
+- **Senha da mesa:** opcional na rede local; criada sozinha ao abrir para a internet. O link já leva a senha. Depois de 20 tentativas erradas em um minuto, a entrada trava por um minuto.
+- **Chave por aparelho:** cada celular ou PC por link recebe uma chave ao entrar; sem ela ninguém lê nem age em nome de outro jogador.
+- **Atualização na hora:** celulares e PCs por link fazem uma consulta que espera a novidade, então dano e vez chegam em menos de um segundo.
+- **Reconexão:** o PC tenta voltar sozinho, com o mesmo nome, quando a conexão cai.
+- **Mesa guardada:** rodada, ordem de turno, efeitos, fichas e eventos pendentes ficam em `~/.prevalecentes/sessao.json`. Se o PC do mestre fechar, ao entrar como mestre de novo (em até 12 horas) o programa oferece retomar.
+
 ### Grupo: interação entre os jogadores
 
 Botão "👥 Grupo" no PC e aba "Grupo" no celular, durante a sessão.
@@ -128,6 +139,7 @@ As fichas são salvas manualmente em arquivos `.json` (Ctrl+S) e abertas com Ctr
 
 | Arquivo | Descrição |
 |---|---|
+| `tunel.py` | Mesa pela internet (abre o túnel com o cloudflared) |
 | `grupo.py`, `grupo_ui.py` | Interação entre jogadores na sessão (servidor e janelas) |
 | `prevalecentes.py` | Programa principal e interface |
 | `regras.py` | Cálculos das regras, sem interface |

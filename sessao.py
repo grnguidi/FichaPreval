@@ -4,7 +4,9 @@
 O mestre abre um servidor TCP (porta 5757 por padrão) e os jogadores se conectam pelo IP dele.
 Só usa a biblioteca padrão do Python. Mensagens: JSON, uma por linha.
 """
+import hashlib
 import json
+import os
 import queue
 import random
 import socket
@@ -13,7 +15,9 @@ import time
 import tkinter as tk
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from tkinter import ttk, messagebox
-from urllib.parse import parse_qs, urlparse
+import urllib.error
+import urllib.request
+from urllib.parse import parse_qs, quote, urlparse
 
 try:
     import segno   # QR code (pip install segno); sem ele o app funciona, só não mostra o QR
@@ -26,6 +30,7 @@ except ImportError:
 
 import regras as R
 from grupo import Grupo, CFG_ROTULOS, SUSSURRO_MODOS, REACOES
+from tunel import Tunel
 try:
     from dados_prevalecentes import DADOS as _DADOS
     ITENS_LIVRO = _DADOS.get("itens", [])
@@ -113,7 +118,8 @@ button{width:100%;max-width:340px;border:0;border-radius:14px;font-family:inheri
  <div id="msg"></div><div id="st"></div>
 </div>
 <script>
-var id=localStorage.getItem('preva_id')||'', nome=localStorage.getItem('preva_nome')||'';
+var id=localStorage.getItem('preva_id')||'', nome=localStorage.getItem('preva_nome')||'', chave=localStorage.getItem('preva_chave')||'';
+var senha=(location.hash.match(/s=([^&]+)/)||[])[1]||localStorage.getItem('preva_senha')||'';
 var $=function(x){return document.getElementById(x)};
 var levantada=false, timer=null;
 $('nome').value=nome;
@@ -121,8 +127,9 @@ function post(url,corpo){return fetch(url,{method:'POST',body:JSON.stringify(cor
 function entrar(){
   nome=$('nome').value.trim(); if(!nome){$('nome').focus();return}
   localStorage.setItem('preva_nome',nome);
-  post('/api/oi',{nome:nome,id:id}).then(function(r){
-    id=r.id; localStorage.setItem('preva_id',id);
+  post('/api/oi',{nome:nome,id:id,chave:chave,senha:senha}).then(function(r){
+    if(r.erro){senha=prompt('Senha da mesa:')||'';localStorage.setItem('preva_senha',senha);if(senha){entrar()}return}
+    id=r.id; chave=r.chave||''; localStorage.setItem('preva_id',id); localStorage.setItem('preva_chave',chave);
     $('t1').classList.add('oculto'); $('t2').classList.remove('oculto');
     $('quem').textContent=id; if(!timer){timer=setInterval(consultar,1000)} consultar();
   }).catch(function(){alert('N\\u00e3o consegui falar com o mestre. Voc\\u00ea est\\u00e1 na mesma rede?')});
@@ -132,9 +139,9 @@ function pintar(){
   b.innerHTML=levantada?'&#9995; M&atilde;o levantada &mdash; toque para abaixar':'&#9995; Levantar a m&atilde;o';
 }
 function consultar(){
-  fetch('/api/estado?id='+encodeURIComponent(id)).then(function(r){return r.json()}).then(function(r){
+  fetch('/api/estado?id='+encodeURIComponent(id)+'&k='+chave).then(function(r){return r.json()}).then(function(r){
     if(!r.ok){ // o mestre reiniciou ou a conex\\u00e3o expirou: entra de novo
-      post('/api/oi',{nome:nome,id:id}).then(function(x){id=x.id;localStorage.setItem('preva_id',id);$('quem').textContent=id});return}
+      post('/api/oi',{nome:nome,id:id,chave:chave,senha:senha}).then(function(x){if(x.erro){return}id=x.id;chave=x.chave||'';localStorage.setItem('preva_id',id);localStorage.setItem('preva_chave',chave);$('quem').textContent=id});return}
     $('st').textContent='Conectado'; levantada=r.mao; pintar();
     if(r.palavra){$('msg').textContent='\\ud83c\\udfa4 O mestre te deu a palavra!';
       if(navigator.vibrate){navigator.vibrate([300,120,300])}
@@ -144,7 +151,7 @@ function consultar(){
 $('entrar').onclick=entrar;
 $('nome').onkeydown=function(e){if(e.key==='Enter')entrar()};
 $('mao').onclick=function(){
-  post(levantada?'/api/abaixar':'/api/mao',{id:id}).then(consultar);
+  post(levantada?'/api/abaixar':'/api/mao',{id:id,chave:chave}).then(consultar);
 };
 </script></body></html>
 """
@@ -153,6 +160,8 @@ $('mao').onclick=function(){
 class _Pagina(BaseHTTPRequestHandler):
     """Atende os celulares (navegador). `srv` é preenchido na criação (veja Servidor.iniciar)."""
     srv = None
+    protocol_version = "HTTP/1.1"   # mantém a conexão (o túnel da internet reaproveita)
+    timeout = 75
 
     def log_message(self, *a):
         pass
@@ -162,13 +171,28 @@ class _Pagina(BaseHTTPRequestHandler):
         self.send_header("Content-Type", tipo)
         self.send_header("Content-Length", str(len(corpo)))
         self.send_header("Cache-Control", "no-store")
+        if not self.srv.ativo:   # mesa fechada: não segura a conexão (senão o aparelho fica falando com a mesa antiga)
+            self.send_header("Connection", "close")
+            self.close_connection = True
         self.end_headers()
         self.wfile.write(corpo)
 
     def _json(self, obj):
         self._resp(json.dumps(obj).encode("utf-8"), "application/json")
 
+    def _fechada(self):
+        if self.srv.ativo:
+            return False
+        self.close_connection = True
+        try:
+            self.send_error(503)
+        except OSError:
+            pass
+        return True
+
     def do_GET(self):
+        if self._fechada():
+            return
         u = urlparse(self.path)
         try:
             if u.path == "/api/estado":
@@ -181,9 +205,17 @@ class _Pagina(BaseHTTPRequestHandler):
                     gv = int(q["gv"][0]) if "gv" in q else None
                 except ValueError:
                     gv = None
-                self._json(self.srv.web_estado(q.get("id", [""])[0], ack, gv))
+                try:
+                    espera = float(q["espera"][0]) if "espera" in q else 0
+                except ValueError:
+                    espera = 0
+                ident = q.get("id", [""])[0]
+                if not self.srv.web_confere(ident, q.get("k", [""])[0]):
+                    self._json({"ok": False})
+                else:
+                    self._json(self.srv.web_espera(ident, ack, gv, q.get("sig", [""])[0], espera))
             elif u.path == "/api/sessao":
-                self._json({"sessao": True, "rodada": self.srv.rodada})
+                self._json({"sessao": True, "rodada": self.srv.rodada, "senha": bool(self.srv.senha)})
             elif u.path in ("/", "/index.html"):
                 self._resp((PAGINA_FICHA or PAGINA_WEB).encode("utf-8"), "text/html; charset=utf-8")
             elif u.path == "/mao":
@@ -194,6 +226,8 @@ class _Pagina(BaseHTTPRequestHandler):
             pass
 
     def do_POST(self):
+        if self._fechada():
+            return
         try:
             n = min(int(self.headers.get("Content-Length") or 0), 20000)
             corpo = json.loads(self.rfile.read(n) or b"{}")
@@ -204,7 +238,10 @@ class _Pagina(BaseHTTPRequestHandler):
         ident = str(corpo.get("id", ""))
         try:
             if self.path == "/api/oi":
-                self._json({"id": self.srv.web_oi(str(corpo.get("nome", "")).strip()[:30], ident)})
+                self._json(self.srv.web_entrar(str(corpo.get("nome", "")).strip()[:30], ident,
+                                               str(corpo.get("senha", "")), str(corpo.get("chave", "")), bool(corpo.get("pc"))))
+            elif not self.srv.web_confere(ident, str(corpo.get("chave", ""))):
+                self._json({"ok": False, "erro": "Você não está na mesa."})
             elif self.path == "/api/mao":
                 self._json({"ok": self.srv.web_mao(ident, True)})
             elif self.path == "/api/abaixar":
@@ -347,7 +384,79 @@ class Servidor(Grupo):
         self.ordem = []        # [[nome, iniciativa, bônus]] em ordem de turno (vazia = fora de combate)
         self.vez = -1          # posição de quem age agora em self.ordem
         self.turno = 0         # conta os turnos passados (o celular usa para o desgaste de armas)
+        self.senha = ""        # senha da mesa (vazia = entra quem souber o endereço)
+        self._erros_senha = []
+        self._salvo = ""
         self._grupo_init()     # interação entre jogadores (grupo.py)
+
+    # --- mesa guardada: se o PC do mestre fechar, dá para retomar de onde parou
+    ARQ_SESSAO = os.path.join(os.path.expanduser("~"), ".prevalecentes", "sessao.json")
+    VALE_HORAS = 12
+
+    def _retrato(self):
+        if True:
+            return {"token": self.token, "senha": self.senha, "rodada": self.rodada, "ordem": self.ordem, "vez": self.vez,
+                    "turno": self.turno, "efeitos": self.efeitos, "fichas": self.fichas, "pendentes": self.pendentes,
+                    "seq_ev": self._seq_ev, "seq": self._seq, "registro": self.registro[:200], "maos": self.maos,
+                    "web": {n: w.get("chave", "") for n, w in self.web.items()}, "pc": list(self.clientes)}
+
+    def salvar_sessao(self):
+        """Grava a mesa em disco quando algo mudou (chamado a cada 1,5 s pelo laço do anúncio)."""
+        try:
+            with self.lock:
+                txt = json.dumps(self._retrato(), ensure_ascii=False, sort_keys=True)
+            if txt == self._salvo:
+                return False
+            os.makedirs(os.path.dirname(self.ARQ_SESSAO), exist_ok=True)
+            tmp = self.ARQ_SESSAO + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.write('{"hora": %r, "mesa": %s}' % (time.time(), txt))
+            os.replace(tmp, self.ARQ_SESSAO)
+            self._salvo = txt
+            return True
+        except (OSError, TypeError, ValueError):
+            return False
+
+    @classmethod
+    def sessao_salva(cls):
+        """A mesa guardada, se houver uma recente com jogadores: {"hora", "mesa"}; senão None."""
+        try:
+            with open(cls.ARQ_SESSAO, encoding="utf-8") as f:
+                d = json.load(f)
+            m = d["mesa"]
+            if time.time() - float(d["hora"]) > cls.VALE_HORAS * 3600 or not (m.get("web") or m.get("pc")):
+                return None
+            return d
+        except (OSError, ValueError, KeyError, TypeError):
+            return None
+
+    def retomar(self, mesa):
+        """Volta a mesa guardada: rodada, ordem de turno, efeitos, fichas e os eventos que ainda não chegaram.
+        Os celulares e os PCs por link continuam com o mesmo nome; os PCs da rede local entram de novo sozinhos."""
+        try:
+            with self.lock:
+                self.token = str(mesa.get("token") or self.token)
+                self.senha = str(mesa.get("senha") or "")
+                self.rodada = int(mesa.get("rodada") or 1)
+                self.ordem = [list(o) for o in mesa.get("ordem") or []]
+                self.vez = int(mesa.get("vez", -1))
+                self.turno = int(mesa.get("turno") or 0)
+                self.efeitos = {str(k): list(v) for k, v in (mesa.get("efeitos") or {}).items()}
+                self.fichas = {str(k): dict(v) for k, v in (mesa.get("fichas") or {}).items()}
+                self.pendentes = {str(k): list(v) for k, v in (mesa.get("pendentes") or {}).items()}
+                self._seq_ev = int(mesa.get("seq_ev") or 0)
+                self._seq = int(mesa.get("seq") or 0)
+                self.registro = [tuple(r) for r in mesa.get("registro") or []]
+                agora = time.time()
+                self.web = {str(n): {"visto": agora - SEM_SINAL - 1, "palavra": False, "chave": str(k), "sem_sinal": True}
+                            for n, k in (mesa.get("web") or {}).items()}
+                self.maos = [n for n in mesa.get("maos") or [] if n in self.web]
+        except (TypeError, ValueError, AttributeError):
+            return False
+        self._anotar("Mesa retomada de onde parou.")
+        self._gmudou()
+        self.fila.put(("mudou",))
+        return True
 
     def iniciar(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -365,7 +474,59 @@ class Servidor(Grupo):
         except OSError:
             self.httpd = None   # porta ocupada: só os jogadores do app entram
 
-    # --- celulares (a página HTTP chama estes métodos)
+    # --- celulares e PCs por link (a página HTTP chama estes métodos)
+    def senha_confere(self, senha):
+        """True se a senha bate (ou a mesa não tem senha). Muitas tentativas erradas travam a entrada por 1 minuto."""
+        if not self.senha:
+            return True
+        agora = time.time()
+        with self.lock:
+            self._erros_senha = [t for t in self._erros_senha if agora - t < 60]
+            if len(self._erros_senha) >= 20:
+                return False
+            if str(senha).strip() == self.senha:
+                return True
+            self._erros_senha.append(agora)
+        time.sleep(0.4)
+        return False
+
+    def web_entrar(self, nome, ident, senha="", chave="", pc=False):
+        """Entrada pela página: confere a senha da mesa e devolve o nome e uma chave só deste aparelho
+        (sem a chave ninguém age em nome de outro jogador)."""
+        with self.lock:
+            w = self.web.get(ident) if ident else None
+            volta = w is not None and w.get("chave") and w["chave"] == chave
+        if not volta and not self.senha_confere(senha):
+            return {"erro": "senha"}
+        if not volta:
+            ident = ""
+        nome = self.web_oi(nome, ident)
+        with self.lock:
+            w = self.web.get(nome)
+            if w is None:
+                return {"erro": "mesa"}
+            w["pc"] = bool(pc)
+            if not w.get("chave"):
+                w["chave"] = "%032x" % random.SystemRandom().getrandbits(128)
+            return {"id": nome, "chave": w["chave"]}
+
+    def web_confere(self, ident, chave):
+        """A chave do aparelho bate com a do nome? (Entradas antigas ou de teste, sem chave, passam.)"""
+        with self.lock:
+            w = self.web.get(ident)
+            return w is None or not w.get("chave") or w["chave"] == chave
+
+    def web_espera(self, ident, ack=None, gv=None, sig="", espera=0):
+        """Consulta que espera: segura a resposta até haver novidade para este jogador (ou `espera` segundos).
+        Assim o dano e a vez chegam na hora, sem o aparelho perguntar o tempo todo."""
+        fim = time.time() + max(0.0, min(float(espera or 0), 25.0))
+        while True:
+            r = self.web_estado(ident, ack, gv)
+            if (not r.get("ok") or r["eventos"] or r["palavra"] or "grupo" in r or r["sig"] != sig
+                    or time.time() >= fim or not self.ativo):
+                return r
+            time.sleep(0.2)
+
     def web_oi(self, nome, ident):
         with self.lock:
             if ident and ident in self.web:
@@ -417,9 +578,11 @@ class Servidor(Grupo):
                 eventos, self.pendentes[ident] = fila, []
             else:
                 eventos = self.pendentes[ident] = [e for e in fila if e["seq"] > ack]
-            return {"ok": True, "token": self.token, "mao": ident in self.maos, "palavra": palavra, "eventos": eventos,
-                    "efeitos": list(self.efeitos.get(ident, [])), "rodada": self.rodada,
-                    "vez": self._quem_age(), "turno": self.turno, "ordem": [o[0] for o in self.ordem]}
+            r = {"ok": True, "token": self.token, "mao": ident in self.maos, "efeitos": list(self.efeitos.get(ident, [])),
+                 "rodada": self.rodada, "vez": self._quem_age(), "turno": self.turno, "ordem": [o[0] for o in self.ordem]}
+            r["sig"] = hashlib.md5(json.dumps(r, sort_keys=True).encode("utf-8")).hexdigest()[:12]
+            r.update(palavra=palavra, eventos=eventos)
+            return r
 
     def _varrer(self):
         """Tira da mesa os celulares que sumiram há muito tempo (fecharam a página ou saíram da rede).
@@ -464,6 +627,7 @@ class Servidor(Grupo):
                 except OSError:
                     pass
             self._varrer()
+            self.salvar_sessao()
             time.sleep(1.5)
         s.close()
 
@@ -484,6 +648,9 @@ class Servidor(Grupo):
                 if nome is None:
                     if t != "oi":
                         continue
+                    if not self.senha_confere(msg.get("senha", "")):
+                        _enviar(c, {"t": "recusado", "motivo": "senha"})
+                        break
                     nome = self._registrar(c, str(msg.get("nome", "")).strip()[:30] or "Jogador")
                     _enviar(c, {"t": "ok", "nome": nome})
                     self._sincronizar(nome)
@@ -797,7 +964,7 @@ class Servidor(Grupo):
             jog = []
             for n in list(self.clientes) + list(self.web):
                 w = self.web.get(n)
-                jog.append({"nome": n, "celular": w is not None, "sem_sinal": bool(w and agora - w["visto"] > SEM_SINAL),
+                jog.append({"nome": n, "celular": w is not None and not w.get("pc"), "sem_sinal": bool(w and agora - w["visto"] > SEM_SINAL),
                             "mao": n in self.maos, "ficha": dict(self.fichas.get(n, {})),
                             "efeitos": [dict(e) for e in self.efeitos.get(n, [])]})
             return {"jogadores": jog, "maos": list(self.maos), "rodada": self.rodada, "registro": list(self.registro[:60]),
@@ -841,11 +1008,7 @@ class Servidor(Grupo):
             socks = list(self.clientes.values())
         for c in socks:
             _fechar(c)
-        try:
-            if self.sock:
-                self.sock.close()
-        except OSError:
-            pass
+        _fechar(self.sock)   # o shutdown solta o accept(): a porta fica livre para reabrir a mesa
 
 
 class Cliente:
@@ -855,11 +1018,11 @@ class Cliente:
         self.fila = fila
         self.sock = None
 
-    def conectar(self, ip, porta, nome):
+    def conectar(self, ip, porta, nome, senha=""):
         self.sock = socket.create_connection((ip, porta), timeout=5)
         self.sock.settimeout(None)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-        _enviar(self.sock, {"t": "oi", "nome": nome})
+        _enviar(self.sock, {"t": "oi", "nome": nome, "senha": senha})
         threading.Thread(target=self._ouvir, daemon=True).start()
 
     def _ouvir(self):
@@ -867,6 +1030,9 @@ class Cliente:
             t = msg.get("t")
             if t == "ok":
                 self.fila.put(("ok", msg.get("nome", "")))
+            elif t == "recusado":
+                self.fila.put(("recusado", self))
+                return
             elif t == "estado":
                 self.fila.put(("estado", bool(msg.get("mao"))))
             elif t == "palavra":
@@ -880,13 +1046,156 @@ class Cliente:
             elif t == "efeitos":
                 self.fila.put(("efeitos", msg.get("lista") or [], int(msg.get("rodada") or 1),
                                str(msg.get("vez") or ""), int(msg.get("turno") or 0)))
-        self.fila.put(("caiu",))
+        self.fila.put(("caiu", self))
 
     def enviar(self, msg):
         return bool(self.sock) and _enviar(self.sock, msg)
 
     def parar(self):
         _fechar(self.sock)
+
+
+class SenhaErrada(Exception):
+    pass
+
+
+def separar_link(texto):
+    """Do que o jogador colou, tira o endereço e a senha: aceita "https://x.trycloudflare.com/#s=1234",
+    "x.trycloudflare.com", "192.168.0.5:5760" (página) e devolve (base_http ou "", ip ou "", senha)."""
+    t, senha = str(texto or "").strip(), ""
+    if "#" in t:
+        t, frag = t.split("#", 1)
+        for parte in frag.split("&"):
+            if parte.startswith("s="):
+                senha = parte[2:]
+    t = t.rstrip("/")
+    if not t:
+        return "", "", senha
+    if t.lower().startswith(("http://", "https://")):
+        return t, "", senha
+    so_ip = all(p.isdigit() for p in t.split(":")[0].split("."))
+    if so_ip and ":" not in t:
+        return "", t, senha                      # IP puro: conexão direta na rede local
+    return ("http://" if so_ip else "https://") + t, "", senha
+
+
+class ClienteWeb:
+    """Jogador do PC ligado pelo endereço da página (link da internet ou http://IP:5760): usa o mesmo caminho
+    dos celulares, então atravessa o túnel. Põe na fila os mesmos eventos do Cliente e reconecta sozinho;
+    ("sinal", bool) avisa quando perde e quando recupera o contato."""
+    ESPERA = 20
+
+    def __init__(self, fila):
+        self.fila = fila
+        self.base = self.id = self.chave = self.senha = self.nome = ""
+        self.ativo = False
+        self.ack = self.gv = 0
+        self.sig = self.token = ""
+        self._mao = None
+        self._efe = None
+        self._saida = queue.Queue()
+
+    def _req(self, caminho, corpo=None, espera=8):
+        dados = None if corpo is None else json.dumps(corpo).encode("utf-8")
+        req = urllib.request.Request(self.base + caminho, data=dados, headers={"User-Agent": "FichaPrevalecentes"})
+        with urllib.request.urlopen(req, timeout=espera) as r:
+            return json.loads(r.read().decode("utf-8"))
+
+    def _oi(self):
+        r = self._req("/api/oi", {"nome": self.nome, "id": self.id, "chave": self.chave, "senha": self.senha, "pc": True})
+        if r.get("erro") == "senha":
+            raise SenhaErrada()
+        if not r.get("id"):
+            raise OSError("resposta inesperada do mestre")
+        self.id, self.chave = r["id"], r.get("chave", "")
+
+    def conectar(self, base, nome, senha=""):
+        self.base, self.nome, self.senha = base.rstrip("/"), nome, senha
+        try:
+            self._oi()
+        except (urllib.error.URLError, ValueError) as e:
+            raise OSError(str(e))
+        self.ativo = True
+        self.fila.put(("ok", self.id))
+        threading.Thread(target=self._ouvir, daemon=True).start()
+        threading.Thread(target=self._mandar, daemon=True).start()
+
+    def _ouvir(self):
+        falhas = 0
+        while self.ativo:
+            try:
+                r = self._req("/api/estado?id=%s&k=%s&ack=%d&gv=%d&sig=%s&espera=%d" % (
+                    quote(self.id), self.chave, self.ack, self.gv, self.sig, self.ESPERA), espera=self.ESPERA + 15)
+                if not r.get("ok"):          # o mestre reabriu a mesa: entra de novo com o mesmo nome
+                    self._oi()
+                    self.fila.put(("ok", self.id))
+                    continue
+            except SenhaErrada:
+                self.fila.put(("recusado", self))
+                return
+            except (OSError, ValueError):
+                falhas += 1
+                if falhas == 2 and self.ativo:
+                    self.fila.put(("sinal", False))
+                time.sleep(min(2 + falhas, 8))
+                continue
+            if falhas >= 2:
+                self.fila.put(("sinal", True))
+            falhas = 0
+            if not self.ativo:
+                return
+            self._entregar(r)
+
+    def _entregar(self, r):
+        if r.get("token") and r["token"] != self.token:
+            self.token, self.ack, self.gv = r["token"], 0, 0
+        self.sig = r.get("sig", "")
+        for ev in r.get("eventos") or []:
+            if isinstance(ev, dict) and int(ev.get("seq") or 0) > self.ack:
+                self.ack = int(ev.get("seq") or 0)
+                self.fila.put(("evento", ev))
+        if bool(r.get("mao")) != self._mao:
+            self._mao = bool(r.get("mao"))
+            self.fila.put(("estado", self._mao))
+        if r.get("palavra"):
+            self.fila.put(("palavra",))
+        efe = (r.get("efeitos") or [], int(r.get("rodada") or 1), str(r.get("vez") or ""), int(r.get("turno") or 0))
+        if efe != self._efe:
+            self._efe = efe
+            self.fila.put(("efeitos",) + efe)
+        if isinstance(r.get("grupo"), dict):
+            self.gv = int(r.get("gv") or 0)
+            self.fila.put(("grupo", r["grupo"]))
+
+    def _mandar(self):
+        rotas = {"mao": "/api/mao", "abaixar": "/api/abaixar", "ficha": "/api/ficha", "relato": "/api/relato", "grupo": "/api/grupo"}
+        while self.ativo:
+            try:
+                msg = self._saida.get(timeout=1)
+            except queue.Empty:
+                continue
+            t = msg.get("t")
+            corpo = dict(msg.get("m") or {}) if t == "grupo" else {k: v for k, v in msg.items() if k != "t"}
+            corpo.update(id=self.id, chave=self.chave)
+            for tentativa in range(4):
+                try:
+                    r = self._req(rotas[t], corpo)
+                    if t == "grupo" and isinstance(r, dict):
+                        self.fila.put(("grupo_resp", r))
+                    break
+                except (OSError, ValueError):
+                    if not self.ativo:
+                        return
+                    time.sleep(1.5)
+
+    def enviar(self, msg):
+        if not self.ativo or msg.get("t") not in ("mao", "abaixar", "ficha", "relato", "grupo"):
+            return False
+        self._saida.put(msg)
+        return True
+
+    def parar(self):
+        self.ativo = False
 
 
 # ======================================================================= interface
@@ -911,8 +1220,8 @@ class JanelaSessao(tk.Toplevel):
         self.nome_padrao = nome_padrao
         self.fonte = cores.get("FONTE", "Georgia")
         self.title("Sessão — Levantar a mão")
-        self.geometry("460x560")
-        self.minsize(400, 480)
+        self.geometry("480x640")
+        self.minsize(420, 560)
         self.configure(background=self.c["FUNDO"])
         self.fila = queue.Queue()
         self.servidor = None
@@ -930,6 +1239,10 @@ class JanelaSessao(tk.Toplevel):
         self.compartilha = True    # minhas rolagens aparecem para o grupo
         self.auto_ajuda = False    # aceitar ajudas (Medicina, cura, efeitos...) sem perguntar
         self._auto_ok = set()
+        self.tunel = None          # mesa pela internet (mestre)
+        self.win_convite = None
+        self._destino = None       # (endereço, porta, senha) da conexão atual do jogador, para reconectar
+        self._reconectando = False
         self.protocol("WM_DELETE_WINDOW", self.fechar)
         self.tela = None
         self._escolha()
@@ -966,7 +1279,7 @@ class JanelaSessao(tk.Toplevel):
     def _escolha(self):
         t = self._trocar()
         self._rot(t, "✋ Sessão", 20, self.c["OURO2"], bold=True).pack(pady=(10, 4))
-        self._rot(t, "Jogadores na mesma rede levantam a mão\npara o mestre, sem cortar o roleplay.\n"
+        self._rot(t, "Na mesma rede os jogadores entram sozinhos.\nDe longe, o mestre abre a mesa para a internet e manda o link.\n"
                      "Só o mestre usa o botão \"Entrar como mestre\".",
                   10, italic=True, justify="center").pack(pady=(0, 18))
 
@@ -990,8 +1303,13 @@ class JanelaSessao(tk.Toplevel):
         self.lbl_busca.pack(anchor="w")
         av = tk.Frame(jog, bg=self.c["FUNDO"])
         av.pack(fill="x", pady=(8, 0))
-        self._rot(av, "Só se não achar — IP do mestre:", 9, italic=True).pack(side="left")
-        ttk.Entry(av, textvariable=self.v_ip, width=16).pack(side="left", padx=6)
+        self._rot(av, "De longe, ou se não achar — link ou IP do mestre:", 9, italic=True).pack(anchor="w")
+        ttk.Entry(av, textvariable=self.v_ip).pack(fill="x", pady=(2, 4))
+        sv = tk.Frame(jog, bg=self.c["FUNDO"])
+        sv.pack(fill="x")
+        self.v_senha = tk.StringVar()
+        self._rot(sv, "Senha da mesa (se houver):", 9, italic=True).pack(side="left")
+        ttk.Entry(sv, textvariable=self.v_senha, width=10).pack(side="left", padx=6)
         self._rot(t, "Se o Windows perguntar sobre o Firewall (no PC do mestre),\npermita o acesso em redes privadas.",
                   9, italic=True, justify="center").pack(pady=(14, 0))
 
@@ -1000,6 +1318,13 @@ class JanelaSessao(tk.Toplevel):
         try:
             porta = int(self.v_porta.get())
             self.servidor = Servidor(porta, self.fila)
+            salva = Servidor.sessao_salva()
+            if salva:
+                m = salva["mesa"]
+                quem = ", ".join(list(m.get("web") or {}) + list(m.get("pc") or [])) or "ninguém"
+                if messagebox.askyesno("Sessão", f"Há uma mesa guardada de {time.strftime('%d/%m %H:%M', time.localtime(salva['hora']))} "
+                                                 f"(rodada {m.get('rodada', 1)}; {quem}).\n\nRetomar de onde parou?", parent=self):
+                    self.servidor.retomar(m)
             self.servidor.iniciar()
         except (ValueError, OSError) as e:
             self.servidor = None
@@ -1030,8 +1355,7 @@ class JanelaSessao(tk.Toplevel):
         ttk.Button(topo, text="👥 Grupo", command=self.abrir_grupo).pack(side="right", padx=(0, 6))
         self.lbl_rodada = self._rot(topo, "Rodada 1", 15, c["OURO2"], bold=True)
         self.lbl_rodada.pack(side="right", padx=14)
-        if self.url_celular:
-            ttk.Button(topo, text="QR code", command=self._mostrar_qr).pack(side="right", padx=(0, 6))
+        ttk.Button(topo, text="🌐 Convidar", command=self._mostrar_qr).pack(side="right", padx=(0, 6))
         tk.Frame(self.tela, height=1, bg=c["OURO"]).pack(fill="x")
 
         corpo = tk.Frame(self.tela, bg=c["PERG"])
@@ -1103,19 +1427,122 @@ class JanelaSessao(tk.Toplevel):
         self.txt_reg.configure(state="disabled")
         self._atualizar_mestre()
 
+    # --- convidar: endereço da rede, senha da mesa e mesa pela internet
+    def link_internet(self):
+        """Link para quem está longe (com a senha embutida), ou "" se a mesa não está aberta para a internet."""
+        if not (self.tunel and self.tunel.url):
+            return ""
+        return self.tunel.url + ("/#s=" + self.servidor.senha if self.servidor.senha else "")
+
     def _mostrar_qr(self):
-        w = tk.Toplevel(self)
-        w.title("Celulares")
-        w.configure(background="white")
-        tk.Label(w, text="Aponte a câmera ou abra:\n" + self.url_celular, bg="white", fg="#222",
-                 font=(self.fonte, 12, "bold")).pack(padx=16, pady=(14, 6))
-        if segno:
+        if self.win_convite is not None:
             try:
-                desenhar_qr(w, self.url_celular, 260).pack(padx=16, pady=(0, 16))
-            except Exception:   # o QR é um extra: nunca derruba a mesa do mestre
+                self.win_convite.destroy()
+            except tk.TclError:
                 pass
+        w = self.win_convite = tk.Toplevel(self)
+        w.title("Convidar jogadores")
+        w.configure(background="white", padx=18, pady=14)
+        f = self.fonte
+
+        def titulo(txt):
+            tk.Label(w, text=txt, bg="white", fg="#7c2626", font=(f, 11, "bold")).pack(anchor="w", pady=(10, 2))
+
+        def nota(txt):
+            tk.Label(w, text=txt, bg="white", fg="#555", font=(f, 9, "italic"), justify="left", wraplength=420).pack(anchor="w")
+
+        def copiar(txt):
+            self.clipboard_clear()
+            self.clipboard_append(txt)
+
+        def qr(txt, tam=200):
+            if segno:
+                try:
+                    desenhar_qr(w, txt, tam).pack(pady=(6, 0))
+                except Exception:   # o QR é um extra: nunca derruba a mesa do mestre
+                    pass
+
+        titulo("Senha da mesa")
+        ls = tk.Frame(w, bg="white")
+        ls.pack(anchor="w")
+        v = tk.StringVar(value=self.servidor.senha)
+        ttk.Entry(ls, textvariable=v, width=12).pack(side="left")
+
+        def aplicar():
+            self.servidor.senha = v.get().strip()[:20]
+            self._mostrar_qr()
+        ttk.Button(ls, text="Aplicar", command=aplicar).pack(side="left", padx=6)
+        nota("Vazia = entra quem tiver o endereço. O link da internet já leva a senha junto. Quem já está na mesa continua.")
+
+        titulo("Na mesma rede (Wi-Fi)")
+        if self.url_celular:
+            tk.Label(w, text="Celular: " + self.url_celular, bg="white", fg="#222", font=(f, 12, "bold")).pack(anchor="w")
+            nota("No PC, o jogador toca em \"Entrar como jogador\" e o programa acha a mesa sozinho.")
         else:
-            tk.Label(w, text="(instale o pacote segno para ver o QR code)", bg="white").pack(pady=(0, 14))
+            nota(f"Celulares indisponíveis (porta {PORTA_WEB} ocupada). Os PCs da rede entram sozinhos.")
+
+        titulo("De longe (internet)")
+        link, est = self.link_internet(), self.tunel.estado if self.tunel else "fechado"
+        if not self.servidor.web_ok:
+            nota(f"Indisponível: a porta {PORTA_WEB} está ocupada neste PC.")
+        elif link:
+            e = ttk.Entry(w, width=58)
+            e.insert(0, link)
+            e.configure(state="readonly")
+            e.pack(anchor="w", fill="x")
+            lb = tk.Frame(w, bg="white")
+            lb.pack(anchor="w", pady=4)
+            ttk.Button(lb, text="Copiar link", command=lambda: copiar(link)).pack(side="left")
+            ttk.Button(lb, text="Fechar a internet", command=self._fechar_tunel).pack(side="left", padx=6)
+            nota("Mande o link aos jogadores. No celular é só abrir; no PC, colar em \"link ou IP do mestre\" "
+                 "e tocar em Entrar como jogador. O link vale até você fechar a mesa e muda a cada sessão.")
+            qr(link)
+        elif est in ("baixando", "abrindo"):
+            self.lbl_tunel = tk.Label(w, text="Abrindo…", bg="white", fg="#222", font=(f, 11, "bold"))
+            self.lbl_tunel.pack(anchor="w")
+        else:
+            ttk.Button(w, text="🌐 Abrir a mesa para a internet", command=self._abrir_tunel).pack(anchor="w", pady=2)
+            nota("Usa o cloudflared (Cloudflare): não precisa de conta nem de mexer no roteador. "
+                 "Só entra quem tiver o link" + (" e a senha." if self.servidor.senha else "; uma senha é criada junto."))
+        if link == "" and self.url_celular:
+            qr(self.url_celular, 170)
+
+    def _abrir_tunel(self):
+        self.tunel = self.tunel or Tunel(PORTA_WEB, self.fila)
+        if self.tunel.precisa_baixar() and not messagebox.askyesno(
+                "Mesa pela internet", "Para abrir a mesa para a internet, o programa precisa baixar o cloudflared "
+                "(da Cloudflare, cerca de 65 MB, uma vez só) para a pasta .prevalecentes do seu usuário.\n\nBaixar agora?",
+                parent=self.win_convite or self):
+            return
+        if not self.servidor.senha:
+            self.servidor.senha = "%04d" % random.SystemRandom().randrange(10000)
+        self.tunel.estado = "abrindo"
+        self.tunel.abrir()
+        self._mostrar_qr()
+
+    def _fechar_tunel(self):
+        if self.tunel:
+            self.tunel.fechar()
+        self._mostrar_qr()
+
+    def _tunel_mudou(self, estado, texto):
+        viva = False
+        try:
+            viva = bool(self.win_convite and self.win_convite.winfo_exists())
+        except tk.TclError:
+            pass
+        if estado == "baixando" and viva and hasattr(self, "lbl_tunel"):
+            try:
+                self.lbl_tunel.config(text=f"Baixando o cloudflared… {texto}")
+            except tk.TclError:
+                pass
+            return
+        if estado == "ok":
+            self.servidor._anotar("Mesa aberta para a internet.")
+        elif estado == "erro":
+            messagebox.showwarning("Mesa pela internet", texto, parent=self)
+        if viva and estado in ("ok", "erro", "fechado"):
+            self._mostrar_qr()
 
     def _proxima_rodada(self):
         self.servidor.proxima_rodada()
@@ -1581,24 +2008,46 @@ class JanelaSessao(tk.Toplevel):
             messagebox.showinfo("Sessão", "Preencha seu nome.", parent=self)
             return
         if ip:
-            self._conectar(ip, PORTA, nome)
+            base, ip_puro, senha = separar_link(ip)
+            if senha:
+                self.v_senha.set(senha)
+            self._conectar(base or ip_puro, PORTA, nome)
             return
         self.btn_entrar.config(state="disabled")
         self.lbl_busca.config(text="Procurando o mestre na rede…")
         procurar_mestre(self.fila)
 
+    def _novo_cliente(self, ip, porta, nome, senha):
+        """Cliente já conectado: pela página (link ou http://IP:porta) ou direto na rede local."""
+        if str(ip).lower().startswith("http"):
+            c = ClienteWeb(self.fila)
+            c.conectar(ip, nome, senha)
+        else:
+            c = Cliente(self.fila)
+            c.conectar(ip, porta, nome, senha)
+        return c
+
     def _conectar(self, ip, porta, nome):
+        senha = self.v_senha.get().strip() if hasattr(self, "v_senha") else ""
         try:
-            self.cliente = Cliente(self.fila)
-            self.cliente.conectar(ip, porta, nome)
+            self.cliente = self._novo_cliente(ip, porta, nome, senha)
+        except SenhaErrada:
+            self.cliente = None
+            self.btn_entrar.config(state="normal")
+            self.lbl_busca.config(text="A mesa tem senha: peça ao mestre e preencha em \"Senha da mesa\".")
+            return
         except (ValueError, OSError) as e:
             self.cliente = None
             self.btn_entrar.config(state="normal")
             self.lbl_busca.config(text="")
             messagebox.showerror("Sessão", f"Não consegui conectar em {ip}.\n"
-                                           f"Confira se o mestre já entrou como mestre.\n{e}", parent=self)
+                                           f"Confira o endereço e se o mestre já abriu a mesa.\n{e}", parent=self)
             return
-        self.ultimo_ip = ip
+        self._destino = (ip, porta, senha)
+        self._reconectando = False
+        self._btn_voltar = None
+        if not str(ip).lower().startswith("http"):
+            self.ultimo_ip = ip
         t = self._trocar()
         self._rot(t, "✋ Sessão", 18, self.c["OURO2"], bold=True).pack()
         self.lbl_status = self._rot(t, "Conectado.", 10, italic=True)
@@ -1774,7 +2223,24 @@ class JanelaSessao(tk.Toplevel):
         if self.ponte:
             self.ponte.efeitos(lista, rodada)
 
+    def _tentar_reconectar(self):
+        """Conexão direta caiu: tenta de novo a cada 3 s, com o mesmo nome, até voltar ou o jogador desistir."""
+        if not self._reconectando or self._destino is None:
+            return
+        ip, porta, senha = self._destino
+        nome, fila = self.meu_nome or self.nome_padrao or "Jogador", self.fila
+
+        def tarefa():
+            try:
+                c = Cliente(fila)
+                c.conectar(ip, porta, nome, senha)
+                fila.put(("reconectou", c))
+            except (ValueError, OSError):
+                fila.put(("reconexao_falhou",))
+        threading.Thread(target=tarefa, daemon=True).start()
+
     def _voltar_escolha(self):
+        self._reconectando = False
         if self.cliente:
             self.cliente.parar()
         self.cliente = None
@@ -1837,12 +2303,44 @@ class JanelaSessao(tk.Toplevel):
                     w = self._win_grupo_viva()
                     if w:
                         w.atualizar()
-                elif ev[0] == "caiu" and self.cliente:
-                    self.lbl_status.config(text="Conexão perdida com o mestre.")
+                elif ev[0] == "tunel" and self.servidor:
+                    self._tunel_mudou(ev[1], ev[2])
+                elif ev[0] == "recusado" and self.cliente is not None and ev[1] is self.cliente:
+                    self._reconectando = False
+                    antes = (self.meu_nome or self.nome_padrao, self._destino[0] if self._destino else "")
+                    self._voltar_escolha()
+                    self.v_nome.set(antes[0])
+                    self.v_ip.set(antes[1])
+                    self.lbl_busca.config(text="A mesa tem senha: peça ao mestre e preencha em \"Senha da mesa\".")
+                elif ev[0] == "sinal" and self.cliente:
+                    self.lbl_status.config(text=f"Conectado como {self.meu_nome}" if ev[1] else "Sem sinal — tentando reconectar…")
+                    self.btn_mao.config(state="normal" if ev[1] else "disabled")
+                    if ev[1]:
+                        self._ultima_ficha = None
+                elif ev[0] == "caiu" and self.cliente is not None and (len(ev) < 2 or ev[1] is self.cliente):
+                    self.lbl_status.config(text="Conexão perdida — tentando reconectar…")
                     self.btn_mao.config(state="disabled")
                     if not self._btn_voltar:
-                        self._btn_voltar = ttk.Button(self.tela, text="Conectar de novo", command=self._voltar_escolha)
+                        self._btn_voltar = ttk.Button(self.tela, text="Desistir e voltar", command=self._voltar_escolha)
                         self._btn_voltar.pack(pady=(4, 0))
+                    if not self._reconectando:
+                        self._reconectando = True
+                        self.after(1500, self._tentar_reconectar)
+                elif ev[0] == "reconexao_falhou" and self._reconectando:
+                    self.after(3000, self._tentar_reconectar)
+                elif ev[0] == "reconectou":
+                    if self._reconectando and self.cliente is not None:
+                        self._reconectando = False
+                        self.cliente = ev[1]
+                        self.mao_levantada = False
+                        self._pintar_mao()
+                        self.btn_mao.config(state="normal")
+                        if self._btn_voltar:
+                            self._btn_voltar.destroy()
+                            self._btn_voltar = None
+                        self._ultima_ficha = None
+                    else:
+                        ev[1].parar()
                 if self.servidor and ev[0] in ("mudou", "mao", "registro"):
                     self._agendar_painel()
         except queue.Empty:
@@ -1857,6 +2355,9 @@ class JanelaSessao(tk.Toplevel):
                 self.ponte.efeitos([], 0)
             except Exception:
                 pass
+        self._reconectando = False
+        if self.tunel:
+            self.tunel.fechar()
         for x in (self.servidor, self.cliente):
             if x:
                 x.parar()
