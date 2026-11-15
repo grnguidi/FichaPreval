@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Exporta a ficha aberta para PDF (reportlab), no visual pergaminho da ficha."""
+"""Exporta a ficha aberta para PDF (reportlab), no visual Vitral: creme, dourado e verde musgo,
+com vitrais e vinhas de enfeite."""
+import math
 import os
 
 from reportlab.lib import colors
@@ -9,20 +11,162 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import (KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
+from reportlab.platypus import (Flowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
 
-PERG = colors.HexColor("#f2e9d3")
-PERG2 = colors.HexColor("#e6d7b4")
-CAMPO = colors.HexColor("#fbf7ea")
-TINTA = colors.HexColor("#2d2015")
-TINTA2 = colors.HexColor("#7d6a54")
-OURO = colors.HexColor("#b39552")
-VINHO = colors.HexColor("#7c2626")
-VERDE = colors.HexColor("#4a6d33")
-FAIXA = colors.HexColor("#f6efdc")
-C = {k: colors.HexColor(v) for k, v in dict(VIDA="#9a3d33", MANA="#3f6283", VIGOR="#567a3b", MOV="#3d7471", CA="#6f675a",
-                                            ATK="#a2463e", DEF="#4a6893", PER="#b07a3c", TAL="#3d7471", ATR="#3b4a3f",
-                                            DIN="#567a3b").items()}
+PERG = colors.HexColor("#f4ecd8")
+PERG2 = colors.HexColor("#e9dfc3")
+CAMPO = colors.HexColor("#fbf6e9")
+ZEBRA = colors.HexColor("#f3ebd3")
+TINTA = colors.HexColor("#2f3a22")
+TINTA2 = colors.HexColor("#666e50")
+OURO = colors.HexColor("#b08a3e")
+OURO2 = colors.HexColor("#e3cd8f")
+VINHO = colors.HexColor("#7d5f1c")     # cor dos títulos (dourado escuro)
+VERDE = colors.HexColor("#5d7340")
+MUSGO = colors.HexColor("#3f4f2e")     # chumbo dos vitrais e hastes
+FOLHA = colors.HexColor("#7d9157")
+FAIXA = colors.HexColor("#f8f1dc")
+C = {k: colors.HexColor(v) for k, v in dict(VIDA="#9a4a3a", MANA="#4a6a7a", VIGOR="#5d7340", MOV="#4f7a6a", CA="#7a715a",
+                                            ATK="#a0553f", DEF="#56708a", PER="#86661f", TAL="#5d7340", ATR="#4a5a36",
+                                            DIN="#5d7340").items()}
+VIDROS = [OURO, PERG, FOLHA, OURO2]
+
+
+# ---------------------------------------------------------------- enfeites: só vinhas e vitrais
+def _folha(c, x, y, ang, t=3.2 * mm):
+    c.saveState()
+    c.translate(x, y)
+    c.rotate(ang)
+    p = c.beginPath()
+    p.moveTo(0, 0)
+    p.curveTo(t * 0.3, -t * 0.42, t * 0.8, -t * 0.32, t, 0)
+    p.curveTo(t * 0.8, t * 0.32, t * 0.3, t * 0.42, 0, 0)
+    c.drawPath(p, stroke=0, fill=1)
+    c.restoreState()
+
+
+def _vinha(c, x0, x1, y, amp=1.1 * mm, passo=9 * mm, t=2.6 * mm):
+    """Ramo ondulado de x0 a x1 com folhas alternadas."""
+    c.saveState()
+    c.setStrokeColor(FOLHA)
+    c.setFillColor(FOLHA)
+    c.setLineWidth(0.6)
+    n = max(1, int(abs(x1 - x0) / passo))
+    dx = (x1 - x0) / n
+    p = c.beginPath()
+    p.moveTo(x0, y)
+    for i in range(n):
+        s = 1 if i % 2 == 0 else -1
+        p.curveTo(x0 + dx * (i + 0.33), y + amp * s, x0 + dx * (i + 0.66), y + amp * s, x0 + dx * (i + 1), y)
+    c.drawPath(p, stroke=1, fill=0)
+    for i in range(n):
+        s = 1 if i % 2 == 0 else -1
+        _folha(c, x0 + dx * (i + 0.5), y + amp * 0.75 * s, (48 if dx > 0 else 132) * s, t)
+    c.restoreState()
+
+
+def _canto(c, x, y, sx, sy, tam=30 * mm):
+    """Vinha de canto: nasce no canto (x, y) e sobe pelos dois lados; sx/sy = +1 ou -1 dizem para onde."""
+    c.saveState()
+    c.translate(x, y)
+    c.scale(sx, sy)
+    c.setStrokeColor(FOLHA)
+    c.setFillColor(FOLHA)
+    c.setLineWidth(0.7)
+    for horizontal in (True, False):
+        p = c.beginPath()
+        p.moveTo(1.5 * mm, 1.5 * mm)
+        pts = [(tam * 0.30, 3.6 * mm, tam * 0.55, 0.4 * mm, tam * 0.80, 2.4 * mm), (tam * 0.90, 3.2 * mm, tam * 0.96, 4.4 * mm, tam, 4.0 * mm)]
+        for a in pts:
+            p.curveTo(*(a if horizontal else (a[1], a[0], a[3], a[2], a[5], a[4])))
+        c.drawPath(p, stroke=1, fill=0)
+        for f, alt, ang in ((0.18, 2.6, 62), (0.34, 2.7, -48), (0.50, 1.5, 58), (0.66, 1.5, -44), (0.82, 2.6, 52), (0.97, 4.1, 20)):
+            px, py, an = tam * f, alt * mm, ang
+            if not horizontal:
+                px, py, an = py, px, 90 - ang
+            _folha(c, px, py, an, 3.0 * mm)
+    c.restoreState()
+
+
+def _faixa_vitral(c, x, y, larg, alt=6.5 * mm):
+    """Faixa de vitral: vidros coloridos com um arco em cada um, separados por chumbo."""
+    n = max(4, int(round(larg / (8.5 * mm))))
+    w = larg / n
+    c.saveState()
+    c.setStrokeColor(MUSGO)
+    c.setLineWidth(0.7)
+    for i in range(n):
+        c.setFillColor(VIDROS[i % 4])
+        c.rect(x + i * w, y, w, alt, stroke=1, fill=1)
+        c.setFillColor(VIDROS[(i + 2) % 4])
+        p = c.beginPath()
+        p.moveTo(x + i * w + w * 0.18, y)
+        p.lineTo(x + i * w + w * 0.18, y + alt * 0.42)
+        p.curveTo(x + i * w + w * 0.18, y + alt * 0.78, x + i * w + w * 0.42, y + alt * 0.92, x + i * w + w * 0.5, y + alt * 0.95)
+        p.curveTo(x + i * w + w * 0.58, y + alt * 0.92, x + i * w + w * 0.82, y + alt * 0.78, x + i * w + w * 0.82, y + alt * 0.42)
+        p.lineTo(x + i * w + w * 0.82, y)
+        p.close()
+        c.drawPath(p, stroke=1, fill=1)
+    c.restoreState()
+
+
+def _janela(c, x, y, w=11 * mm, h=17 * mm):
+    """Vitral em arco (janela): quatro vidros e uma rosácea no meio."""
+    c.saveState()
+    c.setStrokeColor(MUSGO)
+    c.setLineWidth(0.9)
+    m, base = x + w / 2, y + h * 0.52
+
+    def arco(esq):
+        p = c.beginPath()
+        p.moveTo(m, base)
+        p.lineTo(m, y + h)
+        x_fora = x if esq else x + w
+        p.curveTo(m + (x_fora - m) * 0.55, y + h * 0.97, x_fora, y + h * 0.80, x_fora, base)
+        p.close()
+        return p
+    c.setFillColor(OURO2)
+    c.drawPath(arco(True), stroke=1, fill=1)
+    c.setFillColor(FOLHA)
+    c.drawPath(arco(False), stroke=1, fill=1)
+    c.setFillColor(PERG)
+    c.rect(x, y, w / 2, h * 0.52, stroke=1, fill=1)
+    c.setFillColor(OURO)
+    c.rect(m, y, w / 2, h * 0.52, stroke=1, fill=1)
+    c.line(x, y + h * 0.26, x + w, y + h * 0.26)
+    c.setFillColor(FAIXA)
+    c.circle(m, base, w * 0.17, stroke=1, fill=1)
+    c.restoreState()
+
+
+class Secao(Flowable):
+    """Título de seção: um raminho de vinha, o título em dourado escuro e um fio dourado embaixo."""
+
+    def __init__(self, texto, fonte, largura):
+        super().__init__()
+        self.texto, self.fonte, self.width, self.height = texto, fonte, largura, 21
+        self.keepWithNext = True
+
+    def wrap(self, *_):
+        return self.width, self.height
+
+    def draw(self):
+        c = self.canv
+        c.setStrokeColor(FOLHA)
+        c.setFillColor(FOLHA)
+        c.setLineWidth(0.6)
+        c.line(0, 8, 8 * mm, 8)
+        for px, ang in ((0.6 * mm, 40), (3.0 * mm, -40), (5.4 * mm, 40)):
+            _folha(c, px, 8, ang, 2.6 * mm)
+        c.setFillColor(VINHO)
+        t = c.beginText(10.5 * mm, 5)
+        t.setFont(self.fonte, 11.5)
+        t.setCharSpace(1.6)
+        t.textOut(self.texto)
+        c.drawText(t)
+        c.setStrokeColor(OURO)
+        c.setLineWidth(0.6)
+        c.line(0, 1, self.width, 1)
 
 
 def _fontes():
@@ -77,10 +221,7 @@ def gerar_pdf(caminho, app):
         return Paragraph(L(t), s)
 
     def secao(titulo):
-        t = Table([[Paragraph("&nbsp;&nbsp;&nbsp;".join(" ".join(L(p)) for p in titulo.upper().split()), s_sec)]], colWidths=[W])
-        t.setStyle(TableStyle([("LINEBELOW", (0, 0), (-1, -1), 0.6, OURO), ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                               ("BOTTOMPADDING", (0, 0), (-1, -1), 2)]))
-        return t
+        return Secao(_limpa(titulo.upper(), uni).replace("&amp;", "&"), FB, W)
 
     def tabela(cab, linhas, larg, cor=C["ATR"], zebra=True):
         sc = s_cab if cor != PERG2 else ParagraphStyle("h2", parent=s_cab, textColor=TINTA)
@@ -91,7 +232,7 @@ def gerar_pdf(caminho, app):
                   ("BACKGROUND", (0, 1), (-1, -1), CAMPO)]
         if zebra:
             for i in range(2, len(dados), 2):
-                estilo.append(("BACKGROUND", (0, i), (-1, i), colors.HexColor("#f5eedb")))
+                estilo.append(("BACKGROUND", (0, i), (-1, i), ZEBRA))
         t.setStyle(TableStyle(estilo))
         return t
 
@@ -110,7 +251,7 @@ def gerar_pdf(caminho, app):
     e = []
     e.append(Paragraph(L("Prevalecentes"), s_tit))
     e.append(Paragraph(L("Ficha do Sonhador · edição 3.1"), s_sub))
-    e.append(Spacer(1, 6))
+    e.append(Spacer(1, 22))
     ident = [["Nome", idt.get("nome", ""), "Player", idt.get("player", ""), "Nível", str(idt.get("nivel", 1))],
              ["Espécie", idt.get("especie", ""), "Sonho", idt.get("sonho", ""), "Guilda", idt.get("guilda", "")]]
     ident = [[c if j % 2 else c.upper() for j, c in enumerate(r)] for r in ident]
@@ -119,6 +260,23 @@ def gerar_pdf(caminho, app):
     t.setStyle(TableStyle([("LINEBELOW", (1, 0), (1, -1), 0.4, OURO), ("LINEBELOW", (3, 0), (3, -1), 0.4, OURO),
                            ("LINEBELOW", (5, 0), (5, -1), 0.4, OURO), ("VALIGN", (0, 0), (-1, -1), "BOTTOM")]))
     e.append(t)
+
+    # características de espécie: os ajustes de atributo e o par descritivo (vantagem e desvantagem)
+    nomes_atr = {"VIT": "Vitalidade", "MEN": "Mente", "TEN": "Tenacidade", "FOR": "Força", "DES": "Destreza", "INT": "Inteligência", "FE": "Fé", "ARC": "Arcano"}
+    ajustes = []
+    for k, nome in nomes_atr.items():
+        try:
+            v = int(str((st.get("atributos") or {}).get(k, {}).get("especie", "0")).strip() or 0)
+        except ValueError:
+            v = 0
+        if v:
+            ajustes.append(f"{'+' if v > 0 else '−'}{abs(v)} {nome}")
+    notas_esp = str(st.get("especie_notas") or "").strip()
+    if idt.get("especie") or ajustes or notas_esp:
+        e.append(secao("Características de espécie"))
+        e.append(Paragraph(f"<b>{L(idt.get('especie') or 'Espécie')}</b>" + (f" — atributos: {L(', '.join(ajustes))}" if ajustes else ""), s_txt))
+        e.append(Paragraph(L(notas_esp).replace("\n", "<br/>") if notas_esp else L("Sem par descritivo anotado (vantagem e desvantagem da espécie)."),
+                           s_txt if notas_esp else s_peq))
 
     ch = res["Características"]
     e.append(secao("Vigor do corpo"))
@@ -158,7 +316,6 @@ def gerar_pdf(caminho, app):
                     [[per[i][0], f"+{per[i][1]}", per[i + met][0] if i + met < len(per) else "", f"+{per[i + met][1]}" if i + met < len(per) else ""]
                      for i in range(met)], [60 * mm, W / 2 - 60 * mm, 60 * mm, W / 2 - 60 * mm], cor=C["PER"]))
 
-    e.append(PageBreak())
     e.append(secao("Armas"))
     linhas = []
     for i, ui in enumerate(app.armas_ui, start=1):
@@ -207,7 +364,7 @@ def gerar_pdf(caminho, app):
             continue
         vs = [v for v in en["versoes"] if v["nivel"] in x.get("versoes", [])] or en["versoes"][:1]
         v = vs[-1]
-        bloco = [Paragraph(L(f"{en['nome']}") + f"<font color='#7d6a54' size='8'>  {L(en['dominio'])} · {L(en['categoria'])} · Espaço {en['espaco']}"
+        bloco = [Paragraph(L(f"{en['nome']}") + f"<font color='#666e50' size='8'>  {L(en['dominio'])} · {L(en['categoria'])} · Espaço {en['espaco']}"
                            f"{' · EQUIPADO' if x.get('equipado') else ''}</font>", ParagraphStyle("en", parent=s_txt, fontName=FB, textColor=VINHO, spaceBefore=4)),
                  Paragraph(L(f"Versões aprendidas: {', '.join(map(str, x.get('versoes', [])))}  ·  Maior: {v['tier']} nível {v['nivel']}  ·  "
                              f"Mana {v['mana']}  ·  Ação {v['acao']}  ·  Distância {v['distancia']}"), s_peq),
@@ -257,11 +414,20 @@ def gerar_pdf(caminho, app):
         canv.rect(9 * mm, 9 * mm, A4[0] - 18 * mm, A4[1] - 18 * mm)
         canv.setLineWidth(0.4)
         canv.rect(10.5 * mm, 10.5 * mm, A4[0] - 21 * mm, A4[1] - 21 * mm)
+        # vitral no alto, vinhas nos cantos de baixo e um ramo acima do rodapé
+        _faixa_vitral(canv, 10.5 * mm, A4[1] - 10.5 * mm - 6.5 * mm, A4[0] - 21 * mm)
+        _canto(canv, 10.5 * mm, 10.5 * mm, 1, 1)
+        _canto(canv, A4[0] - 10.5 * mm, 10.5 * mm, -1, 1)
+        if doc.page == 1:
+            _janela(canv, 19 * mm, A4[1] - 41 * mm)
+            _janela(canv, A4[0] - 30 * mm, A4[1] - 41 * mm)
+            _vinha(canv, A4[0] / 2 - 42 * mm, A4[0] / 2 - 6 * mm, A4[1] - 40.4 * mm)
+            _vinha(canv, A4[0] / 2 + 42 * mm, A4[0] / 2 + 6 * mm, A4[1] - 40.4 * mm)
         canv.setFont(FI, 8)
         canv.setFillColor(TINTA2)
         canv.drawCentredString(A4[0] / 2, 5.5 * mm, L(f"{idt.get('nome') or 'Sonhador'} · Prevalecentes · página {doc.page}"))
         canv.restoreState()
 
-    doc = SimpleDocTemplate(caminho, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=15 * mm, bottomMargin=15 * mm,
+    doc = SimpleDocTemplate(caminho, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=21 * mm, bottomMargin=19 * mm,
                             title=f"Ficha — {idt.get('nome') or 'Sonhador'}", author=idt.get("player", ""))
     doc.build(e, onFirstPage=fundo, onLaterPages=fundo)

@@ -3,8 +3,14 @@ function folhaImpressao() {
   const d = C.d, v = S.vida, at = (ch, mx) => (v[ch] === "" || v[ch] == null ? mx : int(v[ch], mx));
   const t = (cab, linhas) => `<table><thead><tr>${cab.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${linhas.map((l) => `<tr>${l.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   const sec = (x) => `<h2>${x}</h2>`;
-  let h = `<h1>${esc(S.identidade.nome || "Sonhador sem nome")}</h1><p class="linha">Player: ${esc(S.identidade.player || "—")} · Nível ${C.nv} · ${esc(S.identidade.especie || "—")}${S.sem_alma ? " · sem alma" : ""} · Guilda ${esc(S.identidade.guilda || "—")}</p>
-    ${S.identidade.sonho ? `<p class="linha">Sonho: ${esc(S.identidade.sonho)}</p>` : ""}`;
+  let h = `<div class="cab"><h1>${esc(S.identidade.nome || "Sonhador sem nome")}</h1><p class="linha">Player: ${esc(S.identidade.player || "—")} · Nível ${C.nv} · ${esc(S.identidade.especie || "—")}${S.sem_alma ? " · sem alma" : ""} · Guilda ${esc(S.identidade.guilda || "—")}</p>
+    ${S.identidade.sonho ? `<p class="linha">Sonho: ${esc(S.identidade.sonho)}</p>` : ""}</div>`;
+  // características de espécie: ajustes de atributo e o par descritivo (vantagem e desvantagem)
+  const ajustes = R.ATRIBUTOS.map((k) => [k, int(S.atributos[k].especie)]).filter(([, n]) => n).map(([k, n]) => `${n > 0 ? "+" : "−"}${Math.abs(n)} ${R.NOMES_ATR[k]}`);
+  const notasEsp = String(S.especie_notas || "").trim();
+  if (S.identidade.especie || ajustes.length || notasEsp) h += sec("Características de espécie")
+    + `<p class="linha"><b>${esc(S.identidade.especie || "Espécie")}</b>${ajustes.length ? ` — atributos: ${ajustes.join(", ")}` : ""}</p>`
+    + `<p class="linha">${notasEsp ? esc(notasEsp).replace(/\n/g, "<br>") : "<i>Sem par descritivo anotado (vantagem e desvantagem da espécie).</i>"}</p>`;
   h += sec("Vigor do corpo") + t(["Vida", "Mana", "Vigor", "CA", "Movimento", "Iniciativa", "Ações extras", "RD", "Carga", "Descoberta"],
     [[`${at("atual", d.vida)}/${d.vida}`, `${at("mana_atual", d.mana)}/${d.mana}`, `${at("vigor_atual", d.vigor)}/${d.vigor}`, d.ca, `${C.mov} m`, `+${d.iniciativa_bonus} (${d.iniciativa_dados}d20)`, d.acoes_extras, d.rd ? `${d.rd}d4` : "—", `${C.carga}/${d.carga}`, d.descoberta]]);
   h += sec("Atributos") + t(["Atributo", "Pontos", "Curva", "BC", "Dados"], R.ATRIBUTOS.map((k) => [R.NOMES_ATR[k], C.a[k], d.curva[k], `+${d.bc[k]}`, `${1 + Math.floor(R.cap(C.a[k]) / 20)}d20`]));
@@ -23,7 +29,9 @@ function folhaImpressao() {
     + (S.alma.habilidades.length ? t(["Habilidade", "Tipo", "Valor", "Efeito"], S.alma.habilidades.map((x) => { const inf = infoHab(x); return [esc(x.nome), x.tipo, x.tabela ? `${esc(x.tabela)}: ${esc(inf.valor)}` : "", esc(x.efeito)]; })) : "");
   h += sec("Condições e Portão") + t(R.CONDICOES, [R.CONDICOES.map((n) => `${int(S.condicoes[n].atual)}/${condMax(n)}`)]) + `<p class="linha">Portão: ${S.portao.Sucessos.filter(Boolean).length} sucesso(s), ${S.portao.Falhas.filter(Boolean).length} falha(s) · Cicatrizes: ${esc(S.cicatrizes || "—")}</p>`;
   h += sec("Vínculos e Meta de Vida") + `<p class="linha">Grupo: ${esc(S.vinculos.grupo || "—")} · Mundo: ${esc(S.vinculos.mundo || "—")}</p><p class="linha">Meta: ${esc(S.meta.caminho || "—")}${S.meta.caminho ? ` · etapas ${S.meta.etapas.filter(Boolean).length}/3` : ""} · concluídas ${int(S.meta.concluidas)}</p>`;
-  return `<div class="impr">${h}<p class="rodape-impr">Ficha Prevalecentes 3.1 · ${new Date().toLocaleDateString("pt-BR")}</p></div>`;
+  h += `<p class="rodape-impr">Ficha Prevalecentes 3.1 · ${new Date().toLocaleDateString("pt-BR")}</p>`;
+  // a tabela de fora só serve de moldura: o vitral (thead) e as vinhas (tfoot) saem em todas as páginas
+  return `<div class="impr"><table class="pg"><thead><tr><td><div class="vitral-faixa"></div></td></tr></thead><tbody><tr><td>${h}</td></tr></tbody><tfoot><tr><td><div class="vinhas-pe"><i></i><i></i></div></td></tr></tfoot></table></div>`;
 }
 A["imprimir"] = () => {
   fecharFolha();

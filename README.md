@@ -44,7 +44,7 @@ Execute `GERAR_EXE.bat`. O script instala PyInstaller, reportlab e segno, compil
 - O diário de rolagens fica guardado na ficha (as 100 mais recentes).
 - Acerto do cajado/selo somado ao conjurar, como o acerto da arma.
 - Comparação entre duas fichas.
-- Exportação da ficha em PDF.
+- Exportação da ficha em PDF, no visual Vitral (creme, dourado e verde musgo, com vitrais e vinhas), com as características de espécie (ajustes de atributo e par descritivo).
 - Modo noturno.
 - **Modo Edição e Modo Jogo.** Criar ou subir de nível, escolher talentos, armas, encantamentos e equipamento só no Modo Edição (ficha nova abre nele). No Modo Jogo, usado na mesa, essas escolhas ficam travadas e continuam liberados Vida/Mana/Vigor, rolagens, condições, Portão da Morte, inventário e anotações. Troque pelo botão no topo da ficha. Fichas abertas do disco começam no Modo Jogo.
 

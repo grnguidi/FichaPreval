@@ -245,15 +245,35 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   html.imprimindo body{background:#fff;color:#000;padding:0}
   html.imprimindo body>*:not(#impressao){display:none!important}
   html.imprimindo #impressao{display:block}
-  .impr{font-family:Georgia,"Times New Roman",serif;font-size:10.5pt;color:#000}
-  .impr h1{font-size:18pt;margin:0 0 2mm;color:#5a1a1a}
-  .impr h2{font-size:11pt;margin:5mm 0 1.5mm;color:#5a1a1a;border-bottom:1px solid #b39552;break-after:avoid}
-  .impr table{width:100%;border-collapse:collapse;margin:1mm 0;break-inside:avoid}
-  .impr th,.impr td{border:1px solid #c9b98f;padding:1mm 1.5mm;text-align:left;vertical-align:top}
-  .impr th{background:#efe6cf;font-size:9pt}
+  /* folha impressa no visual Vitral: creme, dourado e verde musgo, com vitrais e vinhas */
+  html.imprimindo,html.imprimindo body{background:#f4ecd8!important}
+  .impr,.impr *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .impr{font-family:Georgia,"Times New Roman",serif;font-size:10.5pt;color:#2f3a22;background:#f4ecd8}
+  .impr .vitral-faixa{height:6mm;border:1px solid #3f4f2e;
+    background:repeating-linear-gradient(90deg,#b08a3e 0 8mm,#3f4f2e 8mm 8.4mm,#f4ecd8 8.4mm 16.4mm,#3f4f2e 16.4mm 16.8mm,#7d9157 16.8mm 24.8mm,#3f4f2e 24.8mm 25.2mm,#e3cd8f 25.2mm 33.2mm,#3f4f2e 33.2mm 33.6mm)}
+  .impr .cab{padding:0 16mm;min-height:17mm;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cg stroke='%233f4f2e' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M2 18 V16 Q2 2 15 2 V18Z' fill='%23e3cd8f'/%3E%3Cpath d='M15 2 Q28 2 28 16 V18 H15Z' fill='%237d9157'/%3E%3Cpath d='M2 18 H15 V38 H2Z' fill='%23f4ecd8'/%3E%3Cpath d='M15 18 H28 V38 H15Z' fill='%23b08a3e'/%3E%3Cpath d='M2 28 H28' fill='none'/%3E%3Ccircle cx='15' cy='18' r='4.2' fill='%23f8f1dc'/%3E%3C/g%3E%3C/svg%3E") left center/12mm 16mm no-repeat,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cg stroke='%233f4f2e' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M2 18 V16 Q2 2 15 2 V18Z' fill='%23e3cd8f'/%3E%3Cpath d='M15 2 Q28 2 28 16 V18 H15Z' fill='%237d9157'/%3E%3Cpath d='M2 18 H15 V38 H2Z' fill='%23f4ecd8'/%3E%3Cpath d='M15 18 H28 V38 H15Z' fill='%23b08a3e'/%3E%3Cpath d='M2 28 H28' fill='none'/%3E%3Ccircle cx='15' cy='18' r='4.2' fill='%23f8f1dc'/%3E%3C/g%3E%3C/svg%3E") right center/12mm 16mm no-repeat}
+  .impr h1{font-size:20pt;margin:0 0 1mm;color:#7d5f1c;text-align:center}
+  .impr .cab .linha{text-align:center;color:#666e50}
+  .impr h2{font-size:11pt;margin:5mm 0 1.5mm;padding-left:9mm;color:#7d5f1c;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid #b08a3e;break-after:avoid;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 14'%3E%3Cpath d='M1 7 H25' stroke='%236b7f4a' stroke-width='1.2' fill='none'/%3E%3Cg fill='%236b7f4a'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(4 7) rotate(-35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(11 7) rotate(35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(18 7) rotate(-35)'/%3E%3C/g%3E%3C/svg%3E") left center/7.5mm 4mm no-repeat}
+  .impr table{width:100%;border-collapse:collapse;margin:1mm 0;break-inside:avoid;background:#fbf6e9}
+  .impr th,.impr td{border:1px solid #b08a3e;padding:1mm 1.5mm;text-align:left;vertical-align:top}
+  .impr th{background:#4a5a36;color:#f8f1dc;font-size:9pt}
+  .impr tbody tr:nth-child(even) td{background:#f3ebd3}
   .impr .linha{margin:1mm 0}
-  .impr .rodape-impr{margin-top:6mm;font-size:8pt;color:#666}
-  @page{size:A4;margin:12mm}
+  .impr .rodape-impr{margin-top:6mm;font-size:8pt;color:#666e50;text-align:center}
+  /* moldura de cada página: o cabeçalho e o rodapé da tabela se repetem em todas as folhas */
+  .impr table.pg{background:none;break-inside:auto;margin:0;border:0}
+  .impr table.pg>thead>tr>td,.impr table.pg>tbody>tr>td,.impr table.pg>tfoot>tr>td{border:0;background:none!important}
+  .impr table.pg>thead>tr>td{padding:8mm 10mm 4mm}
+  .impr table.pg>tbody>tr>td{padding:0 12mm}
+  .impr table.pg>tfoot>tr>td{padding:2mm 8mm 6mm}
+  .impr .vinhas-pe{display:flex;justify-content:space-between;height:22mm}
+  .impr .vinhas-pe i{display:block;width:22mm;height:22mm;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%236b7f4a' stroke-width='1.6' stroke-linecap='round' opacity='.5'%3E%3Cpath d='M138 2 C104 6 82 22 68 48 C56 70 36 76 8 72'/%3E%3Cpath d='M112 12 C108 26 114 36 126 38'/%3E%3Cpath d='M82 30 C70 24 60 28 56 38'/%3E%3Cpath d='M52 68 C50 82 56 90 66 92'/%3E%3C/g%3E%3Cg fill='%236b7f4a' opacity='.42'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(120 8) rotate(-150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(100 16) rotate(60)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(126 38) rotate(20)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(86 28) rotate(-120)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(56 38) rotate(110)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(70 48) rotate(-30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(60 62) rotate(150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(66 92) rotate(30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(36 74) rotate(-160)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(22 72) rotate(40)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(8 72) rotate(170)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;transform:rotate(180deg)}
+  .impr .vinhas-pe i+i{transform:scaleY(-1)}
+  .impr .cab,.impr .cab h1,.impr .cab .linha{display:block}
+  .impr .cab .linha{text-transform:none;letter-spacing:0;font-size:10.5pt;justify-content:center}
+  @page{size:A4;margin:0}
 }
 /* grupo */
 .nav button{position:relative}
@@ -2094,8 +2114,14 @@ function folhaImpressao() {
   const d = C.d, v = S.vida, at = (ch, mx) => (v[ch] === "" || v[ch] == null ? mx : int(v[ch], mx));
   const t = (cab, linhas) => `<table><thead><tr>${cab.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${linhas.map((l) => `<tr>${l.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   const sec = (x) => `<h2>${x}</h2>`;
-  let h = `<h1>${esc(S.identidade.nome || "Sonhador sem nome")}</h1><p class="linha">Player: ${esc(S.identidade.player || "—")} · Nível ${C.nv} · ${esc(S.identidade.especie || "—")}${S.sem_alma ? " · sem alma" : ""} · Guilda ${esc(S.identidade.guilda || "—")}</p>
-    ${S.identidade.sonho ? `<p class="linha">Sonho: ${esc(S.identidade.sonho)}</p>` : ""}`;
+  let h = `<div class="cab"><h1>${esc(S.identidade.nome || "Sonhador sem nome")}</h1><p class="linha">Player: ${esc(S.identidade.player || "—")} · Nível ${C.nv} · ${esc(S.identidade.especie || "—")}${S.sem_alma ? " · sem alma" : ""} · Guilda ${esc(S.identidade.guilda || "—")}</p>
+    ${S.identidade.sonho ? `<p class="linha">Sonho: ${esc(S.identidade.sonho)}</p>` : ""}</div>`;
+  // características de espécie: ajustes de atributo e o par descritivo (vantagem e desvantagem)
+  const ajustes = R.ATRIBUTOS.map((k) => [k, int(S.atributos[k].especie)]).filter(([, n]) => n).map(([k, n]) => `${n > 0 ? "+" : "−"}${Math.abs(n)} ${R.NOMES_ATR[k]}`);
+  const notasEsp = String(S.especie_notas || "").trim();
+  if (S.identidade.especie || ajustes.length || notasEsp) h += sec("Características de espécie")
+    + `<p class="linha"><b>${esc(S.identidade.especie || "Espécie")}</b>${ajustes.length ? ` — atributos: ${ajustes.join(", ")}` : ""}</p>`
+    + `<p class="linha">${notasEsp ? esc(notasEsp).replace(/\n/g, "<br>") : "<i>Sem par descritivo anotado (vantagem e desvantagem da espécie).</i>"}</p>`;
   h += sec("Vigor do corpo") + t(["Vida", "Mana", "Vigor", "CA", "Movimento", "Iniciativa", "Ações extras", "RD", "Carga", "Descoberta"],
     [[`${at("atual", d.vida)}/${d.vida}`, `${at("mana_atual", d.mana)}/${d.mana}`, `${at("vigor_atual", d.vigor)}/${d.vigor}`, d.ca, `${C.mov} m`, `+${d.iniciativa_bonus} (${d.iniciativa_dados}d20)`, d.acoes_extras, d.rd ? `${d.rd}d4` : "—", `${C.carga}/${d.carga}`, d.descoberta]]);
   h += sec("Atributos") + t(["Atributo", "Pontos", "Curva", "BC", "Dados"], R.ATRIBUTOS.map((k) => [R.NOMES_ATR[k], C.a[k], d.curva[k], `+${d.bc[k]}`, `${1 + Math.floor(R.cap(C.a[k]) / 20)}d20`]));
@@ -2114,7 +2140,9 @@ function folhaImpressao() {
     + (S.alma.habilidades.length ? t(["Habilidade", "Tipo", "Valor", "Efeito"], S.alma.habilidades.map((x) => { const inf = infoHab(x); return [esc(x.nome), x.tipo, x.tabela ? `${esc(x.tabela)}: ${esc(inf.valor)}` : "", esc(x.efeito)]; })) : "");
   h += sec("Condições e Portão") + t(R.CONDICOES, [R.CONDICOES.map((n) => `${int(S.condicoes[n].atual)}/${condMax(n)}`)]) + `<p class="linha">Portão: ${S.portao.Sucessos.filter(Boolean).length} sucesso(s), ${S.portao.Falhas.filter(Boolean).length} falha(s) · Cicatrizes: ${esc(S.cicatrizes || "—")}</p>`;
   h += sec("Vínculos e Meta de Vida") + `<p class="linha">Grupo: ${esc(S.vinculos.grupo || "—")} · Mundo: ${esc(S.vinculos.mundo || "—")}</p><p class="linha">Meta: ${esc(S.meta.caminho || "—")}${S.meta.caminho ? ` · etapas ${S.meta.etapas.filter(Boolean).length}/3` : ""} · concluídas ${int(S.meta.concluidas)}</p>`;
-  return `<div class="impr">${h}<p class="rodape-impr">Ficha Prevalecentes 3.1 · ${new Date().toLocaleDateString("pt-BR")}</p></div>`;
+  h += `<p class="rodape-impr">Ficha Prevalecentes 3.1 · ${new Date().toLocaleDateString("pt-BR")}</p>`;
+  // a tabela de fora só serve de moldura: o vitral (thead) e as vinhas (tfoot) saem em todas as páginas
+  return `<div class="impr"><table class="pg"><thead><tr><td><div class="vitral-faixa"></div></td></tr></thead><tbody><tr><td>${h}</td></tr></tbody><tfoot><tr><td><div class="vinhas-pe"><i></i><i></i></div></td></tr></tfoot></table></div>`;
 }
 A["imprimir"] = () => {
   fecharFolha();
