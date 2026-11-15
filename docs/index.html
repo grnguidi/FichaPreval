@@ -261,7 +261,7 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   .impr th{background:#4a5a36;color:#f8f1dc;font-size:9pt}
   .impr tbody tr:nth-child(even) td{background:#f3ebd3}
   .impr .linha{margin:1mm 0}
-  .impr .rodape-impr{margin-top:6mm;font-size:8pt;color:#666e50;text-align:center}
+  .impr .rodape-impr{align-self:flex-end;font-size:8pt;color:#666e50;text-align:center}
   /* moldura de cada página: o cabeçalho e o rodapé da tabela se repetem em todas as folhas */
   .impr table.pg{background:none;break-inside:auto;margin:0;border:0}
   .impr table.pg>thead>tr>td,.impr table.pg>tbody>tr>td,.impr table.pg>tfoot>tr>td{border:0;background:none!important}
@@ -2125,7 +2125,9 @@ function folhaImpressao() {
   h += sec("Vigor do corpo") + t(["Vida", "Mana", "Vigor", "CA", "Movimento", "Iniciativa", "Ações extras", "RD", "Carga", "Descoberta"],
     [[`${at("atual", d.vida)}/${d.vida}`, `${at("mana_atual", d.mana)}/${d.mana}`, `${at("vigor_atual", d.vigor)}/${d.vigor}`, d.ca, `${C.mov} m`, `+${d.iniciativa_bonus} (${d.iniciativa_dados}d20)`, d.acoes_extras, d.rd ? `${d.rd}d4` : "—", `${C.carga}/${d.carga}`, d.descoberta]]);
   h += sec("Atributos") + t(["Atributo", "Pontos", "Curva", "BC", "Dados"], R.ATRIBUTOS.map((k) => [R.NOMES_ATR[k], C.a[k], d.curva[k], `+${d.bc[k]}`, `${1 + Math.floor(R.cap(C.a[k]) / 20)}d20`]));
-  h += sec("Perícias") + t(["Perícia", "T", "Bônus", "Dados"], R.PERICIAS.map(([n, ats, tr]) => { const x = ats || [S.prevalencia_attr || "ARC"]; const [, b, dd] = R.periciaFora(C.a, C.nv, x, C.treinadas.has(n)); return [esc(n) + (tr ? " •" : ""), C.treinadas.has(n) ? "✔" : "", `+${b + (C.ef.pericia[n] || 0)}`, `${dd}d20`]; }));
+  const per = R.PERICIAS.map(([n, ats, tr]) => { const x = ats || [S.prevalencia_attr || "ARC"]; const [, b, dd] = R.periciaFora(C.a, C.nv, x, C.treinadas.has(n)); return [esc(n) + (tr ? " •" : ""), C.treinadas.has(n) ? "✔" : "", `+${b + (C.ef.pericia[n] || 0)}`, `${dd}d20`]; });
+  const meio = Math.ceil(per.length / 2);   // duas colunas lado a lado, em ordem alfabética de cima para baixo
+  h += sec("Perícias") + t(["Perícia", "T", "Bônus", "Dados", "Perícia", "T", "Bônus", "Dados"], per.slice(0, meio).map((l, i) => l.concat(per[i + meio] || ["", "", "", ""])));
   h += sec("Ataque e defesa") + t(["Perícia", "Bônus"], R.PERICIAS_ATAQUE.map(([n, ats]) => [n + (S.pericia_ataque === n ? " (treinada)" : ""), ats.map((k) => `+${d.bc[k] + d.n3}`).join(" / ")])
     .concat(R.PERICIAS_DEFESA.map(([n, k, tn]) => [n, `+${bonusDefesa(n, k, tn)}`]))) + `<p class="linha">DT Feitiçaria ${d.dt_feiticaria} · DT Desejo ${d.dt_desejo} · Resistências: ${d.resistencias.join(", ") || "—"}</p>`;
   h += sec("Armas e proteção") + t(["Arma", "Nível", "Dano", "Crítico", "Propriedades"], S.armas.filter((w) => ARMAS[w.grupo]).map((w) => { const e = efeitoArma(w, int(w.nivel, 1)); return [esc(w.grupo), w.nivel, esc(e.dano), e.margem, esc(w.props || "—")]; }))
@@ -2140,9 +2142,8 @@ function folhaImpressao() {
     + (S.alma.habilidades.length ? t(["Habilidade", "Tipo", "Valor", "Efeito"], S.alma.habilidades.map((x) => { const inf = infoHab(x); return [esc(x.nome), x.tipo, x.tabela ? `${esc(x.tabela)}: ${esc(inf.valor)}` : "", esc(x.efeito)]; })) : "");
   h += sec("Condições e Portão") + t(R.CONDICOES, [R.CONDICOES.map((n) => `${int(S.condicoes[n].atual)}/${condMax(n)}`)]) + `<p class="linha">Portão: ${S.portao.Sucessos.filter(Boolean).length} sucesso(s), ${S.portao.Falhas.filter(Boolean).length} falha(s) · Cicatrizes: ${esc(S.cicatrizes || "—")}</p>`;
   h += sec("Vínculos e Meta de Vida") + `<p class="linha">Grupo: ${esc(S.vinculos.grupo || "—")} · Mundo: ${esc(S.vinculos.mundo || "—")}</p><p class="linha">Meta: ${esc(S.meta.caminho || "—")}${S.meta.caminho ? ` · etapas ${S.meta.etapas.filter(Boolean).length}/3` : ""} · concluídas ${int(S.meta.concluidas)}</p>`;
-  h += `<p class="rodape-impr">Ficha Prevalecentes 3.1 · ${new Date().toLocaleDateString("pt-BR")}</p>`;
   // a tabela de fora só serve de moldura: o vitral (thead) e as vinhas (tfoot) saem em todas as páginas
-  return `<div class="impr"><table class="pg"><thead><tr><td><div class="vitral-faixa"></div></td></tr></thead><tbody><tr><td>${h}</td></tr></tbody><tfoot><tr><td><div class="vinhas-pe"><i></i><i></i></div></td></tr></tfoot></table></div>`;
+  return `<div class="impr"><table class="pg"><thead><tr><td><div class="vitral-faixa"></div></td></tr></thead><tbody><tr><td>${h}</td></tr></tbody><tfoot><tr><td><div class="vinhas-pe"><i></i><span class="rodape-impr">${esc(S.identidade.nome || "Sonhador")} · Ficha Prevalecentes 3.1 · ${new Date().toLocaleDateString("pt-BR")}</span><i></i></div></td></tr></tfoot></table></div>`;
 }
 A["imprimir"] = () => {
   fecharFolha();

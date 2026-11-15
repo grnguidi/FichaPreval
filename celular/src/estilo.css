@@ -246,7 +246,7 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   .impr th{background:#4a5a36;color:#f8f1dc;font-size:9pt}
   .impr tbody tr:nth-child(even) td{background:#f3ebd3}
   .impr .linha{margin:1mm 0}
-  .impr .rodape-impr{margin-top:6mm;font-size:8pt;color:#666e50;text-align:center}
+  .impr .rodape-impr{align-self:flex-end;font-size:8pt;color:#666e50;text-align:center}
   /* moldura de cada página: o cabeçalho e o rodapé da tabela se repetem em todas as folhas */
   .impr table.pg{background:none;break-inside:auto;margin:0;border:0}
   .impr table.pg>thead>tr>td,.impr table.pg>tbody>tr>td,.impr table.pg>tfoot>tr>td{border:0;background:none!important}
