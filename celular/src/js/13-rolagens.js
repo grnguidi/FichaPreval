@@ -18,6 +18,7 @@ function txtAtaque(at, rot = "Acerto") {
 const txtDano = (tot, partes, rot = "Dano") => `${rot}: <b style="font-size:20px">${tot}</b> <span class="sub">(${partes.map(([t, v]) => v.length ? `${t}[${v.join(", ")}]` : t).join(" ")})</span>`;
 function mostrarRolagem(titulo, linhas) {
   registrarDiario({ titulo, linhas });
+  compartilharRolagem(titulo, linhas);
   folha(titulo, `<div class="desc" style="font-size:16px;line-height:1.7">${linhas.join("<br>")}</div>`,
     `${desfazer.length ? `<button class="botao leve" data-a="desfazer">↺ Desfazer custo</button>` : ""}<button class="botao prim" data-a="fechar">OK</button>`);
 }

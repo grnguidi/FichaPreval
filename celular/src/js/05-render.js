@@ -16,8 +16,14 @@ function render() {
     : `<div class="faixa-modo"><span>⚔ <b>Modo Jogo</b> — rolar, gastar e anotar na mesa</span><button data-a="modo">✎ Editar</button></div>`;
   $("#nav-alma").classList.toggle("oculto", !!S.sem_alma);
   if (aba === "alma" && S.sem_alma) aba = "ficha";
-  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa }[aba]();
+  if (aba === "grupo" && !(sessao.ativa && sessao.id)) aba = "ficha";
+  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, grupo: pGrupo }[aba]();
   pintarSessao();
 }
-function aplicarTema() { document.documentElement.classList.toggle("noite", banco.tema === "noite"); }
+function aplicarTema() {
+  const h = document.documentElement;
+  h.classList.toggle("noite", banco.tema === "noite"); h.classList.toggle("vitral", banco.tema === "vitral");
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", banco.tema === "vitral" ? "#fbf6e9" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
+}
 

@@ -255,6 +255,59 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   .impr .rodape-impr{margin-top:6mm;font-size:8pt;color:#666}
   @page{size:A4;margin:12mm}
 }
+/* grupo */
+.nav button{position:relative}
+.nav button.pend:after{content:"";position:absolute;top:5px;right:calc(50% - 18px);width:9px;height:9px;border-radius:50%;background:#d9534f;border:1px solid var(--fundo)}
+.botao.mini{min-height:34px;padding:4px 10px;font-size:14px;margin-left:6px;flex:none}
+.item.pedido{border-left:5px solid var(--ouro)}
+.cartao.aliado{padding:10px 12px;margin-top:8px}
+.cartao.aliado[data-a]{cursor:pointer}
+.cartao.aliado.vez{border-color:var(--vinho);border-width:2px}
+.cartao.aliado.caido{background:var(--rosa)}
+.aliado .topo-al{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.aliado .topo-al b{font-family:var(--tit);font-size:15px}
+.aliado .topo-al .vida{margin-left:auto;font-weight:700}
+.gbarra{height:10px;background:var(--perg2);border-radius:5px;overflow:hidden;margin-top:6px}
+.gbarra i{display:block;height:100%;border-radius:5px}
+.aliado .chips,.folha .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chip{font-size:12.5px;padding:2px 8px;border-radius:10px;background:var(--perg2);color:var(--tinta)}
+.chip.ef{background:var(--agua)}
+.aliado .sinal{margin:6px 0 0;font-weight:700;color:var(--vinho)}
+.acoes-al{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.acoes-al .botao.mini{margin-left:0}
+.item.feed.dest{border-left:5px solid var(--vinho)}
+.reacoes{display:flex;align-items:center;gap:5px;margin-top:5px}
+.reacoes button{border:1px solid var(--linha);background:var(--campo);border-radius:14px;padding:2px 9px;min-height:30px;font-size:14px}
+.reacoes button.on{background:var(--ouro2);border-color:var(--ouro);color:#2d2015}
+.reacoes .sub{margin-left:auto}
+
+/* tema Vitral: creme, dourado e verde musgo; só vinhas e vitrais de enfeite */
+html.vitral{
+  --fundo:#3f4f2e; --fundo2:#4d5f39; --perg:#f4ecd8; --perg2:#e9dfc3; --campo:#fbf6e9; --tinta:#2f3a22; --tinta2:#666e50;
+  --ouro:#b08a3e; --ouro2:#e3cd8f; --vinho:#7d5f1c; --verde:#5d7340; --faixa:#f8f1dc; --linha:#dccf9f;
+  --c-vida:#9a4a3a; --c-mana:#4a6a7a; --c-vigor:#5d7340; --c-mov:#4f7a6a; --c-ca:#7a715a; --c-atk:#a0553f; --c-def:#56708a;
+  --c-per:#86661f; --c-tal:#5d7340; --c-atr:#4a5a36; --rosa:#f3e3d3; --agua:#e2ead6;
+  --sombra:0 1px 0 rgba(0,0,0,.03),0 5px 14px -10px rgba(60,70,30,.3);
+}
+html.vitral,html.vitral body{background:var(--perg)}
+html.vitral .topo{background:var(--campo);color:var(--vinho);border-bottom:0}
+html.vitral .topo:after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:7px;
+  background:repeating-linear-gradient(90deg,#b08a3e 0 18px,#3f4f2e 18px 20px,#f4ecd8 20px 38px,#3f4f2e 38px 40px,#7d9157 40px 58px,#3f4f2e 58px 60px,#e3cd8f 60px 78px,#3f4f2e 78px 80px);
+  border-top:1px solid #3f4f2e;border-bottom:1px solid #3f4f2e}
+html.vitral .topo .nome{padding-left:38px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cg stroke='%233f4f2e' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M2 18 V16 Q2 2 15 2 V18Z' fill='%23e3cd8f'/%3E%3Cpath d='M15 2 Q28 2 28 16 V18 H15Z' fill='%237d9157'/%3E%3Cpath d='M2 18 H15 V38 H2Z' fill='%23f4ecd8'/%3E%3Cpath d='M15 18 H28 V38 H15Z' fill='%23b08a3e'/%3E%3Cpath d='M2 28 H28' fill='none'/%3E%3Ccircle cx='15' cy='18' r='4.2' fill='%23f8f1dc'/%3E%3C/g%3E%3C/svg%3E") left center/28px 37px no-repeat}
+html.vitral .topo .nome small{color:var(--tinta2)}
+html.vitral .nivel,html.vitral .icone{background:var(--perg);border-color:var(--ouro);color:var(--vinho)}
+html.vitral .nivel button{color:var(--vinho)}
+html.vitral .pagina{margin-top:14px;border-radius:0;background:var(--perg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%236b7f4a' stroke-width='1.6' stroke-linecap='round' opacity='.5'%3E%3Cpath d='M138 2 C104 6 82 22 68 48 C56 70 36 76 8 72'/%3E%3Cpath d='M112 12 C108 26 114 36 126 38'/%3E%3Cpath d='M82 30 C70 24 60 28 56 38'/%3E%3Cpath d='M52 68 C50 82 56 90 66 92'/%3E%3C/g%3E%3Cg fill='%236b7f4a' opacity='.42'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(120 8) rotate(-150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(100 16) rotate(60)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(126 38) rotate(20)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(86 28) rotate(-120)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(56 38) rotate(110)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(70 48) rotate(-30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(60 62) rotate(150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(66 92) rotate(30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(36 74) rotate(-160)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(22 72) rotate(40)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(8 72) rotate(170)'/%3E%3C/g%3E%3C/svg%3E") right top/150px 150px no-repeat}
+html.vitral .nav{background:var(--campo)}
+html.vitral .nav button{color:var(--tinta2)}
+html.vitral .nav button.on{color:var(--vinho)}
+html.vitral .mesa{background:var(--perg2)}
+html.vitral .mesa .info{color:var(--tinta)}
+html.vitral .mesa.vez .info{color:#fff}
+html.vitral .secao:before{content:"";width:26px;height:14px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 14'%3E%3Cpath d='M1 7 H25' stroke='%236b7f4a' stroke-width='1.2' fill='none'/%3E%3Cg fill='%236b7f4a'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(4 7) rotate(-35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(11 7) rotate(35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(18 7) rotate(-35)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
+html.vitral .cartao{border-color:#cdb679}
+html.vitral #t-sub span{color:#a0553f!important}
 </style>
 </head>
 <body>
@@ -273,6 +326,7 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   <button data-a="aba" data-aba="alma" id="nav-alma"><i>☽</i>Alma</button>
   <button data-a="aba" data-aba="talentos"><i>❖</i>Talentos</button>
   <button data-a="aba" data-aba="bolsa"><i>⚖</i>Bolsa</button>
+  <button data-a="aba" data-aba="grupo" id="nav-grupo" class="oculto"><i>♟</i>Grupo</button>
 </nav>
 <div class="veu" id="veu"></div>
 <section class="folha" id="folha" role="dialog" aria-modal="true">
@@ -492,7 +546,7 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   }
 
   // ---------------- Livro: tipos de dano, efeitos e condições (gerado de regras.py pelo build) ----------------
-  const LIVRO = {"TIPOS_DANO": [["Impacto", "Físico", ""], ["Cortante", "Físico", ""], ["Perfurante", "Físico", ""], ["Fogo", "Elemental", ""], ["Veneno", "Elemental", ""], ["Magia", "Elemental", ""], ["Magia Pura", "Elemental", "ignora RD"], ["Sagrado", "Elemental", ""], ["Relâmpago", "Elemental", "não tem RD"], ["Elétrico", "Elemental", ""], ["Necrótico", "Elemental", ""], ["Glacial", "Elemental", ""], ["Psíquico", "Mental", ""], ["Êxtase", "Mental", ""], ["Melódico", "Mental", ""], ["Radiante", "Mental", ""], ["Direto", "Outro", "ignora RD e resistências (perda de Vida de condição, quedas…)"]], "DANO_SEM_RD": ["Direto", "Magia Pura", "Relâmpago"], "EFEITOS_LIVRO": [["Abalado", "Fraco", "−2 em jogadas de ataque e testes de perícia."], ["Caído", "Fraco", "−2 em ataques corpo a corpo; move 4,5 m rastejando ou usa ação de movimento para levantar. −2 de CA contra corpo a corpo, +2 contra à distância."], ["Amedrontado", "Médio", "Desvantagem em jogadas de ataque e testes de perícia."], ["Confuso", "Médio", "Move-se ao acaso (1d4 de direção a cada 1,5 m); −2 em Fortitude e Atletismo para ficar de pé."], ["Agarrado", "Médio", "Desprevenido (−2 de CA) e imóvel; ataques à distância contra o agarrão podem acertar o alvo errado (1–5 em 1d10)."], ["Enredado", "Médio", "Deslocamento pela metade; −2 de CA e em jogadas de ataque."], ["Lento", "Médio", "Toda forma de movimento reduzida à metade."], ["Condenado", "Forte", "Custos de Mana e de Vigor aumentam em 50%."], ["Aterrorizado", "Forte", "Não pode se aproximar da criatura que causou o efeito."], ["Exposto", "Forte", "Ataques contra a criatura têm +2 e, se acertarem, +1 dado de dano do maior dado."], ["Fragilizado", "Forte", "Redução de Dano zerada e resistências anuladas (imunidades não)."], ["Atordoado", "Extremo", "Não pode realizar ações."], ["Inconsciente", "Extremo", "Não age, fica caído, larga o que segura, não fala; falha em todos os testes e é acertado sem jogada de ataque."], ["Paralisado", "Extremo", "Não age; ataques contra ele têm vantagem e todo acerto corpo a corpo é crítico."]], "NOTA_EFEITOS": "Salvo indicação contrária, um efeito dura 1 turno. Se durar mais, o afetado faz um teste de resistência no fim de cada turno (Fortitude para físicos, Vontade para mentais) contra a DT de quem causou.", "CONDICAO_TESTE": {"Veneno": "Fortitude", "Podridão": "Fortitude", "Sangramento": "Fortitude", "Congelamento": "Fortitude", "Sono": "Vontade", "Loucura": "Vontade", "Morte": "Vontade"}, "CONDICAO_ATIVA": {"Veneno": {"turnos": 5, "pct_turno": 5, "desc": "Sofre 5% da Vida máxima por turno, por 5 turnos."}, "Podridão": {"turnos": 0, "pct_turno": 3, "desc": "Sofre 3% da Vida máxima por turno até o fim do combate."}, "Sangramento": {"pct_ja": 25, "desc": "Perde 25% da Vida máxima na hora, ignorando resistências e RD."}, "Congelamento": {"turnos": 2, "pct_ja": 10, "desc": "Perde 10% da Vida máxima na hora e fica com a CA pela metade por 2 turnos."}, "Sono": {"turnos": 1, "desc": "Fica Inconsciente por 1 turno; nada remove esse efeito."}, "Loucura": {"turnos": 0, "desc": "Recebe o dobro de dano mental e falha em todo teste de Vontade até o fim do combate."}, "Morte": {"desc": "Morre na hora, consumido pelas raízes da Intérprete."}}, "CONDICAO_DESCANSO_CURTO": 25, "DESCANSOS_CURTOS_MAX": 2, "DESGASTE_TURNOS": 3, "PECAS_SET_PESO": ["Capacete", "Manopla", "Calça", "Bota"], "DADO_INFERIOR": {"12": 10, "10": 8, "8": 6, "6": 4, "4": 4, "20": 12}, "ESCOLHA_TALENTO": {"Maestria": "arma", "Maestria dupla": "arma", "Domínio": "arma", "Matrícula": "escola", "Matrícula avançada": "escola_ou_mana", "Condição Endurecida": "condicao", "Mestre das Perícias": "pericia"}, "ROTULO_ESCOLHA": {"arma": "Arma", "escola": "Escola", "escola_ou_mana": "Escola ou −2 de mana", "condicao": "Condição", "pericia": "Perícia"}, "MATRICULA_MANA2": "−2 de mana", "PROPRIEDADES": [["Afiada", "+1 dado de dano, do maior dado da arma."], ["Canalizada", "Ação bônus: vantagem no próximo golpe."], ["Certeira", "Margem de crítico da arma −1."], ["Cruel", "+3 de dano."], ["Destruidora", "O crítico vira ×3 (triplica os dados)."], ["Discreta", "+5 em Furtividade com a arma equipada."], ["Longa", "Alcance da arma +1,5 m."], ["Penetrante", "Ignora redução de dano do tipo da arma igual ao nível da arma."], ["Poderosa", "+2 de dano. Exige Cruel."], ["Equilibrada", "+1 nos testes de ataque com a arma."], ["Pesada", "Dado de dano um nível acima (d8→d10; com d12, +1 dado), mas exige o dobro da Força da arma."], ["Sagrada", "+1d6 de dano Sagrado contra profanos, mortos-vivos ou de Podridão."], ["Profana", "+1d6 de dano Necrótico contra sagrados ou celestiais."], ["Elemental", "+1d6 de dano do elemento escolhido (Fogo, Glacial, Elétrico ou Veneno)."], ["Reforçada", "Desgaste só depois de 4 turnos afiados."], ["Voraz", "No crítico, recupera 1d10 de Vida."]], "ELEMENTOS_PROP": ["Fogo", "Glacial", "Elétrico", "Veneno"], "TIPOS_ACAO": ["Comum", "Bônus", "Movimento", "Reação"], "ACOES_LIVRO": [["Atacar", "Comum", "ataque", "Golpe com arma ou encantamento contra a CA do alvo."], ["Agarrar", "Comum", "Atletismo", "O alvo fica imóvel enquanto você vencer testes de ataque ou Atletismo; seu movimento cai à metade."], ["Derrubar", "Comum", "Atletismo", "Atletismo contra o Atletismo do alvo; numa vitória ele fica Caído."], ["Preparar", "Comum", "", "Prepara uma ação para um evento que você define; ela gasta a sua Reação."], ["Apoiar", "Comum", "", "A criatura apoiada tem vantagem no próximo teste."], ["Trocar de arma", "Comum", "", "Guarda uma arma e saca outra. Armas de Vigor gastam também a ação bônus; entre arma e cajado/selo custa só 3 m de movimento."], ["Usar item", "Comum", "", "Beber uma poção, comer uma refeição pronta, usar um item ou entregá-lo a 1,5 m."], ["Esconder", "Comum", "Furtividade", "Furtividade contra a Percepção de quem vê você; fica escondido até atacar, conjurar ou ser achado."], ["Mirar", "Bônus", "", "Vantagem na próxima jogada de ataque contra o alvo declarado."], ["Provocar", "Bônus", "provocar", "Alvo a 9 m faz Vontade contra a sua DT; se falhar, tem desvantagem contra quem não for você até o fim do próximo turno dele."], ["Movimentar", "Movimento", "", "Anda até o seu valor de movimento."], ["Levantar", "Movimento", "", "Sai da condição Caído."], ["Desengajar", "Movimento", "", "Anda metade do movimento sem provocar golpe de oportunidade."], ["Golpe de Oportunidade", "Reação", "ataque", "Ataque contra quem cruza o espaço de 1,5 m em volta de você."], ["Incentivar", "Reação", "", "Um aliado a 1,5 m age logo antes de você neste turno."]], "NIVEL_RECARGA": {"turno": 0, "rodada": 0, "combate": 1, "cena": 1, "descanso curto": 2, "descanso longo": 3, "dia": 3}, "EVENTO_RECARGA": {"turno": 0, "combate": 1, "curto": 2, "longo": 3}, "RECURSOS_ARMA": {"Adaga": [["Fragmentos de Combo", 0]], "Espada Grande": [["Momentum", 5]], "Machado Grande": [["Impacto preparado", 3]], "Lança-Arma": [["Cartuchos", 5]], "Lâmina-Dínamo": [["Cargas", 5], ["Frascos", 5]], "Arco": [["Flechas", 30]], "Besta Pesada": [["Virotes", 20]], "Lira": [["Paz", 5], ["Calma", 5], ["Melancolia", 5]]}, "ALMA_TABELAS": {"Dano em alvo único": ["1d4", "1d6", "2d4", "2d6", "2d8", "3d8", "4d8", "5d8", "6d8", "6d10", "8d10", "9d12"], "Dano em múltiplos alvos": ["1d4 (desvantagem)", "1d4", "1d6", "1d8", "1d10", "2d8", "3d6", "3d8", "4d8", "5d8", "6d8", "7d8"], "Área": ["1,5 m", "3 m", "4,5 m", "6 m", "7,5 m", "9 m", "10,5 m", "12 m", "13,5 m", "15 m", "16,5 m", "18 m"], "Aumento de atributo": ["+1", "+2", "+2", "+3", "+3", "+3", "+4", "+4", "+4", "+5", "+6", "+7"], "Redução de dano": ["−1", "−2", "−2", "−2", "−3", "−3", "−3", "−4", "−4", "−4", "−5", "−6"], "Redução de margem de crítico": ["−1", "−1", "−1", "−1", "−2", "−2", "−2", "−2", "−3", "−3", "−3", "−3"], "Efeito negativo": ["Fraco (−5 DT)", "Fraco", "Fraco", "Fraco", "Fraco", "Médio", "Médio", "Médio", "Médio", "Forte", "Forte", "Extremo"]}, "ALMA_CATEGORIAS": ["Dano", "Benefício", "Ofuscamento", "Interlúdio"], "ALMA_EXECUCAO": ["Comum", "Bônus", "Movimento", "Reação", "Completa", "Livre"], "ALMA_AJUSTES": [[-2, "Execução como ação bônus"], [-2, "Duração de uma cena"], [-1, "+4,5 m de alcance"], [-1, "−3 na DT"], [-1, "Execução como movimento ou reação"], [-1, "Troca do teste de perícia"], [-1, "Duração de uma rodada"], [-1, "+1,5 m na área afetada"], [1, "Exige um teste extra de outra perícia"], [1, "Execução com +1 ação Comum"], [1, "Reduz um atributo do portador em −5 por rodada"], [1, "Causa dano em aliados"], [1, "+3 na DT"], [1, "Redução de dano específico"], [2, "Execução como ação completa"], [2, "Aplica um efeito negativo no portador"], [2, "Desvantagem no ataque ou vantagem para resistir"]], "CAMINHOS": [["Costureiro", "Costura", ["Costurar uma peça de um Animal do Andar diante do costureiro mentor.", "Costurar peças de 5 Animais diferentes do Andar.", "Costurar um set completo (Capacete, Peitoral, Manopla, Calça e Bota) com itens de um Prevalecente do Andar."]], ["Ferreiro", "Tecnologia", ["Subir uma arma de nível na Bigorna Portátil diante do ferreiro mentor.", "Forjar armas de 3 Animais diferentes do Andar.", "Forjar a arma de um Prevalecente do Andar."]], ["Cozinheiro", "Gastronomia", ["Preparar uma refeição de nível 2 diante de um chef.", "Criar 5 receitas novas com ingredientes do Andar.", "Preparar um Banquete de nível 4 para todo o grupo (horta e pasto S, Base nível 6 ou mais)."]], ["Cultivador", "Agricultura", ["Cuidar de uma horta por 2 semanas sem perder nenhuma planta.", "Colher 3 espécies diferentes com qualidade A.", "Colher uma planta com a qualidade máxima que a Base permite (mínimo A)."]], ["Pastor", "Agricultura", ["Adestrar um animal da Base.", "Manter 3 animais produzindo por 4 semanas, sem nenhum rejeitar o dono.", "Obter produto de pasto com a qualidade máxima que a Base permite (mínimo A) de dois animais."]], ["Explorador", "Navegação", ["Guiar o grupo em 2 viagens sem se perder.", "Registrar 3 rotas novas do Andar (cada uma vira um Mapa Regional).", "Descobrir o caminho até o covil do Prevalecente de um país do Andar."]], ["Pesquisador", "Ciências", ["Estudar 5 animais diferentes no Bestiário.", "Completar o registro de uma região (um Lacaio, um Comum, um Forte e um Animal).", "Descobrir o Coração, o Ponto Chave do Prevalecente de um país do Andar."]], ["Curandeiro", "Medicina", ["Tratar 3 aliados com uma condição ativada.", "Preparar 5 poções ou remédios.", "Curar um mal que atinge uma comunidade inteira do Andar (um contágio, por exemplo)."]], ["Diplomata", "Persuasão", ["Ganhar a confiança de uma tribo ou facção do Andar.", "Resolver 3 conflitos por negociação, sem violência.", "Unir facções do Andar em torno de uma causa, de modo que 3 NPCs com Funções diferentes aceitem acompanhar o grupo."]]], "ETAPAS_META": ["Aprendiz", "Prática", "Obra-prima"], "METAS_MAX": 5, "CONTOS_POR": {"Contilha": 1000000, "ouro": 1000, "prata": 10, "Contos": 1}, "MOEDAS": ["Contilha", "ouro", "prata", "Contos"], "PERICIAS_RESUMO": {"Acrobacia": ["Equilíbrio, saltos, quedas, piruetas e escapar de situações que pedem agilidade do corpo, como pular uma barreira com segurança.", ""], "Agricultura": ["Plantar, colher, cuidar de animais de criação e tirar sustento da terra.", "Agricultura & Pasto"], "Artes": ["Pintura, escultura, escrita e qualquer ofício artístico; também criar e sustentar um disfarce (o teste é contra quem observa e se repete a cada interação).", "Disfarce"], "Atletismo": ["Força física aplicada: escalar, nadar, empurrar, arrombar, segurar ou se soltar. Agarrar e Derrubar são Atletismo contra o Atletismo da criatura.", ""], "Ciências": ["Conhecimento acadêmico e natural: alquimia, matemática, astronomia, criaturas e fenômenos estudados.", ""], "Costura": ["Confeccionar e consertar as cinco peças de armadura dos sets com os materiais da receita; a DT é a da raridade do item e uma falha perde materiais.", "Sets"], "Crime": ["Abrir fechaduras, desarmar armadilhas, furtar, falsificar e circular no submundo.", "Infiltração"], "Furtividade": ["Mover-se sem ser visto ou ouvido. Esconder é Furtividade contra a Percepção de quem pode ver você; cada falha numa infiltração sobe o Alerta.", "Infiltração"], "Gastronomia": ["Cozinhar refeições que dão bônus ao grupo e conservar alimentos na estrada; a DT sobe com o nível da receita.", "Alimentos/Expedição"], "História": ["Saber sobre o passado, reinos, guerras, linhagens e lendas; argumento de peso num conflito social.", "Conflito Social"], "Intuição": ["Perceber intenções, mentiras e o clima de uma conversa; sentir quando algo está errado.", ""], "Investigação": ["Procurar pistas, examinar cenas e documentos e ligar os fatos; encontrar o que está escondido numa expedição.", "Expedição"], "Medicina": ["Tratar ferimentos, doenças e venenos. No Portão da Morte, um aliado faz Medicina (DT 15) para dar 1 sucesso a quem está Incapaz.", "Portão da Morte"], "Navegação": ["Orientar-se e guiar o grupo em viagens por terra e mar; define o tempo da viagem e evita se perder.", "Viagens"], "Percepção": ["Notar o que está à volta: emboscadas, criaturas escondidas, sons e detalhes. É contra ela que os outros testam Furtividade.", ""], "Performance": ["Cantar, tocar, atuar e discursar para uma plateia; impressionar ou distrair num conflito social.", "Conflito Social"], "Persuasão": ["Convencer, negociar, barganhar e acalmar pela conversa; a principal perícia do conflito social.", "Conflito Social"], "Prevalência": ["A força da vontade do personagem ligada à alma, com o atributo que o jogador escolher; usada por almas e por técnicas como a Dedicação da Katana (Prevalência contra Vontade).", "Almas"], "Religião": ["Deuses, cultos, ritos e criaturas sagradas ou profanas; alguns Feitiços pedem este teste.", "Alguns Feitiços"], "Sorte": ["O acaso a seu favor: achar o que precisa, escapar por pouco, encontros e espólios na expedição.", "Expedição"], "Tática": ["Ler o campo de batalha, prever o inimigo e planejar o grupo; algumas habilidades e o clima adverso nas viagens pedem este teste.", "Algumas Habilidades"], "Tecnologia": ["Mecanismos, ferramentas, forja e engenhocas: consertar, montar e operar; serviços de ferraria pedem este teste.", ""], "Luta": ["Ataques corpo a corpo: 1d20 + BC do atributo da arma + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque corpo a corpo"], "Pontaria": ["Ataques à distância (Arco, Besta): 1d20 + BC de Destreza + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque a distância"], "Feitiçaria": ["Conjurar Magias: 1d20 + BC de Inteligência + nível ÷ 3 + acerto do cajado; também lê idiomas arcanos e anula magias inimigas (Contradomínio).", "Magias"], "Desejo": ["Conjurar Feitiços: 1d20 + BC de Fé + nível ÷ 3 + acerto do selo; também lê idiomas mortos e anula feitiços inimigos (Contradomínio).", "Feitiços"], "Fortitude": ["Defesa do corpo (Tenacidade): resistir a Veneno, Podridão, Sangramento, Congelamento, empurrões e efeitos físicos.", "Defesa"], "Reflexo": ["Defesa por agilidade (Destreza): esquivar de áreas, armadilhas e quedas.", "Defesa"], "Astúcia": ["Defesa da mente (Mente): perceber truques, ilusões e enganações.", "Defesa"], "Vontade": ["Defesa do espírito (Fé): resistir a Sono, Loucura, Morte, medo, provocação e controle mental.", "Defesa"]}, "ATRIBUTOS_RESUMO": {"VIT": ["A força que mantém o corpo de pé: suportar ferimentos e continuar lutando.", ["Vida: rola 1d12 por ponto de Curva da Vitalidade (ou 7 por dado)", "Dados da Poção Espiritual"]], "MEN": ["O reservatório de energia interior que alimenta habilidades: quanto de mana o personagem canaliza.", ["Mana = 2 × Mente + 2 × Curva da Mente", "Astúcia (defesa)", "Artes, Performance e Persuasão", "Perícias treinadas: +1 a cada 10 pontos (a maior entre Mente e Inteligência)"]], "TEN": ["O vigor físico para correr, esquivar, bloquear e aguentar o peso: o porte do corpo em combate.", ["CA: +1 a cada 20 pontos (máx. +4)", "Redução de Dano: 1d4 a cada 20 pontos (máx. 4d4)", "Resistências: Fogo 20, Cortante 30, Impacto 40, Veneno 50, Sangramento 60, Magia 70, Magia Pura 80, Sagrado 90", "Carga = 10 + 2 × Tenacidade + Força ÷ 2 + Curva da Tenacidade", "Fortitude (defesa)"]], "FOR": ["O poder bruto para erguer armas pesadas e desferir golpes devastadores.", ["Vigor = 20 + Força + Curva da Força; recupera Curva ÷ 4 por turno", "Ataque e requisitos das armas de Força", "Atletismo", "Metade da Força entra na Carga"]], "DES": ["Precisão, velocidade e controle: armas leves, flexíveis e à distância.", ["Ações extras (Comum ou Bônus) com 15, 30, 45, 55, 65, 75, 85 e 95", "Movimento: +3 m com 30 e a cada 15 acima", "Iniciativa: 1d20 a mais a cada 20 pontos", "Reflexo (defesa)", "Ataque das armas de Destreza e Pontaria", "Acrobacia, Crime e Furtividade"]], "INT": ["A chave para compreender e manipular forças místicas pelo estudo: conjura as Magias.", ["Feitiçaria: acerto e DT das Magias", "+1 dado nas Magias a cada 30 pontos", "Espaços de encantamento: 1 + (Inteligência + Fé) ÷ 6", "Contradomínio: 1 por combate a cada 10 pontos (a maior entre INT e Fé)", "Perícias treinadas: +1 a cada 10 pontos", "Ciências, Investigação, Medicina e Tecnologia"]], "FE": ["A conexão com forças sagradas, divinas ou espirituais: conjura os Feitiços (curas, bênçãos, proteções e ataques).", ["Desejo: acerto e DT dos Feitiços", "+1 dado nos Feitiços a cada 30 pontos", "Espaços de encantamento: 1 + (Inteligência + Fé) ÷ 6", "Contradomínio: 1 por combate a cada 10 pontos", "Vontade (defesa)", "História, Intuição e Religião"]], "ARC": ["A afinidade com mistérios ocultos e energias sutis: perceber o extraordinário e mexer com as condições dos inimigos.", ["Escalonamento das condições dos encantamentos: 1 cópia dos dados a cada 20 e 1 dado inferior a cada 15", "Descoberta: +10 a cada 15 pontos", "Percepção, Sorte e Tática", "Coordenação do Uso duplo ao conjurar"]]}};
+  const LIVRO = {"TIPOS_DANO": [["Impacto", "Físico", ""], ["Cortante", "Físico", ""], ["Perfurante", "Físico", ""], ["Fogo", "Elemental", ""], ["Veneno", "Elemental", ""], ["Magia", "Elemental", ""], ["Magia Pura", "Elemental", "ignora RD"], ["Sagrado", "Elemental", ""], ["Relâmpago", "Elemental", "não tem RD"], ["Elétrico", "Elemental", ""], ["Necrótico", "Elemental", ""], ["Glacial", "Elemental", ""], ["Psíquico", "Mental", ""], ["Êxtase", "Mental", ""], ["Melódico", "Mental", ""], ["Radiante", "Mental", ""], ["Direto", "Outro", "ignora RD e resistências (perda de Vida de condição, quedas…)"]], "DANO_SEM_RD": ["Direto", "Magia Pura", "Relâmpago"], "EFEITOS_LIVRO": [["Abalado", "Fraco", "−2 em jogadas de ataque e testes de perícia."], ["Caído", "Fraco", "−2 em ataques corpo a corpo; move 4,5 m rastejando ou usa ação de movimento para levantar. −2 de CA contra corpo a corpo, +2 contra à distância."], ["Amedrontado", "Médio", "Desvantagem em jogadas de ataque e testes de perícia."], ["Confuso", "Médio", "Move-se ao acaso (1d4 de direção a cada 1,5 m); −2 em Fortitude e Atletismo para ficar de pé."], ["Agarrado", "Médio", "Desprevenido (−2 de CA) e imóvel; ataques à distância contra o agarrão podem acertar o alvo errado (1–5 em 1d10)."], ["Enredado", "Médio", "Deslocamento pela metade; −2 de CA e em jogadas de ataque."], ["Lento", "Médio", "Toda forma de movimento reduzida à metade."], ["Condenado", "Forte", "Custos de Mana e de Vigor aumentam em 50%."], ["Aterrorizado", "Forte", "Não pode se aproximar da criatura que causou o efeito."], ["Exposto", "Forte", "Ataques contra a criatura têm +2 e, se acertarem, +1 dado de dano do maior dado."], ["Fragilizado", "Forte", "Redução de Dano zerada e resistências anuladas (imunidades não)."], ["Atordoado", "Extremo", "Não pode realizar ações."], ["Inconsciente", "Extremo", "Não age, fica caído, larga o que segura, não fala; falha em todos os testes e é acertado sem jogada de ataque."], ["Paralisado", "Extremo", "Não age; ataques contra ele têm vantagem e todo acerto corpo a corpo é crítico."]], "NOTA_EFEITOS": "Salvo indicação contrária, um efeito dura 1 turno. Se durar mais, o afetado faz um teste de resistência no fim de cada turno (Fortitude para físicos, Vontade para mentais) contra a DT de quem causou.", "CONDICAO_TESTE": {"Veneno": "Fortitude", "Podridão": "Fortitude", "Sangramento": "Fortitude", "Congelamento": "Fortitude", "Sono": "Vontade", "Loucura": "Vontade", "Morte": "Vontade"}, "CONDICAO_ATIVA": {"Veneno": {"turnos": 5, "pct_turno": 5, "desc": "Sofre 5% da Vida máxima por turno, por 5 turnos."}, "Podridão": {"turnos": 0, "pct_turno": 3, "desc": "Sofre 3% da Vida máxima por turno até o fim do combate."}, "Sangramento": {"pct_ja": 25, "desc": "Perde 25% da Vida máxima na hora, ignorando resistências e RD."}, "Congelamento": {"turnos": 2, "pct_ja": 10, "desc": "Perde 10% da Vida máxima na hora e fica com a CA pela metade por 2 turnos."}, "Sono": {"turnos": 1, "desc": "Fica Inconsciente por 1 turno; nada remove esse efeito."}, "Loucura": {"turnos": 0, "desc": "Recebe o dobro de dano mental e falha em todo teste de Vontade até o fim do combate."}, "Morte": {"desc": "Morre na hora, consumido pelas raízes da Intérprete."}}, "CONDICAO_DESCANSO_CURTO": 25, "DESCANSOS_CURTOS_MAX": 2, "DESGASTE_TURNOS": 3, "PECAS_SET_PESO": ["Capacete", "Manopla", "Calça", "Bota"], "DADO_INFERIOR": {"12": 10, "10": 8, "8": 6, "6": 4, "4": 4, "20": 12}, "ESCOLHA_TALENTO": {"Maestria": "arma", "Maestria dupla": "arma", "Domínio": "arma", "Matrícula": "escola", "Matrícula avançada": "escola_ou_mana", "Condição Endurecida": "condicao", "Mestre das Perícias": "pericia"}, "ROTULO_ESCOLHA": {"arma": "Arma", "escola": "Escola", "escola_ou_mana": "Escola ou −2 de mana", "condicao": "Condição", "pericia": "Perícia"}, "MATRICULA_MANA2": "−2 de mana", "PROPRIEDADES": [["Afiada", "+1 dado de dano, do maior dado da arma."], ["Canalizada", "Ação bônus: vantagem no próximo golpe."], ["Certeira", "Margem de crítico da arma −1."], ["Cruel", "+3 de dano."], ["Destruidora", "O crítico vira ×3 (triplica os dados)."], ["Discreta", "+5 em Furtividade com a arma equipada."], ["Longa", "Alcance da arma +1,5 m."], ["Penetrante", "Ignora redução de dano do tipo da arma igual ao nível da arma."], ["Poderosa", "+2 de dano. Exige Cruel."], ["Equilibrada", "+1 nos testes de ataque com a arma."], ["Pesada", "Dado de dano um nível acima (d8→d10; com d12, +1 dado), mas exige o dobro da Força da arma."], ["Sagrada", "+1d6 de dano Sagrado contra profanos, mortos-vivos ou de Podridão."], ["Profana", "+1d6 de dano Necrótico contra sagrados ou celestiais."], ["Elemental", "+1d6 de dano do elemento escolhido (Fogo, Glacial, Elétrico ou Veneno)."], ["Reforçada", "Desgaste só depois de 4 turnos afiados."], ["Voraz", "No crítico, recupera 1d10 de Vida."]], "ELEMENTOS_PROP": ["Fogo", "Glacial", "Elétrico", "Veneno"], "TIPOS_ACAO": ["Comum", "Bônus", "Movimento", "Reação"], "ACOES_LIVRO": [["Atacar", "Comum", "ataque", "Golpe com arma ou encantamento contra a CA do alvo."], ["Agarrar", "Comum", "Atletismo", "O alvo fica imóvel enquanto você vencer testes de ataque ou Atletismo; seu movimento cai à metade."], ["Derrubar", "Comum", "Atletismo", "Atletismo contra o Atletismo do alvo; numa vitória ele fica Caído."], ["Preparar", "Comum", "", "Prepara uma ação para um evento que você define; ela gasta a sua Reação."], ["Apoiar", "Comum", "", "A criatura apoiada tem vantagem no próximo teste."], ["Trocar de arma", "Comum", "", "Guarda uma arma e saca outra. Armas de Vigor gastam também a ação bônus; entre arma e cajado/selo custa só 3 m de movimento."], ["Usar item", "Comum", "", "Beber uma poção, comer uma refeição pronta, usar um item ou entregá-lo a 1,5 m."], ["Esconder", "Comum", "Furtividade", "Furtividade contra a Percepção de quem vê você; fica escondido até atacar, conjurar ou ser achado."], ["Mirar", "Bônus", "", "Vantagem na próxima jogada de ataque contra o alvo declarado."], ["Provocar", "Bônus", "provocar", "Alvo a 9 m faz Vontade contra a sua DT; se falhar, tem desvantagem contra quem não for você até o fim do próximo turno dele."], ["Movimentar", "Movimento", "", "Anda até o seu valor de movimento."], ["Levantar", "Movimento", "", "Sai da condição Caído."], ["Desengajar", "Movimento", "", "Anda metade do movimento sem provocar golpe de oportunidade."], ["Golpe de Oportunidade", "Reação", "ataque", "Ataque contra quem cruza o espaço de 1,5 m em volta de você."], ["Incentivar", "Reação", "", "Um aliado a 1,5 m age logo antes de você neste turno."]], "NIVEL_RECARGA": {"turno": 0, "rodada": 0, "combate": 1, "cena": 1, "descanso curto": 2, "descanso longo": 3, "dia": 3}, "EVENTO_RECARGA": {"turno": 0, "combate": 1, "curto": 2, "longo": 3}, "RECURSOS_ARMA": {"Adaga": [["Fragmentos de Combo", 0]], "Espada Grande": [["Momentum", 5]], "Machado Grande": [["Impacto preparado", 3]], "Lança-Arma": [["Cartuchos", 5]], "Lâmina-Dínamo": [["Cargas", 5], ["Frascos", 5]], "Arco": [["Flechas", 30]], "Besta Pesada": [["Virotes", 20]], "Lira": [["Paz", 5], ["Calma", 5], ["Melancolia", 5]]}, "ALMA_TABELAS": {"Dano em alvo único": ["1d4", "1d6", "2d4", "2d6", "2d8", "3d8", "4d8", "5d8", "6d8", "6d10", "8d10", "9d12"], "Dano em múltiplos alvos": ["1d4 (desvantagem)", "1d4", "1d6", "1d8", "1d10", "2d8", "3d6", "3d8", "4d8", "5d8", "6d8", "7d8"], "Área": ["1,5 m", "3 m", "4,5 m", "6 m", "7,5 m", "9 m", "10,5 m", "12 m", "13,5 m", "15 m", "16,5 m", "18 m"], "Aumento de atributo": ["+1", "+2", "+2", "+3", "+3", "+3", "+4", "+4", "+4", "+5", "+6", "+7"], "Redução de dano": ["−1", "−2", "−2", "−2", "−3", "−3", "−3", "−4", "−4", "−4", "−5", "−6"], "Redução de margem de crítico": ["−1", "−1", "−1", "−1", "−2", "−2", "−2", "−2", "−3", "−3", "−3", "−3"], "Efeito negativo": ["Fraco (−5 DT)", "Fraco", "Fraco", "Fraco", "Fraco", "Médio", "Médio", "Médio", "Médio", "Forte", "Forte", "Extremo"]}, "ALMA_CATEGORIAS": ["Dano", "Benefício", "Ofuscamento", "Interlúdio"], "ALMA_EXECUCAO": ["Comum", "Bônus", "Movimento", "Reação", "Completa", "Livre"], "ALMA_AJUSTES": [[-2, "Execução como ação bônus"], [-2, "Duração de uma cena"], [-1, "+4,5 m de alcance"], [-1, "−3 na DT"], [-1, "Execução como movimento ou reação"], [-1, "Troca do teste de perícia"], [-1, "Duração de uma rodada"], [-1, "+1,5 m na área afetada"], [1, "Exige um teste extra de outra perícia"], [1, "Execução com +1 ação Comum"], [1, "Reduz um atributo do portador em −5 por rodada"], [1, "Causa dano em aliados"], [1, "+3 na DT"], [1, "Redução de dano específico"], [2, "Execução como ação completa"], [2, "Aplica um efeito negativo no portador"], [2, "Desvantagem no ataque ou vantagem para resistir"]], "CAMINHOS": [["Costureiro", "Costura", ["Costurar uma peça de um Animal do Andar diante do costureiro mentor.", "Costurar peças de 5 Animais diferentes do Andar.", "Costurar um set completo (Capacete, Peitoral, Manopla, Calça e Bota) com itens de um Prevalecente do Andar."]], ["Ferreiro", "Tecnologia", ["Subir uma arma de nível na Bigorna Portátil diante do ferreiro mentor.", "Forjar armas de 3 Animais diferentes do Andar.", "Forjar a arma de um Prevalecente do Andar."]], ["Cozinheiro", "Gastronomia", ["Preparar uma refeição de nível 2 diante de um chef.", "Criar 5 receitas novas com ingredientes do Andar.", "Preparar um Banquete de nível 4 para todo o grupo (horta e pasto S, Base nível 6 ou mais)."]], ["Cultivador", "Agricultura", ["Cuidar de uma horta por 2 semanas sem perder nenhuma planta.", "Colher 3 espécies diferentes com qualidade A.", "Colher uma planta com a qualidade máxima que a Base permite (mínimo A)."]], ["Pastor", "Agricultura", ["Adestrar um animal da Base.", "Manter 3 animais produzindo por 4 semanas, sem nenhum rejeitar o dono.", "Obter produto de pasto com a qualidade máxima que a Base permite (mínimo A) de dois animais."]], ["Explorador", "Navegação", ["Guiar o grupo em 2 viagens sem se perder.", "Registrar 3 rotas novas do Andar (cada uma vira um Mapa Regional).", "Descobrir o caminho até o covil do Prevalecente de um país do Andar."]], ["Pesquisador", "Ciências", ["Estudar 5 animais diferentes no Bestiário.", "Completar o registro de uma região (um Lacaio, um Comum, um Forte e um Animal).", "Descobrir o Coração, o Ponto Chave do Prevalecente de um país do Andar."]], ["Curandeiro", "Medicina", ["Tratar 3 aliados com uma condição ativada.", "Preparar 5 poções ou remédios.", "Curar um mal que atinge uma comunidade inteira do Andar (um contágio, por exemplo)."]], ["Diplomata", "Persuasão", ["Ganhar a confiança de uma tribo ou facção do Andar.", "Resolver 3 conflitos por negociação, sem violência.", "Unir facções do Andar em torno de uma causa, de modo que 3 NPCs com Funções diferentes aceitem acompanhar o grupo."]]], "ETAPAS_META": ["Aprendiz", "Prática", "Obra-prima"], "METAS_MAX": 5, "CONTOS_POR": {"Contilha": 1000000, "ouro": 1000, "prata": 10, "Contos": 1}, "MOEDAS": ["Contilha", "ouro", "prata", "Contos"], "PERICIAS_RESUMO": {"Acrobacia": ["Equilíbrio, saltos, quedas, piruetas e escapar de situações que pedem agilidade do corpo, como pular uma barreira com segurança.", ""], "Agricultura": ["Plantar, colher, cuidar de animais de criação e tirar sustento da terra.", "Agricultura & Pasto"], "Artes": ["Pintura, escultura, escrita e qualquer ofício artístico; também criar e sustentar um disfarce (o teste é contra quem observa e se repete a cada interação).", "Disfarce"], "Atletismo": ["Força física aplicada: escalar, nadar, empurrar, arrombar, segurar ou se soltar. Agarrar e Derrubar são Atletismo contra o Atletismo da criatura.", ""], "Ciências": ["Conhecimento acadêmico e natural: alquimia, matemática, astronomia, criaturas e fenômenos estudados.", ""], "Costura": ["Confeccionar e consertar as cinco peças de armadura dos sets com os materiais da receita; a DT é a da raridade do item e uma falha perde materiais.", "Sets"], "Crime": ["Abrir fechaduras, desarmar armadilhas, furtar, falsificar e circular no submundo.", "Infiltração"], "Furtividade": ["Mover-se sem ser visto ou ouvido. Esconder é Furtividade contra a Percepção de quem pode ver você; cada falha numa infiltração sobe o Alerta.", "Infiltração"], "Gastronomia": ["Cozinhar refeições que dão bônus ao grupo e conservar alimentos na estrada; a DT sobe com o nível da receita.", "Alimentos/Expedição"], "História": ["Saber sobre o passado, reinos, guerras, linhagens e lendas; argumento de peso num conflito social.", "Conflito Social"], "Intuição": ["Perceber intenções, mentiras e o clima de uma conversa; sentir quando algo está errado.", ""], "Investigação": ["Procurar pistas, examinar cenas e documentos e ligar os fatos; encontrar o que está escondido numa expedição.", "Expedição"], "Medicina": ["Tratar ferimentos, doenças e venenos. No Portão da Morte, um aliado faz Medicina (DT 15) para dar 1 sucesso a quem está Incapaz.", "Portão da Morte"], "Navegação": ["Orientar-se e guiar o grupo em viagens por terra e mar; define o tempo da viagem e evita se perder.", "Viagens"], "Percepção": ["Notar o que está à volta: emboscadas, criaturas escondidas, sons e detalhes. É contra ela que os outros testam Furtividade.", ""], "Performance": ["Cantar, tocar, atuar e discursar para uma plateia; impressionar ou distrair num conflito social.", "Conflito Social"], "Persuasão": ["Convencer, negociar, barganhar e acalmar pela conversa; a principal perícia do conflito social.", "Conflito Social"], "Prevalência": ["A força da vontade do personagem ligada à alma, com o atributo que o jogador escolher; usada por almas e por técnicas como a Dedicação da Katana (Prevalência contra Vontade).", "Almas"], "Religião": ["Deuses, cultos, ritos e criaturas sagradas ou profanas; alguns Feitiços pedem este teste.", "Alguns Feitiços"], "Sorte": ["O acaso a seu favor: achar o que precisa, escapar por pouco, encontros e espólios na expedição.", "Expedição"], "Tática": ["Ler o campo de batalha, prever o inimigo e planejar o grupo; algumas habilidades e o clima adverso nas viagens pedem este teste.", "Algumas Habilidades"], "Tecnologia": ["Mecanismos, ferramentas, forja e engenhocas: consertar, montar e operar; serviços de ferraria pedem este teste.", ""], "Luta": ["Ataques corpo a corpo: 1d20 + BC do atributo da arma + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque corpo a corpo"], "Pontaria": ["Ataques à distância (Arco, Besta): 1d20 + BC de Destreza + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque a distância"], "Feitiçaria": ["Conjurar Magias: 1d20 + BC de Inteligência + nível ÷ 3 + acerto do cajado; também lê idiomas arcanos e anula magias inimigas (Contradomínio).", "Magias"], "Desejo": ["Conjurar Feitiços: 1d20 + BC de Fé + nível ÷ 3 + acerto do selo; também lê idiomas mortos e anula feitiços inimigos (Contradomínio).", "Feitiços"], "Fortitude": ["Defesa do corpo (Tenacidade): resistir a Veneno, Podridão, Sangramento, Congelamento, empurrões e efeitos físicos.", "Defesa"], "Reflexo": ["Defesa por agilidade (Destreza): esquivar de áreas, armadilhas e quedas.", "Defesa"], "Astúcia": ["Defesa da mente (Mente): perceber truques, ilusões e enganações.", "Defesa"], "Vontade": ["Defesa do espírito (Fé): resistir a Sono, Loucura, Morte, medo, provocação e controle mental.", "Defesa"]}, "REFEICOES": {"1": [10, "1d10 de vida temporária para cada 4 níveis do personagem (mínimo 1d10)."], "2": [20, "Vantagem em um teste à escolha."], "3": [30, "2d10 de vida temporária para cada 4 níveis (mínimo 2d10) e +20 pontos em uma condição à escolha."], "4": [40, "Pacote completo: +2 de acerto, +1 de CA e de resistências, 4d10 de vida temporária para cada 4 níveis, −15% de dano recebido e +1 dado de dano para cada 8 níveis durante 1 combate."]}, "ATRIBUTOS_RESUMO": {"VIT": ["A força que mantém o corpo de pé: suportar ferimentos e continuar lutando.", ["Vida: rola 1d12 por ponto de Curva da Vitalidade (ou 7 por dado)", "Dados da Poção Espiritual"]], "MEN": ["O reservatório de energia interior que alimenta habilidades: quanto de mana o personagem canaliza.", ["Mana = 2 × Mente + 2 × Curva da Mente", "Astúcia (defesa)", "Artes, Performance e Persuasão", "Perícias treinadas: +1 a cada 10 pontos (a maior entre Mente e Inteligência)"]], "TEN": ["O vigor físico para correr, esquivar, bloquear e aguentar o peso: o porte do corpo em combate.", ["CA: +1 a cada 20 pontos (máx. +4)", "Redução de Dano: 1d4 a cada 20 pontos (máx. 4d4)", "Resistências: Fogo 20, Cortante 30, Impacto 40, Veneno 50, Sangramento 60, Magia 70, Magia Pura 80, Sagrado 90", "Carga = 10 + 2 × Tenacidade + Força ÷ 2 + Curva da Tenacidade", "Fortitude (defesa)"]], "FOR": ["O poder bruto para erguer armas pesadas e desferir golpes devastadores.", ["Vigor = 20 + Força + Curva da Força; recupera Curva ÷ 4 por turno", "Ataque e requisitos das armas de Força", "Atletismo", "Metade da Força entra na Carga"]], "DES": ["Precisão, velocidade e controle: armas leves, flexíveis e à distância.", ["Ações extras (Comum ou Bônus) com 15, 30, 45, 55, 65, 75, 85 e 95", "Movimento: +3 m com 30 e a cada 15 acima", "Iniciativa: 1d20 a mais a cada 20 pontos", "Reflexo (defesa)", "Ataque das armas de Destreza e Pontaria", "Acrobacia, Crime e Furtividade"]], "INT": ["A chave para compreender e manipular forças místicas pelo estudo: conjura as Magias.", ["Feitiçaria: acerto e DT das Magias", "+1 dado nas Magias a cada 30 pontos", "Espaços de encantamento: 1 + (Inteligência + Fé) ÷ 6", "Contradomínio: 1 por combate a cada 10 pontos (a maior entre INT e Fé)", "Perícias treinadas: +1 a cada 10 pontos", "Ciências, Investigação, Medicina e Tecnologia"]], "FE": ["A conexão com forças sagradas, divinas ou espirituais: conjura os Feitiços (curas, bênçãos, proteções e ataques).", ["Desejo: acerto e DT dos Feitiços", "+1 dado nos Feitiços a cada 30 pontos", "Espaços de encantamento: 1 + (Inteligência + Fé) ÷ 6", "Contradomínio: 1 por combate a cada 10 pontos", "Vontade (defesa)", "História, Intuição e Religião"]], "ARC": ["A afinidade com mistérios ocultos e energias sutis: perceber o extraordinário e mexer com as condições dos inimigos.", ["Escalonamento das condições dos encantamentos: 1 cópia dos dados a cada 20 e 1 dado inferior a cada 15", "Descoberta: +10 a cada 15 pontos", "Percepção, Sorte e Tática", "Coordenação do Uso duplo ao conjurar"]]}};
   const { TIPOS_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, CONDICAO_DESCANSO_CURTO,
     DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS, PECAS_SET_PESO, DADO_INFERIOR } = LIVRO;
   const NOMES_DANO = (TIPOS_DANO || []).map((t) => t[0]);
@@ -658,7 +712,7 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
 
   // ---------------- Ações em combate, usos, ações de arma, Alma, Metas, dinheiro (tabelas vêm de regras.py) ----------------
   const { TIPOS_ACAO, ACOES_LIVRO, NIVEL_RECARGA, EVENTO_RECARGA, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES,
-    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO } = LIVRO;
+    CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO, REFEICOES } = LIVRO;
   function efeitosAtributo(k, a, d) {
     const v = cap(a[k]);
     const out = [`Curva ${d.curva[k]} fora de combate (perícias: ${1 + Math.floor(v / 20)}d20) · Bônus de Combate +${d.bc[k]}` + (vantagem(a[k]) ? " · vantagem em combate" : "")];
@@ -804,7 +858,7 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
     condicoesDoEncantamento, escalarArcano, arcanoEscala, condicoesDeSet, pesoPecasSet, cargaExtraItens, pesoInventario,
     ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
     PROPRIEDADES, NOMES_PROPRIEDADES, ELEMENTOS_PROP, lerProps, nomeProp, problemasProps, subirDado, efeitoProps, reqComProps,
-    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO, efeitosAtributo,
+    TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO, REFEICOES, efeitosAtributo,
     dtProvocar, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
     precoEmContos, separarMoedas, formatarDinheiro, lerDinheiro,
   };
@@ -1136,10 +1190,16 @@ function render() {
     : `<div class="faixa-modo"><span>⚔ <b>Modo Jogo</b> — rolar, gastar e anotar na mesa</span><button data-a="modo">✎ Editar</button></div>`;
   $("#nav-alma").classList.toggle("oculto", !!S.sem_alma);
   if (aba === "alma" && S.sem_alma) aba = "ficha";
-  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa }[aba]();
+  if (aba === "grupo" && !(sessao.ativa && sessao.id)) aba = "ficha";
+  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, grupo: pGrupo }[aba]();
   pintarSessao();
 }
-function aplicarTema() { document.documentElement.classList.toggle("noite", banco.tema === "noite"); }
+function aplicarTema() {
+  const h = document.documentElement;
+  h.classList.toggle("noite", banco.tema === "noite"); h.classList.toggle("vitral", banco.tema === "vitral");
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", banco.tema === "vitral" ? "#fbf6e9" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
+}
 
 // ------------------------------------------------------------------ levar a ficha do app (https) para a mesa do mestre (http)
 // Um site https não pode falar com http://IP (o navegador bloqueia), mas pode ABRIR o endereço. A ficha vai no
@@ -2160,6 +2220,7 @@ function txtAtaque(at, rot = "Acerto") {
 const txtDano = (tot, partes, rot = "Dano") => `${rot}: <b style="font-size:20px">${tot}</b> <span class="sub">(${partes.map(([t, v]) => v.length ? `${t}[${v.join(", ")}]` : t).join(" ")})</span>`;
 function mostrarRolagem(titulo, linhas) {
   registrarDiario({ titulo, linhas });
+  compartilharRolagem(titulo, linhas);
   folha(titulo, `<div class="desc" style="font-size:16px;line-height:1.7">${linhas.join("<br>")}</div>`,
     `${desfazer.length ? `<button class="botao leve" data-a="desfazer">↺ Desfazer custo</button>` : ""}<button class="botao prim" data-a="fechar">OK</button>`);
 }
@@ -2543,10 +2604,12 @@ A["menu"] = () => {
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="imprimir"><div class="tx"><b>🖨 Imprimir / salvar PDF</b><small>A ficha inteira em folhas A4</small></div></div>` : ""}
-    <div class="item" data-a="tema"><div class="tx"><b>${banco.tema === "noite" ? "☀ Modo diurno" : "☾ Modo noturno"}</b></div></div>
+    <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Tema: diurno, noturno ou Vitral (creme, dourado e verde musgo)</small></div></div>
     ${S ? `<div class="item" data-a="excluir"><div class="tx"><b class="erro">Excluir esta ficha do aparelho</b></div></div>` : ""}</div>`);
 };
-A["tema"] = () => { banco.tema = banco.tema === "noite" ? "dia" : "noite"; gravarLocal(); fecharFolha(); render(); };
+const TEMAS_ROT = { dia: "☀ Modo diurno", noite: "☾ Modo noturno", vitral: "❧ Tema Vitral" };
+const proximoTema = () => ({ dia: "noite", noite: "vitral", vitral: "dia" }[banco.tema] || "noite");
+A["tema"] = () => { banco.tema = proximoTema(); gravarLocal(); fecharFolha(); render(); };
 A["lista"] = () => { fecharFolha(); S = null; banco.atual = null; gravarLocal(); render(); };
 A["abrir"] = (el) => abrirFicha(el.dataset.id);
 function abrirFicha(id, modo = "jogo") { S = normalizar(banco.fichas[id]); banco.atual = id; banco.modo = modo; gravarLocal(); aba = "ficha"; render(); }
@@ -2640,7 +2703,7 @@ function importarArquivo(arq) {
 
 
 // ------------------------------------------------------------------ sessão do mestre (quando o PC do mestre serve esta página)
-const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0, ackEv: 0, token: "" };
+const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0, ackEv: 0, token: "", grupo: null, gv: 0 };
 const durEfeito = (e) => e.rodadas ? `${e.rodadas} turno(s)` : e.fim_combate ? "até o fim do combate" : "até o mestre remover";
 const CH_SESSAO = "prevalecentes.sessao.id", CH_ACK = "prevalecentes.sessao.ack";
 async function api(url, corpo) {
@@ -2699,13 +2762,13 @@ function resumoSessao() {
 async function consultarSessao() {
   if (!sessao.id) return;
   let r;
-  try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id) + "&ack=" + sessao.ackEv); }
+  try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id) + "&ack=" + sessao.ackEv + "&gv=" + sessao.gv); }
   catch (e) { if (sessao.conectado) { sessao.conectado = false; pintarSessao(); } return; }
   if (!r.ok) { entrarSessao(sessao.id); return; }   // o mestre reiniciou: entra de novo com o mesmo nome
   const mudou = !sessao.conectado || sessao.mao !== r.mao || sessao.rodada !== r.rodada || sessao.vez !== (r.vez || "") || JSON.stringify(sessao.efeitos) !== JSON.stringify(r.efeitos || []);
   sessao.conectado = true; sessao.mao = r.mao; sessao.rodada = r.rodada; sessao.vez = r.vez || ""; sessao.turno = r.turno || 0;
   sessao.efeitos = r.efeitos || [];
-  if (r.token && r.token !== sessao.token) { sessao.token = r.token; sessao.ackEv = 0; }   // o mestre reiniciou: a contagem recomeça
+  if (r.token && r.token !== sessao.token) { sessao.token = r.token; sessao.ackEv = 0; sessao.gv = 0; }   // o mestre reiniciou: a contagem recomeça
   // O mestre repete o evento até receber o ack, então ignora o que já foi processado (dano nunca vale duas vezes).
   const novos = (r.eventos || []).filter((e) => !(e.seq <= sessao.ackEv));
   const avisos = novos.map(receberEvento).filter(Boolean);
@@ -2713,7 +2776,9 @@ async function consultarSessao() {
   if (novos.length) { try { localStorage.setItem(CH_ACK, JSON.stringify([sessao.token, sessao.ackEv])); } catch (e) { /* sem storage */ } }
   if (r.palavra) { avisos.push("🎤 <b>O mestre te deu a palavra!</b>"); vibrar([300, 120, 300]); }
   if (avisos.length) toast(avisos.join("<hr>"));
-  if (mudou) { if (S && (aba === "combate")) render(); else pintarSessao(); }
+  let gmudou = false;
+  if (r.grupo) { grupoChegou(r.grupo); sessao.gv = r.gv; gmudou = true; }
+  if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && (aba === "combate")) render(); else pintarSessao(); }
   const res = resumoSessao(), txt = JSON.stringify(res);
   if (res && txt !== sessao.ultimo) {
     try { await api("/api/ficha", { id: sessao.id, dados: res }); sessao.ultimo = txt; } catch (e) { /* tenta na próxima */ }
@@ -2722,6 +2787,8 @@ async function consultarSessao() {
 const vibrar = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* sem vibração */ } };
 function receberEvento(ev) {
   const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const eg = eventoGrupo(ev, hora);
+  if (eg !== null) return eg;
   if (ev.tipo === "dano") {
     const valor = int(ev.valor), desc = String(ev.desc || "");
     const oque = valor < 0 ? `Cura de ${-valor}` : `${valor} de dano${ev.dano_tipo ? ` (${esc(ev.dano_tipo)})` : ""}`;
@@ -2807,7 +2874,7 @@ function itemDoMestre(ev, hora) {
     if (i < 0) return `O mestre tirou ${esc(nome)}, mas o item não está mais na bolsa.`;
     const resto = Math.max(1, int(S.inventario[i].qtd, 1)) - q;
     if (resto > 0) S.inventario[i].qtd = String(resto); else S.inventario.splice(i, 1);
-    txt = `🎒 O mestre tirou <b>${q}× ${esc(nome)}</b>${ev.desc ? " — " + esc(ev.desc) : ""}`;
+    txt = `🎒 ${String(ev.desc || "").startsWith("entregue") ? "Você entregou" : "O mestre tirou"} <b>${q}× ${esc(nome)}</b>${ev.desc ? " — " + esc(ev.desc) : ""}`;
   }
   salvar(); render(); vibrar(120);
   registrarDiario({ titulo: "📣 Bolsa", linhas: [txt], hora });
@@ -2826,6 +2893,7 @@ function pintarSessao() {
   if (!b) return;
   b.classList.toggle("oculto", !sessao.ativa);
   document.body.classList.toggle("com-mesa", sessao.ativa);
+  const ng = $("#nav-grupo"); if (ng) ng.classList.toggle("oculto", !(sessao.ativa && sessao.id && S));
   if (!sessao.ativa) return;
   const ef = sessao.efeitos.length ? ` · ⏳ ${sessao.efeitos.map((e) => esc(e.nome)).join(", ")}` : "";
   const minha = sessao.vez && sessao.vez === sessao.id;
@@ -2834,6 +2902,252 @@ function pintarSessao() {
     <button class="mao ${sessao.mao ? "on" : ""}" data-a="sessao-mao">✋ ${sessao.mao ? "Abaixar" : "Mão"}</button>`;
 }
 
+// ------------------------------------------------------------------ grupo: interação entre jogadores na sessão
+// O PC do mestre guarda e repassa tudo (grupo.py). Tudo que mexe na ficha de outro vira um pedido que ele aceita.
+const AJUDAS = new Set(["medicina", "incentivo", "cura", "buff", "refeicao"]), REACOES = ["🎉", "👏", "😱", "💀"];
+const SINAIS = ["Preciso de cura", "Vou focar este alvo", "Recuem!", "Guardem a Reação", "Sem Mana", "Pronto para o combo"];
+const jaAceitos = new Set();
+async function ga(m, okMsg) {
+  if (!sessao.id) { pedirNomeSessao(); return false; }
+  try {
+    const r = await api("/api/grupo", Object.assign({ id: sessao.id }, m));
+    if (!r.ok) { toast(esc(r.erro || "Não deu certo.")); return false; }
+    if (r.msg || okMsg) toast(esc(r.msg || okMsg));
+    consultarSessao();
+    return true;
+  } catch (e) { toast("Sem conexão com o mestre…"); return false; }
+}
+function grupoChegou(g) {
+  sessao.grupo = g;
+  const meus = g.propostas.filter((p) => p.para === sessao.id);
+  if (banco.autoAjuda) meus.filter((p) => AJUDAS.has(p.tipo) && !jaAceitos.has(p.id)).forEach((p) => { jaAceitos.add(p.id); ga({ acao: "responder", num: p.id, aceitar: true }); });
+  const nb = $("#nav-grupo");
+  if (nb) nb.classList.toggle("pend", meus.length > 0 || !!(g.teste && g.teste.aberto && !g.teste.ja));
+}
+function bonusPericia(nome) {   // [bônus, dados] como na aba Perícias; defesas e ataques pelo Bônus de Combate
+  const c = calcular(), p = R.PERICIAS.find((x) => x[0] === nome);
+  if (p) {
+    const tr = c.treinadas.has(nome), at = p[1] || [S.prevalencia_attr || "ARC"], [, b0, dados] = R.periciaFora(c.a, c.nv, at, tr);
+    const mestre = c.escolha.pericia_mestre.includes(nome);
+    return [b0 + (c.ef.pericia[nome] || 0) + (mestre ? 2 : 0), dados + (mestre ? 1 : 0)];
+  }
+  const d = R.PERICIAS_DEFESA.find((x) => x[0] === nome);
+  if (d) return [c.d.bc[d[1]] + c.d.n3 + (c.tal.has(d[2]) ? 2 : 0), R.vantagem(c.a[d[1]]) ? 2 : 1];
+  return [0, 1];
+}
+function rolarPericiaNome(nome) {
+  const [b, d] = bonusPericia(nome), r = R.rolarPericia(b, d, rng);
+  return { total: r.total, txt: `${nome}: ${r.total} [d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${r.bonus}]` };
+}
+function compartilharRolagem(titulo, linhas) {
+  const g = sessao.grupo;
+  if (!sessao.id || !g || !g.cfg.feed || banco.compartilhar === false) return;
+  const limpo = (x) => String(x).replace(/<[^>]*>/g, "");
+  api("/api/grupo", { id: sessao.id, acao: "rolagem", titulo: limpo(titulo), linhas: linhas.slice(0, 4).map(limpo), destaque: /cr[íi]tico|desastre/i.test(linhas.join(" ")) }).catch(() => {});
+}
+const dinheiroMeu = () => (S ? int(S.dinheiro_c) : 0);
+
+function pGrupo() {
+  const g = sessao.grupo;
+  if (!sessao.id) return `<div class="vazio-msg">Entre na mesa para ver o grupo.<br><button class="botao prim" data-a="sessao-nome" style="margin-top:10px">Entrar na mesa</button></div>`;
+  if (!g) return `<div class="vazio-msg">Carregando o grupo…</div>`;
+  const eu = sessao.id, para = g.propostas.filter((p) => p.para === eu), meus = g.propostas.filter((p) => p.de === eu);
+  let h = "";
+  if (para.length || meus.length) {
+    h += secao("Pedidos") + `<div class="lista">` + para.map((p) => `<div class="item pedido"><div class="tx"><b>${esc(p.de)}</b> quer te dar<small>${esc(p.texto)}</small></div>
+      <button class="botao prim mini" data-a="g-resp" data-id="${p.id}" data-s="1">Aceitar</button><button class="botao leve mini" data-a="g-resp" data-id="${p.id}" data-s="0">Recusar</button></div>`).join("")
+      + meus.map((p) => `<div class="item"><div class="tx"><b>Aguardando ${esc(p.para)}</b><small>${esc(p.texto)}</small></div><button class="botao leve mini" data-a="g-cancelar" data-id="${p.id}">Cancelar</button></div>`).join("") + `</div>`;
+  }
+  if (g.teste) {
+    const t = g.teste;
+    h += secao("Teste em grupo") + `<div class="cartao" style="padding:12px"><b>${esc(t.pericia)}</b>${t.dt ? ` <span class="sub">DT ${t.dt}</span>` : ""}
+      ${t.aberto ? `<p class="sub" style="margin:6px 0">${t.rolaram.length ? "Já rolaram: " + esc(t.rolaram.join(", ")) + ". " : ""}${t.faltam.length ? "Faltam: " + esc(t.faltam.join(", ")) + "." : ""} O resultado aparece quando todos rolarem.</p>
+        ${t.ja ? `<span class="ok">Você rolou ${t.res.length ? t.res[0].total : ""}.</span>` : `<button class="botao prim" data-a="g-teste">🎲 Rolar ${esc(t.pericia)}</button>`}`
+      : `<div class="lista" style="margin-top:8px">${t.res.map((r) => `<div class="item"><div class="tx"><b>${esc(r.nome)}</b></div><b style="font-size:19px">${r.total}</b>${t.dt ? `<span class="${r.total >= t.dt ? "ok" : "erro"}" style="margin-left:8px">${r.total >= t.dt ? "passou" : "falhou"}</span>` : ""}</div>`).join("")}</div>`}</div>`;
+  }
+  const membros = g.membros.slice().sort((a, b) => (b.eu ? 1 : 0) - (a.eu ? 1 : 0));
+  h += secao("Aliados", g.ordem.length ? "em combate" : "") + membros.map((m) => {
+    const barra = m.pct == null ? "" : `<div class="gbarra"><i style="width:${m.pct}%;background:${m.pct > 50 ? "var(--c-vigor)" : m.pct > 20 ? "var(--c-per)" : "var(--c-vida)"}"></i></div>`;
+    const conds = (m.cond || []).map((c) => `<span class="chip">${esc(c[0])} ${c[1]}/${c[2]}</span>`).join("") + (m.efeitos || []).map((e) => `<span class="chip ef">⏳ ${esc(e)}</span>`).join("");
+    return `<div class="cartao aliado ${m.vez ? "vez" : ""} ${m.incapaz ? "caido" : ""}" ${m.eu ? "" : `data-a="g-aliado" data-n="${esc(m.nome)}"`}>
+      <div class="topo-al"><b>${esc(m.nome)}${m.eu ? " (você)" : ""}</b><span class="sub">${esc(m.personagem || "")}${m.nivel ? ` · Nv ${m.nivel}` : ""}${m.vez ? " · ⚔ vez" : ""}${m.sem_sinal ? " · sem sinal" : ""}</span>
+        ${m.vida ? `<span class="vida">${m.vida[0]}/${m.vida[1]}</span>` : m.pct != null ? `<span class="vida">${m.pct}%</span>` : ""}</div>
+      ${barra}${m.incapaz ? `<p class="erro" style="margin:6px 0 0"><b>Incapaz</b> — Portão da Morte: ${m.portao ? m.portao[0] : 0} sucesso(s), ${m.portao ? m.portao[1] : 0} falha(s)${m.eu ? "" : ". Toque para ajudar com Medicina."}</p>` : ""}
+      ${conds ? `<div class="chips">${conds}</div>` : ""}
+      ${m.sinal ? `<p class="sinal">⚑ ${esc(m.sinal)}</p>` : ""}${m.intencao ? `<p class="sub" style="margin:4px 0 0">Pretende: ${esc(m.intencao)}</p>` : ""}
+      ${m.vinculo ? `<p class="sub" style="margin:4px 0 0">Vínculo: ${esc(m.vinculo)}</p>` : ""}
+      ${m.eu ? `<div class="acoes-al"><button class="botao leve mini" data-a="g-sinal">⚑ Sinal e intenção</button>
+        <span class="sub">Mostrar aos aliados:</span>${[["tudo", "tudo"], ["barra", "só a barra"], ["nada", "nada"]].map(([v, r]) => `<button class="chip-acao ${g.vis === v ? "on" : ""}" data-a="g-vis" data-v="${v}">${r}</button>`).join("")}</div>` : ""}
+    </div>`;
+  }).join("") + (g.cfg.ajuda && membros.length > 1 ? `<button class="botao leve" data-a="g-refeicao" style="width:100%;margin-top:8px">🍲 Cozinhar para o grupo</button>` : "");
+  if (g.espolio) {
+    h += secao("Espólio", "marque o que você quer") + `<div class="lista">` + g.espolio.itens.map((i) => {
+      const quero = i.quer.includes(eu);
+      return `<div class="item"><div class="tx"><b>${i.qtd}× ${esc(i.item)}</b><small>${i.quer.length ? "Querem: " + esc(i.quer.join(", ")) : "Ninguém marcou"}</small></div>
+        <button class="botao ${quero ? "prim" : "leve"} mini" data-a="g-quero" data-id="${i.id}" data-s="${quero ? 0 : 1}">${quero ? "✓ Quero" : "Quero"}</button></div>`;
+    }).join("") + `</div>` + (g.espolio.contos ? `<p class="sub">Dinheiro a dividir: ${esc(g.espolio.contos_txt)}.</p>` : "") + `<p class="sub">O mestre divide: empate é decidido no d20.</p>`;
+  }
+  if (g.caixa) {
+    h += secao("Caixa do grupo") + `<div class="cartao dinheiro" data-a="g-caixa"><span>Caixa</span><b>${esc(g.caixa.txt)}</b><small>pôr ou tirar ›</small></div>`
+      + (g.caixa.log.length ? `<p class="sub" style="margin:6px 2px">${g.caixa.log.slice(0, 4).map(esc).join("<br>")}</p>` : "");
+  }
+  if (g.cfg.feed) {
+    h += secao("Rolagens do grupo", `<button class="chip-acao ${banco.compartilhar === false ? "" : "on"}" data-a="g-compartilhar">${banco.compartilhar === false ? "minhas: ocultas" : "minhas: visíveis"}</button>`)
+      + (g.feed.length ? `<div class="lista">` + g.feed.slice(0, 20).map((f) => `<div class="item feed ${f.destaque ? "dest" : ""}"><div class="tx"><b>${esc(f.quem)} · ${esc(f.titulo)}</b><small>${f.linhas.map(esc).join("<br>")}</small>
+        <div class="reacoes">${REACOES.map((r) => { const q = (f.reacoes[r] || []); return `<button class="${q.includes(eu) ? "on" : ""}" data-a="g-reagir" data-seq="${f.seq}" data-r="${r}">${r}${q.length ? " " + q.length : ""}</button>`; }).join("")}<span class="sub">${esc(f.hora)}</span></div></div></div>`).join("") + `</div>`
+        : `<div class="vazio-msg">Nenhuma rolagem ainda.</div>`);
+  }
+  if (g.cfg.diario) {
+    h += secao("Diário do grupo") + `<button class="botao leve" data-a="g-nota" style="width:100%">＋ Anotar</button>`
+      + (g.notas.length ? `<div class="lista" style="margin-top:8px">` + g.notas.map((n) => `<div class="item"><div class="tx"><b>${esc(n.quem)}</b> <span class="sub">${esc(n.hora)}</span><small style="white-space:pre-wrap">${esc(n.texto)}</small></div>
+        ${n.quem === eu ? `<button class="botao leve mini" data-a="g-nota-del" data-id="${n.id}" aria-label="Apagar nota">✕</button>` : ""}</div>`).join("") + `</div>` : "");
+  }
+  h += `<p class="sub" style="margin-top:16px"><button class="chip-acao ${banco.autoAjuda ? "on" : ""}" data-a="g-auto">${banco.autoAjuda ? "✓ " : ""}Aceitar ajudas sem perguntar</button> Trocas de item e dinheiro sempre perguntam. O mestre vê tudo e pode desligar cada recurso.</p>`;
+  return h;
+}
+A["g-resp"] = (el) => ga({ acao: "responder", num: int(el.dataset.id), aceitar: el.dataset.s === "1" });
+A["g-cancelar"] = (el) => ga({ acao: "cancelar", num: int(el.dataset.id) });
+A["g-vis"] = (el) => ga({ acao: "vis", modo: el.dataset.v });
+A["g-quero"] = (el) => ga({ acao: "espolio_quero", num: int(el.dataset.id), quer: el.dataset.s === "1" });
+A["g-reagir"] = (el) => ga({ acao: "reagir", seq: int(el.dataset.seq), r: el.dataset.r });
+A["g-compartilhar"] = () => { banco.compartilhar = banco.compartilhar === false; gravarLocal(); render(); toast(banco.compartilhar ? "Suas rolagens aparecem para o grupo." : "Suas rolagens ficam só com você."); };
+A["g-auto"] = () => { banco.autoAjuda = !banco.autoAjuda; gravarLocal(); render(); };
+A["g-teste"] = () => {
+  if (!S) { toast("Abra uma ficha para rolar."); return; }
+  const t = sessao.grupo.teste, r = rolarPericiaNome(t.pericia);
+  registrarDiario({ titulo: `🎲 Teste em grupo: ${esc(t.pericia)}`, linhas: [esc(r.txt)] });
+  ga({ acao: "teste_rolar", total: r.total, txt: r.txt }, `Você rolou ${r.total}.`);
+};
+A["g-aliado"] = (el) => {
+  const n = el.dataset.n, m = sessao.grupo.membros.find((x) => x.nome === n), cfg = sessao.grupo.cfg; if (!m) return;
+  const b = (a, t, s) => `<div class="item" data-a="${a}" data-n="${esc(n)}"><div class="tx"><b>${t}</b><small>${s}</small></div><span class="sub">›</span></div>`;
+  folha(n, `<div class="lista">`
+    + (cfg.ajuda && m.incapaz ? b("g-medicina", "✚ Medicina", "Teste contra DT 15: um sucesso no Portão da Morte dele") : "")
+    + (cfg.ajuda ? b("g-incentivo", "↯ Incentivar", "Gasta sua Reação: ele age logo antes de você neste turno") + b("g-cura", "✦ Curar", "Manda a cura que você rolou para a Vida dele") + b("g-buff", "⏳ Dar um efeito", "Um bônus ou proteção com duração em turnos") : "")
+    + (cfg.trocas ? b("g-item", "🎒 Dar um item", "Sai da sua bolsa e entra na dele") + b("g-dinheiro", "🪙 Dar dinheiro", `Você tem ${esc(R.formatarDinheiro(dinheiroMeu()))}`) : "")
+    + (cfg.sussurro !== "off" ? b("g-sussurro", "🤫 Sussurrar", cfg.sussurro === "tudo" ? "O mestre também lê" : "O mestre só vê que houve um sussurro") : "")
+    + (cfg.diario ? b("g-vinculo", "❧ Vínculo", m.vinculo ? esc(m.vinculo) : "Anote o que liga vocês dois") : "") + `</div>
+    <p class="sub">O que mexe na ficha dele vira um pedido: ele (ou o mestre) aceita antes de valer.</p>`);
+};
+const precisaFicha = () => { if (!S) { toast("Abra uma ficha primeiro."); return true; } return false; };
+A["g-medicina"] = (el) => {
+  if (precisaFicha()) return;
+  const r = rolarPericiaNome("Medicina"); fecharFolha();
+  registrarDiario({ titulo: `✚ Medicina em ${esc(el.dataset.n)}`, linhas: [esc(r.txt), r.total >= 15 ? "Sucesso (DT 15)." : "Falhou (DT 15)."] });
+  ga({ acao: "propor", tipo: "medicina", para: el.dataset.n, total: r.total, txt: r.txt });
+};
+A["g-incentivo"] = (el) => { fecharFolha(); if (S) { marcarAcao("Reação"); salvar(); } ga({ acao: "propor", tipo: "incentivo", para: el.dataset.n }); };
+A["g-cura"] = (el) => folha(`Curar ${el.dataset.n}`, `<label class="campo"><span>Quanto de Vida</span><input id="gc-v" type="number" inputmode="numeric" min="1"></label>
+  <label class="campo"><span>De onde vem (opcional)</span><input id="gc-d" maxlength="60" placeholder="Ex.: Toque Sagrado"></label><p class="sub">Role a cura na sua ficha e mande o total. A Vida dele não passa do máximo.</p>`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="g-cura-ok" data-n="${esc(el.dataset.n)}">Enviar</button>`);
+A["g-cura-ok"] = (el) => { const v = int($("#gc-v").value); if (v < 1) { $("#gc-v").focus(); return; } const d = $("#gc-d").value; fecharFolha(); ga({ acao: "propor", tipo: "cura", para: el.dataset.n, valor: v, desc: d }); };
+A["g-buff"] = (el) => folha(`Efeito em ${el.dataset.n}`, `<label class="campo"><span>Nome do efeito</span><input id="gb-n" maxlength="30" placeholder="Ex.: Bênção"></label>
+  <label class="campo"><span>Dura quantos turnos dele (0 = até o mestre tirar)</span><input id="gb-t" type="number" inputmode="numeric" min="0" value="1"></label>
+  <label class="campo"><span>O que faz</span><input id="gb-d" maxlength="120" placeholder="Ex.: +2 de acerto"></label>`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="g-buff-ok" data-n="${esc(el.dataset.n)}">Enviar</button>`);
+A["g-buff-ok"] = (el) => { const n = $("#gb-n").value.trim(); if (!n) { $("#gb-n").focus(); return; } const m = { acao: "propor", tipo: "buff", para: el.dataset.n, nome: n, turnos: int($("#gb-t").value), desc: $("#gb-d").value }; fecharFolha(); ga(m); };
+A["g-item"] = (el) => {
+  if (precisaFicha()) return;
+  const itens = S.inventario.map((it, i) => ({ it, i })).filter((x) => (x.it.item || "").trim());
+  folha(`Dar item a ${el.dataset.n}`, itens.length ? `<div class="lista">${itens.map((x) => `<div class="item" data-a="g-item-q" data-i="${x.i}" data-n="${esc(el.dataset.n)}"><div class="tx"><b>${esc(x.it.item)}</b><small>você tem ${Math.max(1, int(x.it.qtd, 1))}</small></div><span class="sub">›</span></div>`).join("")}</div>` : `<div class="vazio-msg">Sua bolsa está vazia.</div>`);
+};
+A["g-item-q"] = (el) => {
+  const it = S.inventario[int(el.dataset.i)], tem = Math.max(1, int(it.qtd, 1));
+  folha(`${it.item} → ${el.dataset.n}`, `<label class="campo"><span>Quantos (você tem ${tem})</span><input id="gi-q" type="number" inputmode="numeric" min="1" max="${tem}" value="1"></label>`,
+    `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="g-item-ok" data-i="${el.dataset.i}" data-n="${esc(el.dataset.n)}">Oferecer</button>`);
+};
+A["g-item-ok"] = (el) => {
+  const it = S.inventario[int(el.dataset.i)], q = Math.max(1, Math.min(Math.max(1, int(it.qtd, 1)), int($("#gi-q").value, 1)));
+  fecharFolha(); ga({ acao: "propor", tipo: "item", para: el.dataset.n, item: { item: it.item, carga: String(it.carga || ""), qtd: q } });
+};
+A["g-dinheiro"] = (el) => { if (precisaFicha()) return; folha(`Dinheiro para ${el.dataset.n}`, `<label class="campo"><span>Quanto (você tem ${esc(R.formatarDinheiro(dinheiroMeu()))})</span><input id="gd-v" placeholder="Ex.: 35 prata"></label>`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="g-dinheiro-ok" data-n="${esc(el.dataset.n)}">Oferecer</button>`); };
+A["g-dinheiro-ok"] = (el) => {
+  const v = R.lerDinheiro($("#gd-v").value);
+  if (!v || v < 1) { toast("Não entendi o valor. Ex.: 35 prata."); return; }
+  if (v > dinheiroMeu()) { toast(`Você só tem ${esc(R.formatarDinheiro(dinheiroMeu()))}.`); return; }
+  fecharFolha(); ga({ acao: "propor", tipo: "dinheiro", para: el.dataset.n, contos: v });
+};
+A["g-sussurro"] = (el) => folha(`Sussurrar para ${el.dataset.n}`, `<label class="campo"><span>Mensagem</span><textarea id="gs-t" rows="3" maxlength="300"></textarea></label>`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="g-sussurro-ok" data-n="${esc(el.dataset.n)}">Enviar</button>`);
+A["g-sussurro-ok"] = (el) => { const t = $("#gs-t").value.trim(); if (!t) return; fecharFolha(); ga({ acao: "sussurro", para: el.dataset.n, texto: t }); };
+A["g-vinculo"] = (el) => { const m = sessao.grupo.membros.find((x) => x.nome === el.dataset.n) || {};
+  folha(`Vínculo com ${el.dataset.n}`, `<label class="campo"><span>O que liga vocês dois (os dois veem)</span><textarea id="gv-t" rows="3" maxlength="200">${esc(m.vinculo || "")}</textarea></label>`,
+    `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="g-vinculo-ok" data-n="${esc(el.dataset.n)}">Salvar</button>`); };
+A["g-vinculo-ok"] = (el) => { const t = $("#gv-t").value; fecharFolha(); ga({ acao: "vinculo", com: el.dataset.n, texto: t }, "Vínculo anotado."); };
+A["g-sinal"] = () => { const eu = sessao.grupo.membros.find((m) => m.eu) || {};
+  folha("Sinal e intenção", `<div class="chips">${SINAIS.map((s) => `<button class="chip-acao" data-a="g-sinal-p" data-s="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+    <label class="campo"><span>Sinal para o grupo</span><input id="gn-s" maxlength="40" value="${esc(eu.sinal || "")}"></label>
+    <label class="campo"><span>O que pretendo fazer no meu turno</span><input id="gn-i" maxlength="80" value="${esc(eu.intencao || "")}"></label>
+    <p class="sub">Some sozinho quando o seu turno termina.</p>`,
+    `<button class="botao leve" data-a="g-sinal-ok" data-limpar="1">Limpar</button><button class="botao prim" data-a="g-sinal-ok">Mostrar</button>`); };
+A["g-sinal-p"] = (el) => { $("#gn-s").value = el.dataset.s; };
+A["g-sinal-ok"] = (el) => { const m = el.dataset.limpar ? { sinal: "", intencao: "" } : { sinal: $("#gn-s").value, intencao: $("#gn-i").value }; fecharFolha(); ga(Object.assign({ acao: "sinal" }, m)); };
+A["g-caixa"] = () => folha("Caixa do grupo", `<p class="sub">A caixa tem ${esc(sessao.grupo.caixa.txt)}. Você tem ${esc(R.formatarDinheiro(dinheiroMeu()))}.</p>
+  <label class="campo"><span>Valor</span><input id="gx-v" placeholder="Ex.: 2 ouro"></label>${sessao.grupo.caixa.log.length ? `<p class="sub">${sessao.grupo.caixa.log.map(esc).join("<br>")}</p>` : ""}`,
+  `<button class="botao leve" data-a="g-caixa-ok" data-s="-1">Tirar</button><button class="botao prim" data-a="g-caixa-ok" data-s="1">Pôr</button>`);
+A["g-caixa-ok"] = (el) => {
+  if (precisaFicha()) return;
+  const v = R.lerDinheiro($("#gx-v").value), s = int(el.dataset.s);
+  if (!v || v < 1) { toast("Não entendi o valor. Ex.: 2 ouro."); return; }
+  if (s > 0 && v > dinheiroMeu()) { toast(`Você só tem ${esc(R.formatarDinheiro(dinheiroMeu()))}.`); return; }
+  fecharFolha(); ga({ acao: "caixa", delta: s * v });
+};
+A["g-nota"] = () => folha("Diário do grupo", `<label class="campo"><span>Nota (todos do grupo leem)</span><textarea id="gt-t" rows="4" maxlength="400"></textarea></label>`,
+  `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="g-nota-ok">Anotar</button>`);
+A["g-nota-ok"] = () => { const t = $("#gt-t").value.trim(); if (!t) return; fecharFolha(); ga({ acao: "nota_add", texto: t }); };
+A["g-nota-del"] = (el) => ga({ acao: "nota_del", num: int(el.dataset.id) });
+A["g-refeicao"] = () => {
+  if (precisaFicha()) return;
+  const [b, d] = bonusPericia("Gastronomia"), outros = sessao.grupo.membros.filter((m) => !m.eu);
+  folha("Cozinhar para o grupo", `<label class="campo"><span>Nível da refeição</span><select id="gr-n">${[1, 2, 3, 4].map((n) => `<option value="${n}">Nível ${n} — DT ${R.REFEICOES[n][0]}</option>`).join("")}</select></label>
+    <p class="sub" id="gr-b">${esc(R.REFEICOES[1][1])}</p>
+    <div class="lista"><label class="item"><input type="checkbox" class="gr-q" value="" checked style="width:22px;height:22px;margin-right:10px"><div class="tx"><b>Você</b></div></label>
+    ${outros.map((m) => `<label class="item"><input type="checkbox" class="gr-q" value="${esc(m.nome)}" checked style="width:22px;height:22px;margin-right:10px"><div class="tx"><b>${esc(m.nome)}</b></div></label>`).join("")}</div>
+    <p class="sub">Seu teste de Gastronomia: ${d}d20 +${b}. O nível depende dos ingredientes; combine com o mestre. O benefício dura até o próximo descanso longo.</p>`,
+    `<button class="botao leve" data-a="fechar">Cancelar</button><button class="botao prim" data-a="g-refeicao-ok">🎲 Cozinhar</button>`,
+    (c) => $("#gr-n", c).addEventListener("change", (e) => { $("#gr-b", c).textContent = R.REFEICOES[e.target.value][1]; }));
+};
+A["g-refeicao-ok"] = () => {
+  const nivel = int($("#gr-n").value, 1), marc = [...document.querySelectorAll(".gr-q:checked")].map((x) => x.value), r = rolarPericiaNome("Gastronomia");
+  fecharFolha();
+  registrarDiario({ titulo: `🍲 Refeição de nível ${nivel}`, linhas: [esc(r.txt), r.total >= R.REFEICOES[nivel][0] ? "Deu certo." : `Falhou (DT ${R.REFEICOES[nivel][0]}).`] });
+  ga({ acao: "propor", tipo: "refeicao", nivel, total: r.total, txt: r.txt, eu: marc.includes(""), alvos: marc.filter(Boolean) });
+};
+// eventos do grupo que chegam pelo mestre
+function eventoGrupo(ev, hora) {
+  if (ev.tipo === "aviso") {
+    registrarDiario({ titulo: "👥 Grupo", linhas: [esc(ev.texto)], hora });
+    return `👥 ${esc(ev.texto)}`;
+  } else if (ev.tipo === "pedido") {
+    vibrar([120, 60, 120]);
+    return banco.autoAjuda ? "" : `👥 <b>${esc(ev.de)}</b> quer te dar: ${esc(ev.texto)} <button class="botao leve" data-a="aba" data-aba="grupo" style="min-height:32px;padding:4px 10px">Ver</button>`;
+  } else if (ev.tipo === "portao" && S) {
+    const i = S.portao.Sucessos.indexOf(false);
+    if (i >= 0) S.portao.Sucessos[i] = true;
+    const n = S.portao.Sucessos.filter(Boolean).length;
+    salvar(); render(); vibrar(200);
+    const txt = `Medicina de ${esc(ev.de)}: +1 sucesso no Portão da Morte (${n}/5).${n >= 5 ? " Você volta com 1 de Vida e uma cicatriz." : ""}`;
+    registrarDiario({ titulo: "✚ Portão da Morte", linhas: [txt], hora });
+    relatar(`Portão da Morte: ${n} sucesso(s) (Medicina de ${ev.de})`);
+    return `✚ ${txt}`;
+  } else if (ev.tipo === "dinheiro" && S) {
+    const d = int(ev.delta), antes = dinheiroMeu();
+    S.dinheiro_c = Math.max(0, antes + d); S.dinheiro_nota = "";
+    salvar(); render();
+    const txt = `${d >= 0 ? "Recebeu" : "Entregou"} ${esc(R.formatarDinheiro(Math.abs(d)))}${ev.desc ? " — " + esc(ev.desc) : ""}. Agora: ${esc(R.formatarDinheiro(S.dinheiro_c))}.`;
+    registrarDiario({ titulo: "🪙 Dinheiro", linhas: [txt], hora });
+    return `🪙 ${txt}`;
+  } else if (ev.tipo === "sussurro") {
+    vibrar([80, 60, 80]);
+    registrarDiario({ titulo: `🤫 Sussurro de ${esc(ev.de)}`, linhas: [esc(ev.texto)], hora });
+    return `🤫 <b>${esc(ev.de)}</b>: ${esc(ev.texto)}<hr>`;
+  } else if (ev.tipo === "teste") {
+    vibrar([200, 80, 200]);
+    return `🎲 O mestre pediu <b>${esc(ev.pericia)}</b>${ev.dt ? ` (DT ${int(ev.dt)})` : ""} de todos. <button class="botao leve" data-a="aba" data-aba="grupo" style="min-height:32px;padding:4px 10px">Rolar</button>`;
+  }
+  return null;
+}
 // ------------------------------------------------------------------ eventos
 document.addEventListener("click", (ev) => {
   const el = ev.target.closest("[data-a]");

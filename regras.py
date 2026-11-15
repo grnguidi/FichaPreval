@@ -616,6 +616,16 @@ def condicoes_de_set(ativos):
     return out
 
 
+# Refeições (Gastronomia): nível -> (DT do teste, benefício de quem come, até o próximo descanso longo)
+REFEICOES = {
+    1: (10, "1d10 de vida temporária para cada 4 níveis do personagem (mínimo 1d10)."),
+    2: (20, "Vantagem em um teste à escolha."),
+    3: (30, "2d10 de vida temporária para cada 4 níveis (mínimo 2d10) e +20 pontos em uma condição à escolha."),
+    4: (40, "Pacote completo: +2 de acerto, +1 de CA e de resistências, 4d10 de vida temporária para cada 4 níveis, "
+            "−15% de dano recebido e +1 dado de dano para cada 8 níveis durante 1 combate."),
+}
+
+
 # ---------------- Carga extra ----------------
 PECAS_SET_PESO = ("Capacete", "Manopla", "Calça", "Bota")   # pesam 1 cada; o Peitoral pesa como a armadura
 

@@ -240,3 +240,56 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   .impr .rodape-impr{margin-top:6mm;font-size:8pt;color:#666}
   @page{size:A4;margin:12mm}
 }
+/* grupo */
+.nav button{position:relative}
+.nav button.pend:after{content:"";position:absolute;top:5px;right:calc(50% - 18px);width:9px;height:9px;border-radius:50%;background:#d9534f;border:1px solid var(--fundo)}
+.botao.mini{min-height:34px;padding:4px 10px;font-size:14px;margin-left:6px;flex:none}
+.item.pedido{border-left:5px solid var(--ouro)}
+.cartao.aliado{padding:10px 12px;margin-top:8px}
+.cartao.aliado[data-a]{cursor:pointer}
+.cartao.aliado.vez{border-color:var(--vinho);border-width:2px}
+.cartao.aliado.caido{background:var(--rosa)}
+.aliado .topo-al{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.aliado .topo-al b{font-family:var(--tit);font-size:15px}
+.aliado .topo-al .vida{margin-left:auto;font-weight:700}
+.gbarra{height:10px;background:var(--perg2);border-radius:5px;overflow:hidden;margin-top:6px}
+.gbarra i{display:block;height:100%;border-radius:5px}
+.aliado .chips,.folha .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chip{font-size:12.5px;padding:2px 8px;border-radius:10px;background:var(--perg2);color:var(--tinta)}
+.chip.ef{background:var(--agua)}
+.aliado .sinal{margin:6px 0 0;font-weight:700;color:var(--vinho)}
+.acoes-al{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.acoes-al .botao.mini{margin-left:0}
+.item.feed.dest{border-left:5px solid var(--vinho)}
+.reacoes{display:flex;align-items:center;gap:5px;margin-top:5px}
+.reacoes button{border:1px solid var(--linha);background:var(--campo);border-radius:14px;padding:2px 9px;min-height:30px;font-size:14px}
+.reacoes button.on{background:var(--ouro2);border-color:var(--ouro);color:#2d2015}
+.reacoes .sub{margin-left:auto}
+
+/* tema Vitral: creme, dourado e verde musgo; só vinhas e vitrais de enfeite */
+html.vitral{
+  --fundo:#3f4f2e; --fundo2:#4d5f39; --perg:#f4ecd8; --perg2:#e9dfc3; --campo:#fbf6e9; --tinta:#2f3a22; --tinta2:#666e50;
+  --ouro:#b08a3e; --ouro2:#e3cd8f; --vinho:#7d5f1c; --verde:#5d7340; --faixa:#f8f1dc; --linha:#dccf9f;
+  --c-vida:#9a4a3a; --c-mana:#4a6a7a; --c-vigor:#5d7340; --c-mov:#4f7a6a; --c-ca:#7a715a; --c-atk:#a0553f; --c-def:#56708a;
+  --c-per:#86661f; --c-tal:#5d7340; --c-atr:#4a5a36; --rosa:#f3e3d3; --agua:#e2ead6;
+  --sombra:0 1px 0 rgba(0,0,0,.03),0 5px 14px -10px rgba(60,70,30,.3);
+}
+html.vitral,html.vitral body{background:var(--perg)}
+html.vitral .topo{background:var(--campo);color:var(--vinho);border-bottom:0}
+html.vitral .topo:after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:7px;
+  background:repeating-linear-gradient(90deg,#b08a3e 0 18px,#3f4f2e 18px 20px,#f4ecd8 20px 38px,#3f4f2e 38px 40px,#7d9157 40px 58px,#3f4f2e 58px 60px,#e3cd8f 60px 78px,#3f4f2e 78px 80px);
+  border-top:1px solid #3f4f2e;border-bottom:1px solid #3f4f2e}
+html.vitral .topo .nome{padding-left:38px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cg stroke='%233f4f2e' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M2 18 V16 Q2 2 15 2 V18Z' fill='%23e3cd8f'/%3E%3Cpath d='M15 2 Q28 2 28 16 V18 H15Z' fill='%237d9157'/%3E%3Cpath d='M2 18 H15 V38 H2Z' fill='%23f4ecd8'/%3E%3Cpath d='M15 18 H28 V38 H15Z' fill='%23b08a3e'/%3E%3Cpath d='M2 28 H28' fill='none'/%3E%3Ccircle cx='15' cy='18' r='4.2' fill='%23f8f1dc'/%3E%3C/g%3E%3C/svg%3E") left center/28px 37px no-repeat}
+html.vitral .topo .nome small{color:var(--tinta2)}
+html.vitral .nivel,html.vitral .icone{background:var(--perg);border-color:var(--ouro);color:var(--vinho)}
+html.vitral .nivel button{color:var(--vinho)}
+html.vitral .pagina{margin-top:14px;border-radius:0;background:var(--perg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%236b7f4a' stroke-width='1.6' stroke-linecap='round' opacity='.5'%3E%3Cpath d='M138 2 C104 6 82 22 68 48 C56 70 36 76 8 72'/%3E%3Cpath d='M112 12 C108 26 114 36 126 38'/%3E%3Cpath d='M82 30 C70 24 60 28 56 38'/%3E%3Cpath d='M52 68 C50 82 56 90 66 92'/%3E%3C/g%3E%3Cg fill='%236b7f4a' opacity='.42'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(120 8) rotate(-150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(100 16) rotate(60)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(126 38) rotate(20)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(86 28) rotate(-120)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(56 38) rotate(110)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(70 48) rotate(-30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(60 62) rotate(150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(66 92) rotate(30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(36 74) rotate(-160)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(22 72) rotate(40)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(8 72) rotate(170)'/%3E%3C/g%3E%3C/svg%3E") right top/150px 150px no-repeat}
+html.vitral .nav{background:var(--campo)}
+html.vitral .nav button{color:var(--tinta2)}
+html.vitral .nav button.on{color:var(--vinho)}
+html.vitral .mesa{background:var(--perg2)}
+html.vitral .mesa .info{color:var(--tinta)}
+html.vitral .mesa.vez .info{color:#fff}
+html.vitral .secao:before{content:"";width:26px;height:14px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 14'%3E%3Cpath d='M1 7 H25' stroke='%236b7f4a' stroke-width='1.2' fill='none'/%3E%3Cg fill='%236b7f4a'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(4 7) rotate(-35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(11 7) rotate(35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(18 7) rotate(-35)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
+html.vitral .cartao{border-color:#cdb679}
+html.vitral #t-sub span{color:#a0553f!important}

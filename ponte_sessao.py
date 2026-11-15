@@ -130,8 +130,58 @@ class PonteSessao:
             else:
                 for k in ("item", "carga", "qtd"):
                     linha[k].set("")
-            txt = f"O mestre tirou {q}× {nome}" + (f" — {ev.get('desc')}" if ev.get("desc") else "")
+            txt = (f"Entregou {q}× {nome}" if str(ev.get("desc", "")).startswith("entregue") else f"O mestre tirou {q}× {nome}") \
+                + (f" — {ev.get('desc')}" if ev.get("desc") else "")
         a.registrar("📣 Bolsa", [txt])
+        a.recalc()
+        return txt
+
+    # --- grupo: o que os aliados fazem pela sessão
+    def registrar(self, titulo, linhas):
+        self.app.registrar(titulo, linhas)
+
+    def marcar_acao(self, tipo):
+        self.app.marcar_acao(tipo)
+
+    def rolar_pericia(self, nome):
+        """Rola uma perícia (fora de combate ou defesa) pela ficha. Devolve (total, texto)."""
+        a = self.app
+        a.recalc()
+        p = a.per.get(nome)
+        if p and "calc" in p:
+            b, dados = p["calc"]
+            r = R.rolar_pericia(b, dados, a._rng)
+        else:
+            d = next((x for x in R.PERICIAS_DEFESA if x[0] == nome), None)
+            b = (a.d["bc"][d[1]] + a.nivel() // 3 + (2 if d[2] in a.talentos_escolhidos() else 0)) if d else 0
+            r = dict(R.rolar_defesa(b, bool(d) and R.vantagem(a.a[d[1]]), a._rng), bonus=b)
+        return r["total"], f"{nome}: {r['total']} [d20 {', '.join(map(str, r['d20']))}{' → maior' if len(r['d20']) > 1 else ''} +{r['bonus']}]"
+
+    def itens(self):
+        return [{"item": i["item"], "carga": i["carga"], "qtd": to_int(i["qtd"], 1) or 1} for i in self.app._inventario()]
+
+    def dinheiro_atual(self):
+        return self.app.dinheiro_c
+
+    def dinheiro(self, delta, desc):
+        a = self.app
+        a.dinheiro_c = max(0, a.dinheiro_c + delta)
+        a.dinheiro_nota = ""
+        a.alterado = True
+        txt = (f"{'Recebeu' if delta >= 0 else 'Entregou'} {R.formatar_dinheiro(abs(delta))}" + (f" — {desc}" if desc else "")
+               + f". Agora: {R.formatar_dinheiro(a.dinheiro_c)}.")
+        a.registrar("🪙 Dinheiro", [txt])
+        a.recalc()
+        return txt
+
+    def portao_sucesso(self, de):
+        a = self.app
+        livre = next((v for v in a.portao["Sucessos"] if not v.get()), None)
+        if livre is not None:
+            livre.set(True)
+        n = sum(v.get() for v in a.portao["Sucessos"])
+        txt = f"Medicina de {de}: +1 sucesso no Portão da Morte ({n}/5)." + (" Você volta com 1 de Vida e uma cicatriz." if n >= 5 else "")
+        a.registrar("✚ Portão da Morte", [txt])
         a.recalc()
         return txt
 

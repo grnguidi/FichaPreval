@@ -39,14 +39,65 @@ TEMAS = {
         MESA_CAMPO="#1d2721", MESA_BORDA="#36463b", MESA_ATIVO="#243128", MESA_TXT="#8a998a", ALERTA="#e8907c",
         C_VIDA="#80352d", C_MANA="#34516e", C_VIGOR="#476532", C_MOV="#33605e", C_CA="#5b554a", C_ATK="#86403a",
         C_DEF="#3d5679", C_PER="#8c6232", C_TAL="#33605e", C_DIN="#476532", C_ATR="#2f3d33"),
+    # "Vitral": creme, dourado e detalhes em verde musgo; os únicos enfeites são vinhas e vitrais.
+    "vitral": dict(
+        FUNDO="#3f4f2e", FUNDO2="#4d5f39", PERG="#f4ecd8", PERG2="#e9dfc3", CAMPO="#fbf6e9",
+        TINTA="#2f3a22", TINTA2="#666e50", OURO="#b08a3e", OURO2="#e3cd8f", VINHO="#7d5f1c", VINHO_BG="#7d5f1c", VERDE="#5d7340",
+        FAIXA="#f8f1dc", LINHA="#dccf9f", ROSA="#f3e3d3", AGUA="#e2ead6",
+        MESA_CAMPO="#4d5f39", MESA_BORDA="#7d9157", MESA_ATIVO="#586b40", MESA_TXT="#d5dcc0", ALERTA="#f2c9a0",
+        C_VIDA="#9a4a3a", C_MANA="#4a6a7a", C_VIGOR="#5d7340", C_MOV="#4f7a6a", C_CA="#7a715a", C_ATK="#a0553f",
+        C_DEF="#56708a", C_PER="#86661f", C_TAL="#5d7340", C_DIN="#5d7340", C_ATR="#4a5a36"),
 }
 NOTURNO = False
+TEMA = "diurno"
+ORDEM_TEMAS = ["diurno", "noturno", "vitral"]
+ROTULO_TEMA = {"diurno": "☀ Modo diurno", "noturno": "☾ Modo noturno", "vitral": "❧ Tema Vitral"}
+
+
+def proximo_tema():
+    return ORDEM_TEMAS[(ORDEM_TEMAS.index(TEMA) + 1) % len(ORDEM_TEMAS)]
 
 
 def aplicar_tema(nome):
-    global NOTURNO
-    NOTURNO = nome == "noturno"
+    global NOTURNO, TEMA
+    nome = nome if nome in TEMAS else "diurno"
+    NOTURNO, TEMA = nome == "noturno", nome
     globals().update(TEMAS[nome])
+
+
+def desenhar_vitral(cv, largura, altura=22):
+    """Faixa de vitral com uma vinha por cima (enfeite do tema Vitral)."""
+    cv.delete("all")
+    cores, chumbo, x, i = ["#b08a3e", "#f4ecd8", "#7d9157", "#e3cd8f"], "#3f4f2e", 0, 0
+    while x < largura:
+        cv.create_rectangle(x, 0, x + 26, altura, fill=cores[i % 4], outline=chumbo)
+        cv.create_arc(x + 3, 3, x + 23, altura * 2 - 6, start=0, extent=180, style="arc", outline=chumbo)
+        x, i = x + 26, i + 1
+    cv.create_line(0, altura, largura, altura, fill=chumbo)
+
+
+def desenhar_arco(cv, w=40, h=52):
+    """Vitral em arco (ícone do cabeçalho no tema Vitral)."""
+    chumbo, m = "#2f3a22", w // 2
+    cv.create_rectangle(3, h * 0.45, m, h - 3, fill="#f4ecd8", outline=chumbo, width=2)
+    cv.create_rectangle(m, h * 0.45, w - 3, h - 3, fill="#b08a3e", outline=chumbo, width=2)
+    cv.create_arc(3, 3, w - 3, h * 0.9, start=90, extent=90, style="pieslice", fill="#e3cd8f", outline=chumbo, width=2)
+    cv.create_arc(3, 3, w - 3, h * 0.9, start=0, extent=90, style="pieslice", fill="#7d9157", outline=chumbo, width=2)
+    cv.create_oval(m - 5, h * 0.45 - 5, m + 5, h * 0.45 + 5, fill="#f8f1dc", outline=chumbo, width=2)
+
+
+def desenhar_vinha(cv, largura, altura=18, cor="#7d9157"):
+    """Vinha: um ramo ondulado com folhas dos dois lados."""
+    cv.delete("all")
+    import math
+    pts = []
+    for x in range(0, int(largura) + 12, 12):
+        pts += [x, altura / 2 + math.sin(x / 38) * 3]
+    if len(pts) >= 4:
+        cv.create_line(*pts, fill=cor, smooth=True, width=1.4)
+    for k, x in enumerate(range(18, int(largura), 44)):
+        y, s = altura / 2 + math.sin(x / 38) * 3, -1 if k % 2 else 1
+        cv.create_polygon(x, y, x + 6, y - 6 * s, x + 14, y - 5 * s, x + 8, y, fill=cor, outline="", smooth=True)
 
 
 aplicar_tema("diurno")
@@ -446,7 +497,7 @@ class App(tk.Tk):
         se.add_command(label="Levantar a mão / Mesa do mestre…", command=self.abrir_sessao)
         m.add_cascade(label="Sessão", menu=se)
         ex = tk.Menu(m, tearoff=0)
-        ex.add_command(label="Alternar modo noturno", command=self.alternar_tema, accelerator="Ctrl+T")
+        ex.add_command(label="Trocar tema (diurno, noturno, Vitral)", command=self.alternar_tema, accelerator="Ctrl+T")
         m.add_cascade(label="Exibir", menu=ex)
         self.bind("<Control-t>", lambda e: self.alternar_tema())
         aj = tk.Menu(m, tearoff=0)
@@ -466,7 +517,11 @@ class App(tk.Tk):
         ban.pack(fill="x")
         tit = tk.Frame(ban, bg=FUNDO)
         tit.pack(side="left", anchor="n")
-        tk.Label(tit, text="⚜ Prevalecentes", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
+        if TEMA == "vitral":
+            arco = tk.Canvas(ban, width=40, height=52, bg=FUNDO, highlightthickness=0)
+            arco.pack(side="left", anchor="n", padx=(0, 10), before=tit)
+            desenhar_arco(arco)
+        tk.Label(tit, text="Prevalecentes" if TEMA == "vitral" else "⚜ Prevalecentes", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
         tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.1", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
         self.lbl_modo.pack(anchor="w", pady=(4, 0))
@@ -492,7 +547,7 @@ class App(tk.Tk):
         ext.pack(side="right", anchor="n", padx=(12, 0), pady=(4, 0))
         self.bt_modo = ttk.Button(ext, text="✎ Modo Edição", command=self.alternar_modo)
         self.bt_modo.pack(fill="x", pady=1)
-        ttk.Button(ext, text="☀ Modo diurno" if NOTURNO else "☾ Modo noturno", command=self.alternar_tema).pack(fill="x", pady=1)
+        ttk.Button(ext, text=ROTULO_TEMA[proximo_tema()], command=self.alternar_tema).pack(fill="x", pady=1)
         ttk.Button(ext, text="⚖ Comparar fichas", command=self.comparar).pack(fill="x", pady=1)
         ttk.Button(ext, text="📜 Exportar PDF", command=self.exportar_pdf).pack(fill="x", pady=1)
         ttk.Button(ext, text="✋ Sessão", command=self.abrir_sessao).pack(fill="x", pady=1)
@@ -504,6 +559,15 @@ class App(tk.Tk):
         self.lbl_pontos_topo_sub = Rot(pts, bg=FUNDO, fg=MESA_TXT, size=9, bold=False, italic=True, anchor="e")
         self.lbl_pontos_topo_sub.pack(anchor="e")
         tk.Frame(self, height=1, bg=OURO).pack(fill="x")
+        if TEMA == "vitral":   # enfeites do tema: uma faixa de vitral e uma vinha
+            vt = tk.Canvas(self, height=22, bg=PERG, highlightthickness=0)
+            vt.pack(fill="x")
+            vt.bind("<Configure>", lambda e: desenhar_vitral(vt, e.width))
+            vn = tk.Canvas(self, height=18, bg=PERG, highlightthickness=0)
+            vn.pack(fill="x")
+            vn.bind("<Configure>", lambda e: desenhar_vinha(vn, e.width))
+            desenhar_vitral(vt, 1400)
+            desenhar_vinha(vn, 1400)
 
         self.nb = ttk.Notebook(self)
         self.nb.pack(fill="both", expand=True, padx=12, pady=(4, 12))
@@ -2745,6 +2809,12 @@ class App(tk.Tk):
         import datetime
         import html
         self.abrir_diario()
+        js = self.janela_sessao
+        if js is not None and not self._carregando and hasattr(js, "compartilhar"):
+            try:
+                js.compartilhar(titulo, linhas, destaque)   # Rolagens do grupo (só rolagens; o jogador pode ocultar)
+            except Exception:
+                pass
         hora = f"{datetime.datetime.now():%H:%M}"
         self.diario_lista.insert(0, {"hora": hora, "titulo": html.escape(titulo), "linhas": [html.escape(str(x)) for x in linhas],
                                      "destaque": bool(destaque)})
@@ -3621,7 +3691,7 @@ class App(tk.Tk):
             aba = self.nb.index(self.nb.select())
         except tk.TclError:
             aba = 0
-        novo_tema = "diurno" if NOTURNO else "noturno"
+        novo_tema = proximo_tema()
         aplicar_tema(novo_tema)
         gravar_pref(tema=novo_tema)
         for w in list(self.winfo_children()):

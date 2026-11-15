@@ -1,5 +1,5 @@
 // ------------------------------------------------------------------ sessão do mestre (quando o PC do mestre serve esta página)
-const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0, ackEv: 0, token: "" };
+const sessao = { ativa: false, id: "", mao: false, rodada: 0, efeitos: [], conectado: false, ultimo: "", timer: null, falhas: 0, vez: "", turno: 0, meusTurnos: 0, ackEv: 0, token: "", grupo: null, gv: 0 };
 const durEfeito = (e) => e.rodadas ? `${e.rodadas} turno(s)` : e.fim_combate ? "até o fim do combate" : "até o mestre remover";
 const CH_SESSAO = "prevalecentes.sessao.id", CH_ACK = "prevalecentes.sessao.ack";
 async function api(url, corpo) {
@@ -58,13 +58,13 @@ function resumoSessao() {
 async function consultarSessao() {
   if (!sessao.id) return;
   let r;
-  try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id) + "&ack=" + sessao.ackEv); }
+  try { r = await api("/api/estado?id=" + encodeURIComponent(sessao.id) + "&ack=" + sessao.ackEv + "&gv=" + sessao.gv); }
   catch (e) { if (sessao.conectado) { sessao.conectado = false; pintarSessao(); } return; }
   if (!r.ok) { entrarSessao(sessao.id); return; }   // o mestre reiniciou: entra de novo com o mesmo nome
   const mudou = !sessao.conectado || sessao.mao !== r.mao || sessao.rodada !== r.rodada || sessao.vez !== (r.vez || "") || JSON.stringify(sessao.efeitos) !== JSON.stringify(r.efeitos || []);
   sessao.conectado = true; sessao.mao = r.mao; sessao.rodada = r.rodada; sessao.vez = r.vez || ""; sessao.turno = r.turno || 0;
   sessao.efeitos = r.efeitos || [];
-  if (r.token && r.token !== sessao.token) { sessao.token = r.token; sessao.ackEv = 0; }   // o mestre reiniciou: a contagem recomeça
+  if (r.token && r.token !== sessao.token) { sessao.token = r.token; sessao.ackEv = 0; sessao.gv = 0; }   // o mestre reiniciou: a contagem recomeça
   // O mestre repete o evento até receber o ack, então ignora o que já foi processado (dano nunca vale duas vezes).
   const novos = (r.eventos || []).filter((e) => !(e.seq <= sessao.ackEv));
   const avisos = novos.map(receberEvento).filter(Boolean);
@@ -72,7 +72,9 @@ async function consultarSessao() {
   if (novos.length) { try { localStorage.setItem(CH_ACK, JSON.stringify([sessao.token, sessao.ackEv])); } catch (e) { /* sem storage */ } }
   if (r.palavra) { avisos.push("🎤 <b>O mestre te deu a palavra!</b>"); vibrar([300, 120, 300]); }
   if (avisos.length) toast(avisos.join("<hr>"));
-  if (mudou) { if (S && (aba === "combate")) render(); else pintarSessao(); }
+  let gmudou = false;
+  if (r.grupo) { grupoChegou(r.grupo); sessao.gv = r.gv; gmudou = true; }
+  if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && (aba === "combate")) render(); else pintarSessao(); }
   const res = resumoSessao(), txt = JSON.stringify(res);
   if (res && txt !== sessao.ultimo) {
     try { await api("/api/ficha", { id: sessao.id, dados: res }); sessao.ultimo = txt; } catch (e) { /* tenta na próxima */ }
@@ -81,6 +83,8 @@ async function consultarSessao() {
 const vibrar = (p) => { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) { /* sem vibração */ } };
 function receberEvento(ev) {
   const hora = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const eg = eventoGrupo(ev, hora);
+  if (eg !== null) return eg;
   if (ev.tipo === "dano") {
     const valor = int(ev.valor), desc = String(ev.desc || "");
     const oque = valor < 0 ? `Cura de ${-valor}` : `${valor} de dano${ev.dano_tipo ? ` (${esc(ev.dano_tipo)})` : ""}`;
@@ -166,7 +170,7 @@ function itemDoMestre(ev, hora) {
     if (i < 0) return `O mestre tirou ${esc(nome)}, mas o item não está mais na bolsa.`;
     const resto = Math.max(1, int(S.inventario[i].qtd, 1)) - q;
     if (resto > 0) S.inventario[i].qtd = String(resto); else S.inventario.splice(i, 1);
-    txt = `🎒 O mestre tirou <b>${q}× ${esc(nome)}</b>${ev.desc ? " — " + esc(ev.desc) : ""}`;
+    txt = `🎒 ${String(ev.desc || "").startsWith("entregue") ? "Você entregou" : "O mestre tirou"} <b>${q}× ${esc(nome)}</b>${ev.desc ? " — " + esc(ev.desc) : ""}`;
   }
   salvar(); render(); vibrar(120);
   registrarDiario({ titulo: "📣 Bolsa", linhas: [txt], hora });
@@ -185,6 +189,7 @@ function pintarSessao() {
   if (!b) return;
   b.classList.toggle("oculto", !sessao.ativa);
   document.body.classList.toggle("com-mesa", sessao.ativa);
+  const ng = $("#nav-grupo"); if (ng) ng.classList.toggle("oculto", !(sessao.ativa && sessao.id && S));
   if (!sessao.ativa) return;
   const ef = sessao.efeitos.length ? ` · ⏳ ${sessao.efeitos.map((e) => esc(e.nome)).join(", ")}` : "";
   const minha = sessao.vez && sessao.vez === sessao.id;

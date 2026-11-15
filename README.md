@@ -87,6 +87,23 @@ Observações:
 - Celular com a tela bloqueada continua na mesa: o mestre vê "(sem sinal)" ao lado do nome depois de 20 segundos e a mão continua na fila. O jogador só sai da mesa depois de 10 minutos sem contato.
 - Se a conexão cair, o jogador no computador vê "Conexão perdida" e um botão para conectar de novo. Quando o mestre não é encontrado na rede, o programa sugere o último IP usado.
 
+### Grupo: interação entre os jogadores
+
+Botão "👥 Grupo" no PC e aba "Grupo" no celular, durante a sessão.
+
+- **Painel do grupo:** nome, barra de Vida, condições e de quem é a vez. Cada jogador escolhe o que mostra (tudo, só a barra ou nada).
+- **Ajuda pelas regras:** Medicina no Portão da Morte (DT 15; o sucesso vai para a ficha de quem caiu), Incentivar (Reação: o aliado age logo antes de você, como no livro), curas e efeitos com alvo, refeição com Gastronomia (DT 10/20/30/40).
+- **Trocas:** dar item ou dinheiro, espólio que o mestre solta (quem quer marca; empate vai no d20; dinheiro dividido e o resto na caixa) e caixa do grupo com registro.
+- **Rolagens:** feed com as rolagens de todos, reações rápidas e teste em grupo pedido pelo mestre (o resultado aparece quando todos rolaram).
+- **Combinar o turno:** sinais, intenção para o próximo turno e sussurro entre dois jogadores (o mestre vê só o aviso, o texto inteiro, ou desliga).
+- **Fora do combate:** vínculos entre dois personagens e diário do grupo.
+- Tudo que muda a ficha de outro jogador vira um pedido: vale quando o destinatário (ou o mestre) aceita. Cada jogador pode ligar o aceite automático para ajudas; trocas sempre perguntam.
+- O mestre liga e desliga cada recurso na sessão e vê tudo. Caixa, diário e vínculos ficam guardados no PC do mestre (`~/.prevalecentes/grupo.json`).
+
+### Temas
+
+Diurno, noturno e **Vitral** (creme, dourado e verde musgo, com vinhas e vitrais). Troca no menu ☰ do celular e em "Extras" (ou no menu) do PC.
+
 ## App de celular (ficha de mesa)
 
 Versão para usar na mesa pelo celular: Vida, Mana e Vigor, atributos, características, perícias, armas com ações, rolagens de ataque e conjuração, grimório, talentos e bolsa (inventário com os itens do livro, quantidade, botão de usar, carga, dinheiro e peças de set com os bônus ativos). Também rola perícias, faz descanso curto/longo, Poção Espiritual e controla o desgaste das armas. Também tem Modo Jogo e Modo Edição, como no PC. Abre os mesmos arquivos `.json` do programa de PC e funciona sem internet depois de instalado.
@@ -111,6 +128,7 @@ As fichas são salvas manualmente em arquivos `.json` (Ctrl+S) e abertas com Ctr
 
 | Arquivo | Descrição |
 |---|---|
+| `grupo.py`, `grupo_ui.py` | Interação entre jogadores na sessão (servidor e janelas) |
 | `prevalecentes.py` | Programa principal e interface |
 | `regras.py` | Cálculos das regras, sem interface |
 | `assistente.py` | Assistente de criação de personagem |

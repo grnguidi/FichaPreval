@@ -25,6 +25,7 @@ except ImportError:
     PAGINA_FICHA = None
 
 import regras as R
+from grupo import Grupo, CFG_ROTULOS, SUSSURRO_MODOS, REACOES
 try:
     from dados_prevalecentes import DADOS as _DADOS
     ITENS_LIVRO = _DADOS.get("itens", [])
@@ -176,7 +177,11 @@ class _Pagina(BaseHTTPRequestHandler):
                     ack = int(q["ack"][0]) if "ack" in q else None
                 except ValueError:
                     ack = None
-                self._json(self.srv.web_estado(q.get("id", [""])[0], ack))
+                try:
+                    gv = int(q["gv"][0]) if "gv" in q else None
+                except ValueError:
+                    gv = None
+                self._json(self.srv.web_estado(q.get("id", [""])[0], ack, gv))
             elif u.path == "/api/sessao":
                 self._json({"sessao": True, "rodada": self.srv.rodada})
             elif u.path in ("/", "/index.html"):
@@ -206,6 +211,12 @@ class _Pagina(BaseHTTPRequestHandler):
                 self._json({"ok": self.srv.web_mao(ident, False)})
             elif self.path == "/api/ficha":
                 self._json({"ok": self.srv.receber_ficha(ident, corpo.get("dados"), web=True)})
+            elif self.path == "/api/grupo":
+                with self.srv.lock:
+                    na_mesa = ident in self.srv.web
+                    if na_mesa:
+                        self.srv.web[ident]["visto"] = time.time()
+                self._json(self.srv.grupo_acao(ident, corpo) if na_mesa else {"ok": False, "erro": "Você não está na mesa."})
             elif self.path == "/api/relato":
                 self._json({"ok": self.srv.relato(ident, corpo.get("texto"), corpo.get("ativou"), web=True)})
             else:
@@ -311,7 +322,7 @@ def _linhas(sock):
 
 
 # ======================================================================= rede
-class Servidor:
+class Servidor(Grupo):
     """Lado do mestre. Os eventos para a interface vão em `fila`: ("mudou",) ou ("mao", nome)."""
 
     def __init__(self, porta, fila):
@@ -336,6 +347,7 @@ class Servidor:
         self.ordem = []        # [[nome, iniciativa, bônus]] em ordem de turno (vazia = fora de combate)
         self.vez = -1          # posição de quem age agora em self.ordem
         self.turno = 0         # conta os turnos passados (o celular usa para o desgaste de armas)
+        self._grupo_init()     # interação entre jogadores (grupo.py)
 
     def iniciar(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -382,7 +394,15 @@ class Servidor:
         self.fila.put(("mao", ident) if novo else ("mudou",))
         return True
 
-    def web_estado(self, ident, ack=None):
+    def web_estado(self, ident, ack=None, gv=None):
+        r = self._web_estado(ident, ack)
+        if r.get("ok") and gv is not None:   # página com a aba Grupo: manda o grupo só quando mudou
+            r["gv"] = self.gv
+            if gv != self.gv:
+                r["grupo"] = self.grupo_estado(ident)
+        return r
+
+    def _web_estado(self, ident, ack=None):
         """Estado para o celular. Os eventos só saem da fila quando o celular confirma (ack = último seq que
         ele processou): se a resposta se perder (tela bloqueada, Wi-Fi caindo), o dano chega na próxima consulta.
         Sem ack (página antiga, só com a mão), a fila é esvaziada ao entregar."""
@@ -467,6 +487,7 @@ class Servidor:
                     nome = self._registrar(c, str(msg.get("nome", "")).strip()[:30] or "Jogador")
                     _enviar(c, {"t": "ok", "nome": nome})
                     self._sincronizar(nome)
+                    self._gmudou()
                     self.fila.put(("mudou",))
                 elif t == "mao":
                     with self.lock:
@@ -486,6 +507,9 @@ class Servidor:
                     self.receber_ficha(nome, msg.get("dados"))
                 elif t == "relato":
                     self.relato(nome, msg.get("texto"), msg.get("ativou"))
+                elif t == "grupo":
+                    r = self.grupo_acao(nome, msg.get("m"))
+                    _enviar(c, {"t": "grupo_resp", "r": r, "ref": msg.get("ref")})
         finally:
             if nome is not None:
                 with self.lock:
@@ -529,6 +553,7 @@ class Servidor:
                 return True
             self.fichas[nome] = novo
         self.fila.put(("mudou",))
+        self._gmudou()
         return True
 
     def _anotar(self, texto):
@@ -737,6 +762,8 @@ class Servidor:
             rod = self.rodada
         for nome, cond in acabaram:
             self._evento(nome, {"tipo": "fim", "nome": cond})
+        if anterior:
+            self._grupo_fim_turno(anterior)
         self._evento(agora, {"tipo": "vez", "rodada": rod})
         for n in self.jogadores():
             self._sincronizar(n)
@@ -759,6 +786,7 @@ class Servidor:
         for n in self.jogadores():
             self._evento(n, {"tipo": "combate", "fase": "fim"})
             self._sincronizar(n)
+        self._grupo_fim_combate()
         self._anotar("Fim do combate" + (" — terminou: " + ", ".join(f"{c} ({n})" for n, c in fim) if fim else ""))
         self.fila.put(("mudou",))
 
@@ -845,6 +873,10 @@ class Cliente:
                 self.fila.put(("palavra",))
             elif t == "evento" and isinstance(msg.get("ev"), dict):
                 self.fila.put(("evento", msg["ev"]))
+            elif t == "grupo" and isinstance(msg.get("estado"), dict):
+                self.fila.put(("grupo", msg["estado"]))
+            elif t == "grupo_resp" and isinstance(msg.get("r"), dict):
+                self.fila.put(("grupo_resp", msg["r"]))
             elif t == "efeitos":
                 self.fila.put(("efeitos", msg.get("lista") or [], int(msg.get("rodada") or 1),
                                str(msg.get("vez") or ""), int(msg.get("turno") or 0)))
@@ -893,6 +925,11 @@ class JanelaSessao(tk.Toplevel):
         self._painel_agendado = False
         self._ultima_ficha = None
         self.efeitos = []          # efeitos recebidos do mestre (lado do jogador)
+        self.grupo = None          # estado do grupo (lado do jogador)
+        self.win_grupo = None      # janela do Grupo aberta (jogador ou mestre)
+        self.compartilha = True    # minhas rolagens aparecem para o grupo
+        self.auto_ajuda = False    # aceitar ajudas (Medicina, cura, efeitos...) sem perguntar
+        self._auto_ok = set()
         self.protocol("WM_DELETE_WINDOW", self.fechar)
         self.tela = None
         self._escolha()
@@ -990,6 +1027,7 @@ class JanelaSessao(tk.Toplevel):
         ttk.Button(topo, text="Passar turno ▶", command=self._passar_turno).pack(side="right")
         ttk.Button(topo, text="Fim do combate", command=lambda: self.servidor.encerrar_combate()).pack(side="right", padx=(0, 6))
         ttk.Button(topo, text="🎲 Iniciativa", command=self._iniciativa).pack(side="right", padx=(0, 6))
+        ttk.Button(topo, text="👥 Grupo", command=self.abrir_grupo).pack(side="right", padx=(0, 6))
         self.lbl_rodada = self._rot(topo, "Rodada 1", 15, c["OURO2"], bold=True)
         self.lbl_rodada.pack(side="right", padx=14)
         if self.url_celular:
@@ -1569,6 +1607,8 @@ class JanelaSessao(tk.Toplevel):
                                  fg="#1b2520", activebackground=self.c["OURO2"], relief="flat", pady=26,
                                  command=self._alternar_mao)
         self.btn_mao.pack(fill="x", pady=10)
+        self.btn_grupo = ttk.Button(t, text="👥 Grupo", command=self.abrir_grupo)
+        self.btn_grupo.pack(fill="x")
         self.lbl_palavra = self._rot(t, "", 14, self.c["OURO2"], bold=True)
         self.lbl_palavra.pack(pady=(12, 6))
         self.lbl_evento = self._rot(t, "", 11, self.c["ALERTA"], bold=True, wraplength=400, justify="center")
@@ -1581,6 +1621,63 @@ class JanelaSessao(tk.Toplevel):
             self._rot(t, "Sua Vida, Mana e Vigor aparecem para o mestre enquanto esta janela estiver aberta.",
                       9, italic=True, wraplength=400, justify="center").pack(side="bottom", pady=(10, 0))
             self.after(300, self._enviar_ficha)
+
+    # --- grupo (interação entre jogadores)
+    def itens_livro(self):
+        return ITENS_LIVRO
+
+    def abrir_grupo(self):
+        from grupo_ui import JanelaGrupo, JanelaGrupoMestre
+        w = self.win_grupo
+        try:
+            if w is not None and w.winfo_exists():
+                w.lift()
+                return w
+        except tk.TclError:
+            pass
+        self.win_grupo = JanelaGrupoMestre(self) if self.servidor else JanelaGrupo(self)
+        return self.win_grupo
+
+    def _win_grupo_viva(self):
+        w = self.win_grupo
+        try:
+            return w if w is not None and w.winfo_exists() else None
+        except tk.TclError:
+            return None
+
+    def enviar_grupo(self, m):
+        if not self.cliente or not self.cliente.enviar({"t": "grupo", "m": m}):
+            self._mostrar_aviso("Sem conexão com o mestre.")
+
+    def compartilhar(self, titulo, linhas, destaque=False):
+        """A ficha chama a cada rolagem: aparece nas Rolagens do grupo (se o jogador deixar e o mestre permitir)."""
+        g = self.grupo
+        if not self.cliente or not g or not g["cfg"].get("feed") or not self.compartilha:
+            return
+        if not any("d20" in str(x) or "Dano" in str(x) for x in linhas):
+            return   # só rolagens, não avisos e anotações
+        self.cliente.enviar({"t": "grupo", "m": {"acao": "rolagem", "titulo": str(titulo), "linhas": [str(x) for x in linhas[:4]],
+                                                 "destaque": bool(destaque)}})
+
+    def _grupo_chegou(self, g):
+        self.grupo = g
+        para = [p for p in g["propostas"] if p["para"] == self.meu_nome]
+        if self.auto_ajuda:
+            for p in para:
+                if p["tipo"] in ("medicina", "incentivo", "cura", "buff", "refeicao") and p["id"] not in self._auto_ok:
+                    self._auto_ok.add(p["id"])
+                    self.enviar_grupo({"acao": "responder", "num": p["id"], "aceitar": True})
+        pend = len(para) + (1 if g.get("teste") and g["teste"]["aberto"] and not g["teste"]["ja"] else 0)
+        if hasattr(self, "btn_grupo"):
+            self.btn_grupo.config(text="👥 Grupo" + (f"  ({pend} esperando você)" if pend else ""))
+        w = self._win_grupo_viva()
+        if w:
+            w.atualizar(g)
+
+    def _mostrar_aviso(self, texto):
+        self._avisos = ([texto] + self._avisos)[:3]
+        if hasattr(self, "lbl_evento"):
+            self.lbl_evento.config(text="\n".join(self._avisos))
 
     def _enviar_ficha(self):
         """Manda o resumo da ficha ao mestre sempre que muda (verifica a cada segundo)."""
@@ -1636,6 +1733,30 @@ class JanelaSessao(tk.Toplevel):
             self._ultima_ficha = None
         elif tipo == "fim":
             texto = f"Terminou: {ev.get('nome')}"
+        elif tipo == "aviso":
+            texto = "👥 " + str(ev.get("texto", ""))
+            if self.ponte:
+                self.ponte.registrar("👥 Grupo", [str(ev.get("texto", ""))])
+        elif tipo == "pedido":
+            texto = f"👥 {ev.get('de')} quer te dar: {ev.get('texto')} — abra o Grupo para responder."
+            if not self.auto_ajuda:
+                self._aviso_sonoro()
+        elif tipo == "portao" and self.ponte:
+            texto = self.ponte.portao_sucesso(str(ev.get("de", "")))
+            self._relatar(texto)
+            self._ultima_ficha = None
+            self._aviso_sonoro()
+        elif tipo == "dinheiro" and self.ponte:
+            texto = self.ponte.dinheiro(int(ev.get("delta", 0)), str(ev.get("desc", "")))
+            self._ultima_ficha = None
+        elif tipo == "sussurro":
+            texto = f"🤫 {ev.get('de')}: {ev.get('texto')}"
+            if self.ponte:
+                self.ponte.registrar(f"🤫 Sussurro de {ev.get('de')}", [str(ev.get("texto", ""))])
+            self._aviso_sonoro()
+        elif tipo == "teste":
+            texto = f"🎲 O mestre pediu {ev.get('pericia')}" + (f" (DT {ev.get('dt')})" if ev.get("dt") else "") + " de todos — abra o Grupo para rolar."
+            self._aviso_sonoro()
         else:
             return
         self._avisos = ([texto] + self._avisos)[:3]   # os três mais recentes, o novo em cima
@@ -1707,6 +1828,15 @@ class JanelaSessao(tk.Toplevel):
                     self._receber_evento(ev[1])
                 elif ev[0] == "efeitos" and self.cliente:
                     self._mostrar_efeitos(*ev[1:])
+                elif ev[0] == "grupo" and len(ev) > 1 and self.cliente:
+                    self._grupo_chegou(ev[1])
+                elif ev[0] == "grupo_resp" and self.cliente:
+                    if ev[1].get("erro") or ev[1].get("msg"):
+                        self._mostrar_aviso("👥 " + (ev[1].get("erro") or ev[1].get("msg")))
+                elif ev[0] == "grupo" and self.servidor:
+                    w = self._win_grupo_viva()
+                    if w:
+                        w.atualizar()
                 elif ev[0] == "caiu" and self.cliente:
                     self.lbl_status.config(text="Conexão perdida com o mestre.")
                     self.btn_mao.config(state="disabled")
