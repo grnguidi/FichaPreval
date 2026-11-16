@@ -11,7 +11,7 @@ try:
 except Exception:      # o Pillow é um extra
     Image = None
 
-LADO = 256
+LADO = 384
 LIMITE_SEM_PIL = 300_000
 LIMITE_TEXTO = 400_000     # tamanho máximo do endereço de dados aceito numa ficha
 

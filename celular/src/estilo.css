@@ -315,11 +315,12 @@ html.vitral .cartao{border-color:#cdb679}
 html.vitral #t-sub span{color:#a0553f!important}
 
 /* foto do personagem */
-.avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--ouro);flex:none;margin-right:10px;background:var(--perg2)}
+.avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid var(--ouro);flex:none;margin-right:10px;background:var(--perg2)}
 span.avatar.vazio{display:inline-flex;align-items:center;justify-content:center;color:var(--tinta2);font-size:18px;opacity:.55}
-.topo .avatar{width:38px;height:38px;margin-right:8px}
-.topo-al .avatar{width:30px;height:30px;margin-right:8px;vertical-align:middle}
+.topo .avatar{width:46px;height:46px;margin-right:8px}
+.topo-al .avatar{width:44px;height:44px;margin-right:8px;vertical-align:middle}
 .retrato{display:flex;align-items:center;gap:12px;margin:2px 0 6px}
-.retrato img{width:84px;height:84px;border-radius:12px;object-fit:cover;border:2px solid var(--ouro);box-shadow:var(--sombra)}
+.retrato{flex-direction:column;align-items:center}
+.retrato img{width:min(62vw,240px);height:min(62vw,240px);border-radius:16px;object-fit:cover;border:2px solid var(--ouro);box-shadow:var(--sombra)}
 .item.apagado{opacity:.5}
-@media print{.impr .cab.com-foto{position:relative;background-position:left center,200% 0}.impr .cab .foto-impr{position:absolute;right:0;top:-1mm;width:18mm;height:18mm;object-fit:cover;border:1.2pt solid #b08a3e;outline:.4pt solid #3f4f2e;outline-offset:1pt}}
+@media print{.impr .cab.com-foto{position:relative;min-height:32mm;background-position:left 4mm,200% 0}.impr .cab .foto-impr{position:absolute;right:0;top:0;width:31mm;height:31mm;object-fit:cover;border:1.2pt solid #b08a3e;outline:.4pt solid #3f4f2e;outline-offset:1pt}}

@@ -275,11 +275,14 @@ def gerar_pdf(caminho, app):
     e.append(Paragraph(L("Prevalecentes"), s_tit))
     e.append(Paragraph(L("Ficha do Sonhador · edição 3.2"), s_sub))
     e.append(Spacer(1, 22))
+    import foto as _F
+    tem_foto = _F.valida(st.get("foto"))      # com foto, a identificação encolhe para dar lugar a ela
     ident = [["Nome", idt.get("nome", ""), "Player", idt.get("player", ""), "Nível", str(idt.get("nivel", 1))],
              ["Espécie", idt.get("especie", ""), "Sonho", idt.get("sonho", ""), "Guilda", idt.get("guilda", "")]]
     ident = [[c if j % 2 else c.upper() for j, c in enumerate(r)] for r in ident]
     t = Table([[Paragraph(L(c), ParagraphStyle("i", parent=s_peq, fontName=FB, fontSize=7) if j % 2 == 0 else s_cel) for j, c in enumerate(r)] for r in ident],
-              colWidths=[19 * mm, 56 * mm, 19 * mm, 40 * mm, 19 * mm, W - 153 * mm])
+              colWidths=([17 * mm, 42 * mm, 17 * mm, 30 * mm, 17 * mm, W - 159 * mm] if tem_foto
+                         else [19 * mm, 56 * mm, 19 * mm, 40 * mm, 19 * mm, W - 153 * mm]), hAlign="LEFT")
     t.setStyle(TableStyle([("LINEBELOW", (1, 0), (1, -1), 0.4, OURO), ("LINEBELOW", (3, 0), (3, -1), 0.4, OURO),
                            ("LINEBELOW", (5, 0), (5, -1), 0.4, OURO), ("VALIGN", (0, 0), (-1, -1), "BOTTOM")]))
     e.append(t)
@@ -443,7 +446,7 @@ def gerar_pdf(caminho, app):
         _canto(canv, A4[0] - 10.5 * mm, 10.5 * mm, -1, 1)
         if doc.page == 1:
             _janela(canv, 19 * mm, A4[1] - 41 * mm)
-            if not _foto(canv, st.get("foto"), A4[0] - 37 * mm, A4[1] - 41 * mm, 22 * mm):
+            if not _foto(canv, st.get("foto"), A4[0] - 15 * mm - 32 * mm, A4[1] - 20.5 * mm - 32 * mm, 32 * mm):
                 _janela(canv, A4[0] - 30 * mm, A4[1] - 41 * mm)
             _vinha(canv, A4[0] / 2 - 42 * mm, A4[0] / 2 - 6 * mm, A4[1] - 40.4 * mm)
             _vinha(canv, A4[0] / 2 + 42 * mm, A4[0] / 2 + 6 * mm, A4[1] - 40.4 * mm)

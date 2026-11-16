@@ -102,7 +102,7 @@ Ao abrir a mesa, o programa cria a pasta `fichas/` ao lado dele, com um `.json` 
 - **Dono da ficha:** quem escolhe uma ficha livre cria um código (3 a 12 caracteres). Ela fica presa a esse jogador: só entra de novo quem souber o código, até o mestre liberar. O mestre vê o código na janela de fichas. Enquanto um jogador conectado usa a ficha, ninguém mais entra nela.
 - **Ficha vazia:** o jogador liga uma ficha que já tem (do aparelho, de um arquivo `.json`, do app instalado ou a que está aberta no PC) ou cria do zero.
 - **No PC também:** o jogador do programa de PC escolhe a ficha ao entrar (conexão direta ou por link); a ficha da mesa troca a ficha aberta e cada mudança volta para o `.json` do mestre.
-- **Foto do personagem:** fica dentro da ficha (256 px). No celular, botão "📷 Foto do personagem" no modo edição; no PC, clique no quadro "＋ foto" do cabeçalho (botão direito tira). Aparece na ficha, no PDF e na folha impressa, na lista de fichas ao entrar, no painel do Grupo e na tela do mestre. No PC, mostrar e converter fotos usa o Pillow (`requirements.txt`); sem ele só PNG ou GIF pequenos.
+- **Foto do personagem:** fica dentro da ficha (384 px). No celular, botão "📷 Foto do personagem" no modo edição; no PC, clique no quadro "＋ foto" do cabeçalho (botão direito tira). Aparece na ficha, no PDF e na folha impressa, na lista de fichas ao entrar, no painel do Grupo e na tela do mestre. No PC, mostrar e converter fotos usa o Pillow (`requirements.txt`); sem ele só PNG ou GIF pequenos.
 
 ### Painel do mestre: inimigos, anotações e combate
 

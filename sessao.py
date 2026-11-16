@@ -1859,7 +1859,7 @@ class JanelaSessao(tk.Toplevel, FichasJogador):
             guard = self.__dict__.setdefault("_fotos_painel", {})
             if guard.get(nome, ("", None))[0] != ver:
                 import foto as F
-                guard[nome] = (ver, F.para_tk((self.servidor.fichas_arq.ler(sl)[0] or {}).get("foto"), 36))
+                guard[nome] = (ver, F.para_tk((self.servidor.fichas_arq.ler(sl)[0] or {}).get("foto"), 52))
             return guard[nome][1]
         except Exception:      # a foto é enfeite: nunca derruba o painel
             return None

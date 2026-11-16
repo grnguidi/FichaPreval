@@ -533,7 +533,7 @@ class App(tk.Tk):
         self.lbl_modo.pack(anchor="w", pady=(4, 0))
 
         # foto do personagem: clique para escolher; botão direito tira
-        self.lbl_foto = tk.Label(ban, text="＋\nfoto", bg=MESA_CAMPO, fg=MESA_TXT, font=(FONTE, 9), width=9, height=4, cursor="hand2",
+        self.lbl_foto = tk.Label(ban, text="＋\nfoto", bg=MESA_CAMPO, fg=MESA_TXT, font=(FONTE, 10), width=13, height=6, cursor="hand2",
                                  highlightthickness=1, highlightbackground=OURO)
         self.lbl_foto.pack(side="left", padx=(28, 0), anchor="n")
         self.lbl_foto.bind("<Button-1>", lambda e: self.escolher_foto())
@@ -1316,13 +1316,13 @@ class App(tk.Tk):
         lb = getattr(self, "lbl_foto", None)
         if lb is None:
             return
-        img = F.para_tk(self.foto, 72) if self.foto else None
+        img = F.para_tk(self.foto, 112) if self.foto else None
         self._foto_tk = img            # o Tk precisa de uma referência viva
         try:
             if img is not None:
-                lb.configure(image=img, text="", width=72, height=72)
+                lb.configure(image=img, text="", width=112, height=112)
             else:
-                lb.configure(image="", text="foto ✓\n(sem prévia)" if self.foto else "＋\nfoto", width=9, height=4)
+                lb.configure(image="", text="foto ✓\n(sem prévia)" if self.foto else "＋\nfoto", width=13, height=6)
         except tk.TclError:
             pass
 

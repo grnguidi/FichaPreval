@@ -33,7 +33,7 @@ def _guardar_codigo(slug, codigo):
         pass
 
 
-def _miniatura(master, fotos, chave, dados_foto, lado=44):
+def _miniatura(master, fotos, chave, dados_foto, lado=64):
     """Label com a foto (ou um espaço vazio do mesmo tamanho). `fotos` segura as imagens para o Tk não as soltar."""
     img = F.para_tk(dados_foto, lado) if dados_foto else None
     if img is not None:

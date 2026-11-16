@@ -193,7 +193,7 @@ A["atualizar-confirma"] = () => {
 };
 
 // ------------------------------------------------------------------ foto do personagem
-// A imagem é cortada em quadrado e reduzida a 256 px (JPEG) para caber na ficha e viajar pela sessão.
+// A imagem é cortada em quadrado e reduzida a 384 px (JPEG) para caber na ficha e viajar pela sessão.
 A["foto"] = () => {
   if (banco.modo !== "edicao" && S.foto) return;      // no modo jogo o toque na foto não troca nada
   const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
@@ -202,8 +202,8 @@ A["foto"] = () => {
     const url = URL.createObjectURL(arq), img = new Image();
     img.onload = () => {
       const lado = Math.min(img.width, img.height), cv = document.createElement("canvas");
-      cv.width = cv.height = 256;
-      cv.getContext("2d").drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 256, 256);
+      cv.width = cv.height = 384;
+      cv.getContext("2d").drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 384, 384);
       URL.revokeObjectURL(url);
       const dados = cv.toDataURL("image/jpeg", 0.82);
       mudar((s) => { s.foto = dados; });
