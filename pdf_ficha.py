@@ -139,6 +139,29 @@ def _janela(c, x, y, w=11 * mm, h=17 * mm):
     c.restoreState()
 
 
+def _foto(c, txt, x, y, lado):
+    """Foto do personagem numa moldura dourada. Devolve False se a ficha não tem foto (ou ela não pôde ser lida)."""
+    try:
+        import io
+        import foto as F
+        from reportlab.lib.utils import ImageReader
+        bruto, _ = F.bytes_de(txt)
+        if bruto is None:
+            return False
+        c.drawImage(ImageReader(io.BytesIO(bruto)), x, y, lado, lado, preserveAspectRatio=True, anchor="c", mask="auto")
+        c.saveState()
+        c.setStrokeColor(OURO)
+        c.setLineWidth(1.4)
+        c.rect(x, y, lado, lado, stroke=1, fill=0)
+        c.setStrokeColor(MUSGO)
+        c.setLineWidth(0.4)
+        c.rect(x - 1.2, y - 1.2, lado + 2.4, lado + 2.4, stroke=1, fill=0)
+        c.restoreState()
+        return True
+    except Exception:
+        return False
+
+
 class Secao(Flowable):
     """Título de seção: um raminho de vinha, o título em dourado escuro e um fio dourado embaixo."""
 
@@ -420,7 +443,8 @@ def gerar_pdf(caminho, app):
         _canto(canv, A4[0] - 10.5 * mm, 10.5 * mm, -1, 1)
         if doc.page == 1:
             _janela(canv, 19 * mm, A4[1] - 41 * mm)
-            _janela(canv, A4[0] - 30 * mm, A4[1] - 41 * mm)
+            if not _foto(canv, st.get("foto"), A4[0] - 37 * mm, A4[1] - 41 * mm, 22 * mm):
+                _janela(canv, A4[0] - 30 * mm, A4[1] - 41 * mm)
             _vinha(canv, A4[0] / 2 - 42 * mm, A4[0] / 2 - 6 * mm, A4[1] - 40.4 * mm)
             _vinha(canv, A4[0] / 2 + 42 * mm, A4[0] / 2 + 6 * mm, A4[1] - 40.4 * mm)
         canv.setFont(FI, 8)

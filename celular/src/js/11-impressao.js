@@ -3,7 +3,7 @@ function folhaImpressao() {
   const d = C.d, v = S.vida, at = (ch, mx) => (v[ch] === "" || v[ch] == null ? mx : int(v[ch], mx));
   const t = (cab, linhas) => `<table><thead><tr>${cab.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${linhas.map((l) => `<tr>${l.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   const sec = (x) => `<h2>${x}</h2>`;
-  let h = `<div class="cab"><h1>${esc(S.identidade.nome || "Sonhador sem nome")}</h1><p class="linha">Player: ${esc(S.identidade.player || "—")} · Nível ${C.nv} · ${esc(S.identidade.especie || "—")}${S.sem_alma ? " · sem alma" : ""} · Guilda ${esc(S.identidade.guilda || "—")}</p>
+  let h = `<div class="cab${S.foto ? " com-foto" : ""}">${S.foto ? `<img class="foto-impr" src="${S.foto}" alt="">` : ""}<h1>${esc(S.identidade.nome || "Sonhador sem nome")}</h1><p class="linha">Player: ${esc(S.identidade.player || "—")} · Nível ${C.nv} · ${esc(S.identidade.especie || "—")}${S.sem_alma ? " · sem alma" : ""} · Guilda ${esc(S.identidade.guilda || "—")}</p>
     ${S.identidade.sonho ? `<p class="linha">Sonho: ${esc(S.identidade.sonho)}</p>` : ""}</div>`;
   // características de espécie: ajustes de atributo e o par descritivo (vantagem e desvantagem)
   const ajustes = R.ATRIBUTOS.map((k) => [k, int(S.atributos[k].especie)]).filter(([, n]) => n).map(([k, n]) => `${n > 0 ? "+" : "−"}${Math.abs(n)} ${R.NOMES_ATR[k]}`);

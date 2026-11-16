@@ -218,7 +218,18 @@ class _Pagina(BaseHTTPRequestHandler):
                     self._json(self.srv.web_espera(ident, ack, gv, q.get("sig", [""])[0], espera))
             elif u.path == "/api/sessao":
                 self._json({"sessao": True, "rodada": self.srv.rodada, "senha": bool(self.srv.senha),
-                            "fichas": self.srv.fichas_arq.lista()})
+                            "fichas": self.srv.fichas_lista(parse_qs(u.query).get("id", [""])[0])})
+            elif u.path == "/api/foto":          # foto do personagem de uma ficha da mesa (o ?v= muda quando a foto muda)
+                dados, tipo = self.srv.fichas_arq.foto(slug_ficha(parse_qs(u.query).get("f", [""])[0]))
+                if dados is None:
+                    self.send_error(404)
+                else:
+                    self.send_response(200)
+                    self.send_header("Content-Type", tipo)
+                    self.send_header("Content-Length", str(len(dados)))
+                    self.send_header("Cache-Control", "max-age=86400")
+                    self.end_headers()
+                    self.wfile.write(dados)
             elif u.path == "/api/ficha-arq":
                 q = parse_qs(u.query)
                 self._json(self.srv.ficha_baixar(q.get("id", [""])[0], q.get("k", [""])[0]))
@@ -235,7 +246,7 @@ class _Pagina(BaseHTTPRequestHandler):
         if self._fechada():
             return
         try:
-            limite = LIMITE_FICHA if self.path == "/api/ficha-salvar" else 20000
+            limite = LIMITE_FICHA if self.path in ("/api/ficha-salvar", "/api/fichas-pc") else 20000
             n = min(int(self.headers.get("Content-Length") or 0), limite)
             corpo = json.loads(self.rfile.read(n) or b"{}")
             if not isinstance(corpo, dict):
@@ -247,7 +258,7 @@ class _Pagina(BaseHTTPRequestHandler):
             if self.path == "/api/oi":
                 self._json(self.srv.web_entrar(str(corpo.get("nome", "")).strip()[:30], ident,
                                                str(corpo.get("senha", "")), str(corpo.get("chave", "")), bool(corpo.get("pc")),
-                                               str(corpo.get("ficha", ""))[:40]))
+                                               str(corpo.get("ficha", ""))[:40], str(corpo.get("codigo", ""))[:12]))
             elif not self.srv.web_confere(ident, str(corpo.get("chave", ""))):
                 self._json({"ok": False, "erro": "Você não está na mesa."})
             elif self.path == "/api/mao":
@@ -258,6 +269,8 @@ class _Pagina(BaseHTTPRequestHandler):
                 self._json({"ok": self.srv.receber_ficha(ident, corpo.get("dados"), web=True)})
             elif self.path == "/api/ficha-salvar":
                 self._json(self.srv.ficha_salvar(ident, corpo.get("estado"), corpo.get("base"), bool(corpo.get("forcar"))))
+            elif self.path == "/api/fichas-pc":
+                self._json(self.srv.ficha_acao(ident, corpo.get("m")))
             elif self.path == "/api/grupo":
                 with self.srv.lock:
                     na_mesa = ident in self.srv.web
@@ -400,6 +413,7 @@ class Servidor(Grupo):
         self._erros_senha = []
         self._salvo = ""
         self.fichas_arq = Fichas()   # pasta fichas/: um .json por jogador
+        self.ficha_pc = {}           # jogador do PC (conexão direta) -> ficha da mesa que ele escolheu
         self._grupo_init()     # interação entre jogadores (grupo.py)
 
     # --- mesa guardada: se o PC do mestre fechar, dá para retomar de onde parou
@@ -506,7 +520,7 @@ class Servidor(Grupo):
         time.sleep(0.4)
         return False
 
-    def web_entrar(self, nome, ident, senha="", chave="", pc=False, ficha=""):
+    def web_entrar(self, nome, ident, senha="", chave="", pc=False, ficha="", codigo=""):
         """Entrada pela página: confere a senha da mesa e devolve o nome e uma chave só deste aparelho
         (sem a chave ninguém age em nome de outro jogador)."""
         with self.lock:
@@ -516,6 +530,17 @@ class Servidor(Grupo):
             return {"erro": "senha"}
         if not volta:
             ident = ""
+        if ficha:
+            sl = slug_ficha(ficha)
+            erro = self.ficha_pode(sl, ident, codigo)
+            if erro:
+                return erro
+            if not ident:        # o dono voltou por outro aparelho: retoma o mesmo lugar na mesa (o antigo estava sem sinal)
+                with self.lock:
+                    velho = next((n for n, w in self.web.items() if w.get("ficha") == sl), "")
+                    if velho:
+                        self.web[velho]["chave"] = ""
+                        ident = velho
         nome = self.web_oi(nome, ident)
         with self.lock:
             w = self.web.get(nome)
@@ -695,11 +720,14 @@ class Servidor(Grupo):
                 elif t == "grupo":
                     r = self.grupo_acao(nome, msg.get("m"))
                     _enviar(c, {"t": "grupo_resp", "r": r, "ref": msg.get("ref")})
+                elif t == "fichas":
+                    _enviar(c, {"t": "fichas_resp", "r": self.ficha_acao(nome, msg.get("m"))})
         finally:
             if nome is not None:
                 with self.lock:
                     if self.clientes.get(nome) is c:
                         del self.clientes[nome]
+                        self.ficha_pc.pop(nome, None)
                     if nome in self.maos:
                         self.maos.remove(nome)
                 self.fila.put(("mudou",))
@@ -747,7 +775,96 @@ class Servidor(Grupo):
             w = self.web.get(ident)
             if w is not None:
                 w["visto"] = time.time()
-            return (w or {}).get("ficha", "")
+                return w.get("ficha", "")
+            return self.ficha_pc.get(ident, "")
+
+    def ficha_pode(self, s, ident, codigo):
+        """None se `ident` pode entrar na ficha `s`; senão o erro: ficha que não existe, em uso agora, presa a outro
+        jogador, ou livre e ainda sem o código que o novo dono precisa criar."""
+        if not any(f["slug"] == s for f in self.fichas_arq.lista()):
+            return {"erro": "ficha_inexistente"}
+        por = self.ficha_em_uso(s, ident)
+        if por:
+            return {"erro": "ficha_em_uso", "por": por}
+        r = self.fichas_arq.conferir_dono(s, codigo)
+        if r == "presa":
+            time.sleep(0.4)      # freia quem tenta adivinhar o código
+            return {"erro": "ficha_presa"}
+        if r == "codigo":
+            return {"erro": "ficha_codigo"}
+        return None
+
+    def ficha_em_uso(self, s, exceto=""):
+        """Nome do jogador conectado que está com a ficha `s` (sem contar `exceto`), ou ''."""
+        if not s:
+            return ""
+        agora = time.time()
+        with self.lock:
+            for n, w in self.web.items():
+                if n != exceto and w.get("ficha") == s and agora - w.get("visto", 0) < SEM_SINAL:
+                    return n
+            for n, f in self.ficha_pc.items():
+                if n != exceto and f == s and n in self.clientes:
+                    return n
+        return ""
+
+    def fichas_lista(self, ident=""):
+        """A lista das fichas da mesa com quem está usando cada uma agora ('uso') e qual é a de `ident` ('minha')."""
+        minha = self._ficha_de(ident) if ident else ""
+        out = self.fichas_arq.lista()
+        for f in out:
+            f["uso"] = self.ficha_em_uso(f["slug"], ident)
+            f["minha"] = bool(minha) and f["slug"] == minha
+        return out
+
+    def ficha_acao(self, ident, m):
+        """Fichas da mesa para o jogador do PC (conexão direta ou por link): listar, escolher, baixar, salvar, ver, soltar."""
+        if not isinstance(m, dict):
+            return {"ok": False}
+        acao = m.get("acao")
+        with self.lock:
+            web, pc = ident in self.web, ident in self.clientes
+        if not (web or pc):
+            return {"ok": False, "erro": "Você não está na mesa."}
+        if acao == "listar":
+            return {"ok": True, "acao": acao, "fichas": self.fichas_lista(ident), "minha": self._ficha_de(ident)}
+        if acao == "escolher":
+            s = slug_ficha(m.get("slug"))
+            e = self.ficha_pode(s, ident, m.get("codigo"))
+            if e:
+                txt = {"ficha_inexistente": "Essa ficha não existe mais na mesa.", "ficha_em_uso": f"Essa ficha está em uso por {e.get('por', 'outro jogador')}.",
+                       "ficha_presa": "Essa ficha é de outro jogador (código errado). Peça ao mestre para liberar.",
+                       "ficha_codigo": "Crie um código de 3 a 12 caracteres para esta ficha."}[e["erro"]]
+                return {"ok": False, "acao": acao, "slug": s, "motivo": e["erro"], "erro": txt}
+            with self.lock:
+                if web:
+                    self.web[ident]["ficha"] = s
+                else:
+                    self.ficha_pc[ident] = s
+            self._anotar(f"{ident} escolheu a ficha “{self.fichas_arq.nome(s)}”.")
+            ficha, ver, mt = self.fichas_arq.ler(s)
+            return {"ok": True, "acao": acao, "slug": s, "nome": self.fichas_arq.nome(s), "existe": ficha is not None, "ficha": ficha, "ver": ver}
+        s = self._ficha_de(ident)
+        if acao == "soltar":
+            with self.lock:
+                if web:
+                    self.web[ident].pop("ficha", None)
+                else:
+                    self.ficha_pc.pop(ident, None)
+            self.fila.put(("mudou",))
+            return {"ok": True, "acao": acao}
+        if not s:
+            return {"ok": False, "acao": acao, "erro": "escolha uma ficha"}
+        if acao == "ver":
+            return {"ok": True, "acao": acao, "ver": self.fichas_arq.ver(s)}
+        if acao == "baixar":
+            ficha, ver, mt = self.fichas_arq.ler(s)
+            return {"ok": True, "acao": acao, "existe": ficha is not None, "ficha": ficha, "ver": ver}
+        if acao == "salvar":
+            r = self.ficha_salvar(ident, m.get("estado"), m.get("base"), bool(m.get("forcar")))
+            r["acao"] = acao
+            return r
+        return {"ok": False}
 
     def ficha_baixar(self, ident, chave):
         """Entrega ao celular a ficha dele (a que está no .json) e a versão atual."""
@@ -1116,6 +1233,8 @@ class Cliente:
                 self.fila.put(("grupo", msg["estado"]))
             elif t == "grupo_resp" and isinstance(msg.get("r"), dict):
                 self.fila.put(("grupo_resp", msg["r"]))
+            elif t == "fichas_resp" and isinstance(msg.get("r"), dict):
+                self.fila.put(("fichas_resp", msg["r"]))
             elif t == "efeitos":
                 self.fila.put(("efeitos", msg.get("lista") or [], int(msg.get("rodada") or 1),
                                str(msg.get("vez") or ""), int(msg.get("turno") or 0)))
@@ -1241,20 +1360,23 @@ class ClienteWeb:
             self.fila.put(("grupo", r["grupo"]))
 
     def _mandar(self):
-        rotas = {"mao": "/api/mao", "abaixar": "/api/abaixar", "ficha": "/api/ficha", "relato": "/api/relato", "grupo": "/api/grupo"}
+        rotas = {"mao": "/api/mao", "abaixar": "/api/abaixar", "ficha": "/api/ficha", "relato": "/api/relato", "grupo": "/api/grupo",
+                 "fichas": "/api/fichas-pc"}
         while self.ativo:
             try:
                 msg = self._saida.get(timeout=1)
             except queue.Empty:
                 continue
             t = msg.get("t")
-            corpo = dict(msg.get("m") or {}) if t == "grupo" else {k: v for k, v in msg.items() if k != "t"}
+            corpo = dict(msg.get("m") or {}) if t == "grupo" else {k: v for k, v in msg.items() if k != "t"}   # "fichas" leva o "m" inteiro
             corpo.update(id=self.id, chave=self.chave)
             for tentativa in range(4):
                 try:
-                    r = self._req(rotas[t], corpo)
+                    r = self._req(rotas[t], corpo, 30 if t == "fichas" else 8)
                     if t == "grupo" and isinstance(r, dict):
                         self.fila.put(("grupo_resp", r))
+                    elif t == "fichas" and isinstance(r, dict):
+                        self.fila.put(("fichas_resp", r))
                     break
                 except (OSError, ValueError):
                     if not self.ativo:
@@ -1262,7 +1384,7 @@ class ClienteWeb:
                     time.sleep(1.5)
 
     def enviar(self, msg):
-        if not self.ativo or msg.get("t") not in ("mao", "abaixar", "ficha", "relato", "grupo"):
+        if not self.ativo or msg.get("t") not in ("mao", "abaixar", "ficha", "relato", "grupo", "fichas"):
             return False
         self._saida.put(msg)
         return True
@@ -1278,7 +1400,10 @@ CORES_PADRAO = dict(FUNDO="#1b2520", CAMPO="#fbf7ea", PERG="#f2e9d3", PERG2="#e6
                     C_VIGOR="#567a3b", FONTE="Georgia")
 
 
-class JanelaSessao(tk.Toplevel):
+from fichas_ui import FichasJogador, JanelaFichasMestre   # noqa: E402
+
+
+class JanelaSessao(tk.Toplevel, FichasJogador):
     """Janela única com as três telas: escolha, painel do mestre e painel do jogador."""
 
     def __init__(self, app, cores, nome_padrao, ao_fechar, ponte=None):
@@ -1312,6 +1437,8 @@ class JanelaSessao(tk.Toplevel):
         self.compartilha = True    # minhas rolagens aparecem para o grupo
         self.auto_ajuda = False    # aceitar ajudas (Medicina, cura, efeitos...) sem perguntar
         self._auto_ok = set()
+        self._fichas_init()        # ficha da mesa escolhida pelo jogador (fichas_ui.py)
+        self.win_fichas_mestre = None
         self.tunel = None          # mesa pela internet (mestre)
         self.win_convite = None
         self._destino = None       # (endereço, porta, senha) da conexão atual do jogador, para reconectar
@@ -1427,6 +1554,7 @@ class JanelaSessao(tk.Toplevel):
         ttk.Button(topo, text="🎲 Iniciativa", command=self._iniciativa).pack(side="right", padx=(0, 6))
         ttk.Button(topo, text="👥 Grupo", command=self.abrir_grupo).pack(side="right", padx=(0, 6))
         ttk.Button(topo, text="👹 Inimigos e anotações", command=self._abrir_painel_mestre).pack(side="right", padx=(0, 6))
+        ttk.Button(topo, text="📜 Fichas", command=self._abrir_fichas_mestre).pack(side="right", padx=(0, 6))
         self.lbl_rodada = self._rot(topo, "Rodada 1", 15, c["OURO2"], bold=True)
         self.lbl_rodada.pack(side="right", padx=14)
         ttk.Button(topo, text="🌐 Convidar", command=self._mostrar_qr).pack(side="right", padx=(0, 6))
@@ -1618,6 +1746,16 @@ class JanelaSessao(tk.Toplevel):
         if viva and estado in ("ok", "erro", "fechado"):
             self._mostrar_qr()
 
+    def _abrir_fichas_mestre(self):
+        try:
+            if self.win_fichas_mestre is not None and self.win_fichas_mestre.winfo_exists():
+                self.win_fichas_mestre.lift()
+                self.win_fichas_mestre.atualizar(True)
+                return
+        except tk.TclError:
+            pass
+        self.win_fichas_mestre = JanelaFichasMestre(self)
+
     def _abrir_painel_mestre(self):
         """Abre o painel do mestre (inimigos, anotações e combate) no navegador deste computador."""
         import mestre_web
@@ -1711,6 +1849,21 @@ class JanelaSessao(tk.Toplevel):
         cv.bind("<Configure>", desenhar)
         desenhar()
 
+    def _foto_do_jogador(self, nome):
+        """Miniatura da foto do personagem (da ficha da mesa do jogador), guardada enquanto a ficha não muda."""
+        try:
+            sl = self.servidor._ficha_de(nome)
+            ver = self.servidor.fichas_arq.resumo(sl)["foto"] if sl else ""
+            if not ver:
+                return None
+            guard = self.__dict__.setdefault("_fotos_painel", {})
+            if guard.get(nome, ("", None))[0] != ver:
+                import foto as F
+                guard[nome] = (ver, F.para_tk((self.servidor.fichas_arq.ler(sl)[0] or {}).get("foto"), 36))
+            return guard[nome][1]
+        except Exception:      # a foto é enfeite: nunca derruba o painel
+            return None
+
     def _cartao(self, master, j):
         c = self.c
         fi, nome = j["ficha"], j["nome"]
@@ -1723,6 +1876,9 @@ class JanelaSessao(tk.Toplevel):
         v = tk.BooleanVar(value=marcado)
         tk.Checkbutton(cab, variable=v, bg=c["CAMPO"], activebackground=c["CAMPO"],
                        command=lambda n=nome: self._alternar_sel(n)).pack(side="left")
+        img = self._foto_do_jogador(nome)
+        if img is not None:
+            tk.Label(cab, image=img, bg=c["CAMPO"]).pack(side="left", padx=(0, 6))
         tk.Label(cab, text=fi.get("personagem") or nome, bg=c["CAMPO"], fg=c["VINHO"], font=(self.fonte, 13, "bold")).pack(side="left")
         extra = nome if fi.get("personagem") and fi.get("personagem") != nome else ""
         extra += (" · " if extra else "") + ("celular" if j["celular"] else "PC")
@@ -2140,6 +2296,12 @@ class JanelaSessao(tk.Toplevel):
         self.btn_mao.pack(fill="x", pady=10)
         self.btn_grupo = ttk.Button(t, text="👥 Grupo", command=self.abrir_grupo)
         self.btn_grupo.pack(fill="x")
+        lf = tk.Frame(t, bg=t["bg"])
+        lf.pack(fill="x", pady=(8, 0))
+        self.lbl_ficha_mesa = self._rot(lf, "Sem ficha da mesa", 9, italic=True)
+        self.lbl_ficha_mesa.pack(side="left")
+        ttk.Button(lf, text="Trocar ficha", command=self.ficha_trocar).pack(side="right")
+        self._ficha_rotulo()
         self.lbl_palavra = self._rot(t, "", 14, self.c["OURO2"], bold=True)
         self.lbl_palavra.pack(pady=(12, 6))
         self.lbl_evento = self._rot(t, "", 11, self.c["ALERTA"], bold=True, wraplength=400, justify="center")
@@ -2220,6 +2382,12 @@ class JanelaSessao(tk.Toplevel):
             dados = None
         if dados and dados != self._ultima_ficha and self.cliente.enviar({"t": "ficha", "dados": dados}):
             self._ultima_ficha = dados
+        self._tique_ficha += 1
+        if self._tique_ficha % 2 == 0:
+            try:
+                self._ficha_sincronizar()        # ficha da mesa: devolve as mudanças ao .json do mestre
+            except Exception:
+                pass
         self.after(1000, self._enviar_ficha)
 
     def _relatar(self, texto, ativou=None):
@@ -2328,6 +2496,7 @@ class JanelaSessao(tk.Toplevel):
         self.cliente = None
         self._btn_voltar = None
         self.mao_levantada = False
+        self._fichas_init()
         self._escolha()
 
     def _alternar_mao(self):
@@ -2364,6 +2533,9 @@ class JanelaSessao(tk.Toplevel):
                 elif ev[0] == "ok" and hasattr(self, "lbl_status"):
                     self.meu_nome = ev[1]
                     self.lbl_status.config(text=f"Conectado como {ev[1]}")
+                    self.fichas_pedir_lista()        # fichas da mesa: escolhe ao entrar; retoma ao reconectar
+                elif ev[0] == "fichas_resp" and self.cliente:
+                    self._fichas_resp(ev[1])
                 elif ev[0] == "estado" and self.cliente:
                     self.mao_levantada = ev[1]
                     self._pintar_mao()
@@ -2425,6 +2597,11 @@ class JanelaSessao(tk.Toplevel):
                         ev[1].parar()
                 if self.servidor and ev[0] in ("mudou", "mao", "registro"):
                     self._agendar_painel()
+                    try:
+                        if self.win_fichas_mestre is not None and self.win_fichas_mestre.winfo_exists():
+                            self.win_fichas_mestre.atualizar()
+                    except tk.TclError:
+                        pass
         except queue.Empty:
             pass
         except tk.TclError:

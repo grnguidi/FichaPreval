@@ -140,13 +140,24 @@ class Grupo:
             sem_sinal = {n for n, w in self.web.items() if agora - w["visto"] > 12}
             vez = self._quem_age()
             ordem = [o[0] for o in self.ordem]
+            de_quem = {n: (self.web[n].get("ficha", "") if n in self.web else getattr(self, "ficha_pc", {}).get(n, "")) for n in nomes}
+        fotos = {}      # foto do personagem (da ficha da mesa de cada um): "slug?v=versão", para a página buscar em /api/foto
+        arq = getattr(self, "fichas_arq", None)
+        for n, sl in de_quem.items():
+            if sl and arq is not None:
+                try:
+                    v = arq.resumo(sl)["foto"]
+                except (OSError, ValueError, KeyError):
+                    v = ""
+                if v:
+                    fotos[n] = f"{sl}&v={v}"
         with self.glock:
             cfg = dict(self.cfg)
             membros = []
             for n in nomes:
                 f, vis = fichas[n], self.vis.get(n, "tudo")
                 m = {"nome": n, "personagem": f.get("personagem", ""), "nivel": f.get("nivel", 0), "vis": vis, "vez": n == vez,
-                     "sem_sinal": n in sem_sinal, "eu": n == nome}
+                     "sem_sinal": n in sem_sinal, "eu": n == nome, "foto": fotos.get(n, "")}
                 vmax = f.get("vida_max", 0)
                 ver = cfg["painel"] and (vis != "nada" or n == nome) and vmax
                 if ver:

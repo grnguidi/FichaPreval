@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, font as tkfont
 
 import regras as R
+import foto as F
 import sessao
 from ponte_sessao import PonteSessao
 from regras_texto import REGRAS_TXT
@@ -276,6 +277,8 @@ class App(tk.Tk):
             if e["categoria"] not in self.categorias_enc:
                 self.categorias_enc.append(e["categoria"])
         self.arquivo = None
+        self.foto = ""                # foto do personagem (endereço de dados), vai dentro da ficha
+        self._foto_tk = None
         self._recalc_agendado = False
         self._carregando = False
         self.nivel_anterior = 1
@@ -529,8 +532,16 @@ class App(tk.Tk):
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
         self.lbl_modo.pack(anchor="w", pady=(4, 0))
 
+        # foto do personagem: clique para escolher; botão direito tira
+        self.lbl_foto = tk.Label(ban, text="＋\nfoto", bg=MESA_CAMPO, fg=MESA_TXT, font=(FONTE, 9), width=9, height=4, cursor="hand2",
+                                 highlightthickness=1, highlightbackground=OURO)
+        self.lbl_foto.pack(side="left", padx=(28, 0), anchor="n")
+        self.lbl_foto.bind("<Button-1>", lambda e: self.escolher_foto())
+        self.lbl_foto.bind("<Button-3>", lambda e: self.tirar_foto())
+        self._pintar_foto()
+
         idf = ttk.Frame(ban, style="Mesa.TFrame")
-        idf.pack(side="left", padx=(36, 0), anchor="n")
+        idf.pack(side="left", padx=(14, 0), anchor="n")
         self.v_nome, self.v_player, self.v_nivel = self.var(), self.var(), self.var("1")
         self.v_especie, self.v_sonho, self.v_guilda = self.var(), self.var(), self.var()
         self.ed(self.campo(idf, 0, 0, "Nome", self.v_nome, 24, estilo="Mesa"))
@@ -1299,6 +1310,41 @@ class App(tk.Tk):
                                     ("Notas da espécie", self.v_esp_notas)]):
             tk.Label(c, text=t, bg=PERG, fg=TINTA, font=(FONTE, 10, "bold"), anchor="w", width=16).grid(row=r, column=0, sticky="w", pady=3)
             ttk.Entry(c, textvariable=v).grid(row=r, column=1, sticky="we", pady=3)
+
+    # ---- foto do personagem
+    def _pintar_foto(self):
+        lb = getattr(self, "lbl_foto", None)
+        if lb is None:
+            return
+        img = F.para_tk(self.foto, 72) if self.foto else None
+        self._foto_tk = img            # o Tk precisa de uma referência viva
+        try:
+            if img is not None:
+                lb.configure(image=img, text="", width=72, height=72)
+            else:
+                lb.configure(image="", text="foto ✓\n(sem prévia)" if self.foto else "＋\nfoto", width=9, height=4)
+        except tk.TclError:
+            pass
+
+    def escolher_foto(self):
+        fn = filedialog.askopenfilename(title="Foto do personagem", filetypes=[("Imagens", "*.png *.jpg *.jpeg *.gif *.webp *.bmp"), ("Todos", "*.*")])
+        if not fn:
+            return
+        try:
+            self.foto = F.de_arquivo(fn)
+        except ValueError as e:
+            messagebox.showerror(APP_NOME, str(e))
+            return
+        self._pintar_foto()
+        self.alterado = True
+        self._titulo()
+
+    def tirar_foto(self):
+        if self.foto and messagebox.askyesno(APP_NOME, "Tirar a foto do personagem?"):
+            self.foto = ""
+            self._pintar_foto()
+            self.alterado = True
+            self._titulo()
 
     def _txt_mod(self, e):
         e.widget.edit_modified(False)
@@ -4122,6 +4168,7 @@ class App(tk.Tk):
             "talentos_ativos": sorted(self.talentos_ativos()),
             "talentos_escolha": {sl: ui["escolha"].get() for sl, ui in self.tal_ui.items() if ui["escolha"].get()},
             "especie_notas": self.v_esp_notas.get(),
+            "foto": self.foto,
         }
 
     def aplicar(self, s):
@@ -4212,6 +4259,8 @@ class App(tk.Tk):
             self.manual = {k: int(v) for k, v in (s.get("manual") or {}).items() if str(v).lstrip("-").isdigit()}
             self.desfazer = []
             self.v_esp_notas.set(s.get("especie_notas", ""))
+            self.foto = s.get("foto") if F.valida(s.get("foto")) else ""
+            self._pintar_foto()
             self.nivel_anterior = to_int(i.get("nivel", 1), 1)
             self.inicializado = s.get("inicializado", all(self.atr[k]["inicial"].get() for k in R.ATRIBUTOS))
         finally:
@@ -4273,6 +4322,27 @@ class App(tk.Tk):
         fn = filedialog.askopenfilename(title="Abrir ficha", filetypes=[("Ficha Prevalecentes", "*.json"), ("Todos", "*.*")])
         if not fn:
             return
+        self.abrir_caminho(fn)
+
+    def abrir_da_mesa(self, fn):
+        """O mestre abre uma ficha da mesa (pasta fichas/): é o próprio arquivo, então salvar atualiza a ficha do jogador."""
+        if self._descartar_ok():
+            self.abrir_caminho(fn)
+            try:
+                self.lift()
+            except Exception:
+                pass
+
+    def carregar_da_mesa(self, estado):
+        """O jogador recebe a ficha da mesa: ela troca a ficha aberta (sem arquivo; a mesa guarda as mudanças)."""
+        self.arquivo = None
+        self.modo = "jogo"
+        self.aplicar(estado)
+        self._aplicar_modo()
+        self.alterado = False
+        self._titulo()
+
+    def abrir_caminho(self, fn):
         try:
             with open(fn, encoding="utf-8") as f:
                 s = json.load(f)

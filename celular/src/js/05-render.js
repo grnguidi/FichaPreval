@@ -4,9 +4,10 @@ function render() {
   const vazio = !S;
   $("#nav").classList.toggle("oculto", vazio);
   $("#nivel").classList.toggle("oculto", vazio);
-  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Prevalecentes"; $("#t-sub").textContent = "Ficha de mesa"; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
+  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Prevalecentes"; $("#t-sub").textContent = "Ficha de mesa"; if ($("#t-foto")) $("#t-foto").hidden = true; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
   C = calcular();
   $("#t-nome").textContent = S.identidade.nome || "Sonhador sem nome";
+  const tf = $("#t-foto"); if (tf) { tf.hidden = !S.foto; if (S.foto && tf.getAttribute("src") !== S.foto) tf.src = S.foto; }
   $("#t-sub").innerHTML = C.resto ? `<span style="color:#f0a08c">${C.resto > 0 ? `faltam ${C.resto} pontos` : `excedeu ${-C.resto}`}</span>` : (S.identidade.especie || "") + (S.sem_alma ? " · sem alma" : "");
   $("#nv").textContent = `Nv ${C.nv}`;
   document.documentElement.classList.toggle("jogo", banco.modo !== "edicao");

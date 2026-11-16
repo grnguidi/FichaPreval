@@ -128,7 +128,9 @@ function pFicha() {
       <div class="passos"><button data-a="vital" data-chave="${chave}" data-d="-1" data-max="${max}">−</button><button data-a="vital" data-chave="${chave}" data-d="1" data-max="${max}">+</button></div></div>`;
   };
   const falta = Math.max(0, C.nVida - (v.rolagens || []).length);
-  let h = secao("Vigor do corpo") + `<div class="vitais">${vital("VIDA", "var(--c-vida)", "atual", d.vida)}${vital("MANA", "var(--c-mana)", "mana_atual", d.mana)}${vital("VIGOR", "var(--c-vigor)", "vigor_atual", d.vigor)}</div>
+  let h = `<div class="retrato">${S.foto ? `<img src="${S.foto}" alt="Foto do personagem" data-a="foto">` : `<button class="botao leve so-ed" data-a="foto">📷 Foto do personagem</button>`}
+    ${S.foto ? `<div class="so-ed"><button class="chip-acao" data-a="foto">Trocar foto</button><button class="chip-acao" data-a="foto-tirar">Tirar</button></div>` : ""}</div>`;
+  h += secao("Vigor do corpo") + `<div class="vitais">${vital("VIDA", "var(--c-vida)", "atual", d.vida)}${vital("MANA", "var(--c-mana)", "mana_atual", d.mana)}${vital("VIGOR", "var(--c-vigor)", "vigor_atual", d.vigor)}</div>
     <p class="sub" style="margin:8px 2px">Vigor recupera ${d.vigor_regen}/turno · Dados de vida: ${C.nVida}d12 ${v.modo === "media" ? "(média 7)" : `(rolados: ${Math.min(v.rolagens.length, C.nVida)})`}
     <span class="so-ed">· <a href="#" data-a="modo-vida" style="color:var(--vinho)">${v.modo === "media" ? "usar rolagem" : "usar média"}</a>
     ${v.modo === "rolar" && falta ? ` · <a href="#" data-a="rolar-vida" style="color:var(--vinho);font-weight:700">🎲 rolar ${falta}d12</a>` : ""}</span></p>`;

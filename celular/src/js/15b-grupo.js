@@ -66,7 +66,7 @@ function pGrupo() {
     const barra = m.pct == null ? "" : `<div class="gbarra"><i style="width:${m.pct}%;background:${m.pct > 50 ? "var(--c-vigor)" : m.pct > 20 ? "var(--c-per)" : "var(--c-vida)"}"></i></div>`;
     const conds = (m.cond || []).map((c) => `<span class="chip">${esc(c[0])} ${c[1]}/${c[2]}</span>`).join("") + (m.efeitos || []).map((e) => `<span class="chip ef">⏳ ${esc(e)}</span>`).join("");
     return `<div class="cartao aliado ${m.vez ? "vez" : ""} ${m.incapaz ? "caido" : ""}" ${m.eu ? "" : `data-a="g-aliado" data-n="${esc(m.nome)}"`}>
-      <div class="topo-al"><b>${esc(m.nome)}${m.eu ? " (você)" : ""}</b><span class="sub">${esc(m.personagem || "")}${m.nivel ? ` · Nv ${m.nivel}` : ""}${m.vez ? " · ⚔ vez" : ""}${m.sem_sinal ? " · sem sinal" : ""}</span>
+      <div class="topo-al">${m.foto ? fotoMesa(m.foto) : ""}<b>${esc(m.nome)}${m.eu ? " (você)" : ""}</b><span class="sub">${esc(m.personagem || "")}${m.nivel ? ` · Nv ${m.nivel}` : ""}${m.vez ? " · ⚔ vez" : ""}${m.sem_sinal ? " · sem sinal" : ""}</span>
         ${m.vida ? `<span class="vida">${m.vida[0]}/${m.vida[1]}</span>` : m.pct != null ? `<span class="vida">${m.pct}%</span>` : ""}</div>
       ${barra}${m.incapaz ? `<p class="erro" style="margin:6px 0 0"><b>Incapaz</b> — Portão da Morte: ${m.portao ? m.portao[0] : 0} sucesso(s), ${m.portao ? m.portao[1] : 0} falha(s)${m.eu ? "" : ". Toque para ajudar com Medicina."}</p>` : ""}
       ${conds ? `<div class="chips">${conds}</div>` : ""}

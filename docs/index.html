@@ -328,10 +328,21 @@ html.vitral .mesa.vez .info{color:#fff}
 html.vitral .secao:before{content:"";width:26px;height:14px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 14'%3E%3Cpath d='M1 7 H25' stroke='%236b7f4a' stroke-width='1.2' fill='none'/%3E%3Cg fill='%236b7f4a'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(4 7) rotate(-35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(11 7) rotate(35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(18 7) rotate(-35)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
 html.vitral .cartao{border-color:#cdb679}
 html.vitral #t-sub span{color:#a0553f!important}
+
+/* foto do personagem */
+.avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--ouro);flex:none;margin-right:10px;background:var(--perg2)}
+span.avatar.vazio{display:inline-flex;align-items:center;justify-content:center;color:var(--tinta2);font-size:18px;opacity:.55}
+.topo .avatar{width:38px;height:38px;margin-right:8px}
+.topo-al .avatar{width:30px;height:30px;margin-right:8px;vertical-align:middle}
+.retrato{display:flex;align-items:center;gap:12px;margin:2px 0 6px}
+.retrato img{width:84px;height:84px;border-radius:12px;object-fit:cover;border:2px solid var(--ouro);box-shadow:var(--sombra)}
+.item.apagado{opacity:.5}
+@media print{.impr .cab.com-foto{position:relative;background-position:left center,200% 0}.impr .cab .foto-impr{position:absolute;right:0;top:-1mm;width:18mm;height:18mm;object-fit:cover;border:1.2pt solid #b08a3e;outline:.4pt solid #3f4f2e;outline-offset:1pt}}
 </style>
 </head>
 <body>
 <header class="topo">
+  <img id="t-foto" class="avatar" alt="" hidden>
   <div class="nome"><b id="t-nome">Prevalecentes</b><small id="t-sub"></small></div>
   <div class="nivel" id="nivel"><button class="so-ed" data-a="nivel" data-d="-1" aria-label="Diminuir nível">−</button><span id="nv">Nv 1</span><button class="so-ed" data-a="nivel" data-d="1" aria-label="Subir nível">+</button></div>
   <button class="icone" data-a="menu" aria-label="Menu">☰</button>
@@ -1048,7 +1059,8 @@ function normalizar(s) {
   out.usos = Object.assign({}, out.usos || {});
   out.contra_usados = int(out.contra_usados);
   out.fome_usos = Math.max(0, int(out.fome_usos));          // Símbolo da Fome: Poções Espirituais gastas pelo grupo
-  out.casco_tipo = out.casco_tipo || "";                    // set Casco: tipo físico escolhido
+  out.casco_tipo = out.casco_tipo || "";
+  out.foto = typeof out.foto === "string" && out.foto.startsWith("data:image/") && out.foto.length <= 400000 ? out.foto : "";   // foto do personagem (pequena, dentro da ficha)                    // set Casco: tipo físico escolhido
   out.recursos = Object.assign({}, out.recursos || {});
   out.diario = Array.isArray(out.diario) ? out.diario.slice(0, 100) : [];
   out.meta = Object.assign({ caminho: "", mentor: "", etapas: [false, false, false], concluidas: 0, notas: "" }, out.meta || {});
@@ -1265,9 +1277,10 @@ function render() {
   const vazio = !S;
   $("#nav").classList.toggle("oculto", vazio);
   $("#nivel").classList.toggle("oculto", vazio);
-  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Prevalecentes"; $("#t-sub").textContent = "Ficha de mesa"; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
+  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Prevalecentes"; $("#t-sub").textContent = "Ficha de mesa"; if ($("#t-foto")) $("#t-foto").hidden = true; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
   C = calcular();
   $("#t-nome").textContent = S.identidade.nome || "Sonhador sem nome";
+  const tf = $("#t-foto"); if (tf) { tf.hidden = !S.foto; if (S.foto && tf.getAttribute("src") !== S.foto) tf.src = S.foto; }
   $("#t-sub").innerHTML = C.resto ? `<span style="color:#f0a08c">${C.resto > 0 ? `faltam ${C.resto} pontos` : `excedeu ${-C.resto}`}</span>` : (S.identidade.especie || "") + (S.sem_alma ? " · sem alma" : "");
   $("#nv").textContent = `Nv ${C.nv}`;
   document.documentElement.classList.toggle("jogo", banco.modo !== "edicao");
@@ -1418,7 +1431,9 @@ function pFicha() {
       <div class="passos"><button data-a="vital" data-chave="${chave}" data-d="-1" data-max="${max}">−</button><button data-a="vital" data-chave="${chave}" data-d="1" data-max="${max}">+</button></div></div>`;
   };
   const falta = Math.max(0, C.nVida - (v.rolagens || []).length);
-  let h = secao("Vigor do corpo") + `<div class="vitais">${vital("VIDA", "var(--c-vida)", "atual", d.vida)}${vital("MANA", "var(--c-mana)", "mana_atual", d.mana)}${vital("VIGOR", "var(--c-vigor)", "vigor_atual", d.vigor)}</div>
+  let h = `<div class="retrato">${S.foto ? `<img src="${S.foto}" alt="Foto do personagem" data-a="foto">` : `<button class="botao leve so-ed" data-a="foto">📷 Foto do personagem</button>`}
+    ${S.foto ? `<div class="so-ed"><button class="chip-acao" data-a="foto">Trocar foto</button><button class="chip-acao" data-a="foto-tirar">Tirar</button></div>` : ""}</div>`;
+  h += secao("Vigor do corpo") + `<div class="vitais">${vital("VIDA", "var(--c-vida)", "atual", d.vida)}${vital("MANA", "var(--c-mana)", "mana_atual", d.mana)}${vital("VIGOR", "var(--c-vigor)", "vigor_atual", d.vigor)}</div>
     <p class="sub" style="margin:8px 2px">Vigor recupera ${d.vigor_regen}/turno · Dados de vida: ${C.nVida}d12 ${v.modo === "media" ? "(média 7)" : `(rolados: ${Math.min(v.rolagens.length, C.nVida)})`}
     <span class="so-ed">· <a href="#" data-a="modo-vida" style="color:var(--vinho)">${v.modo === "media" ? "usar rolagem" : "usar média"}</a>
     ${v.modo === "rolar" && falta ? ` · <a href="#" data-a="rolar-vida" style="color:var(--vinho);font-weight:700">🎲 rolar ${falta}d12</a>` : ""}</span></p>`;
@@ -2223,7 +2238,7 @@ function folhaImpressao() {
   const d = C.d, v = S.vida, at = (ch, mx) => (v[ch] === "" || v[ch] == null ? mx : int(v[ch], mx));
   const t = (cab, linhas) => `<table><thead><tr>${cab.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>${linhas.map((l) => `<tr>${l.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
   const sec = (x) => `<h2>${x}</h2>`;
-  let h = `<div class="cab"><h1>${esc(S.identidade.nome || "Sonhador sem nome")}</h1><p class="linha">Player: ${esc(S.identidade.player || "—")} · Nível ${C.nv} · ${esc(S.identidade.especie || "—")}${S.sem_alma ? " · sem alma" : ""} · Guilda ${esc(S.identidade.guilda || "—")}</p>
+  let h = `<div class="cab${S.foto ? " com-foto" : ""}">${S.foto ? `<img class="foto-impr" src="${S.foto}" alt="">` : ""}<h1>${esc(S.identidade.nome || "Sonhador sem nome")}</h1><p class="linha">Player: ${esc(S.identidade.player || "—")} · Nível ${C.nv} · ${esc(S.identidade.especie || "—")}${S.sem_alma ? " · sem alma" : ""} · Guilda ${esc(S.identidade.guilda || "—")}</p>
     ${S.identidade.sonho ? `<p class="linha">Sonho: ${esc(S.identidade.sonho)}</p>` : ""}</div>`;
   // características de espécie: ajustes de atributo e o par descritivo (vantagem e desvantagem)
   const ajustes = R.ATRIBUTOS.map((k) => [k, int(S.atributos[k].especie)]).filter(([, n]) => n).map(([k, n]) => `${n > 0 ? "+" : "−"}${Math.abs(n)} ${R.NOMES_ATR[k]}`);
@@ -2917,14 +2932,15 @@ A["sessao-ok"] = () => {
 async function entrarSessao(nome, novo = false) {
   try {
     if (novo && sessao.id && sessao.id !== nome) sessao.id = "";
-    const r = await api("/api/oi", { nome, id: novo ? "" : sessao.id, senha: sessao.senha, ficha: sessao.ficha || undefined });
+    const r = await api("/api/oi", { nome, id: novo ? "" : sessao.id, senha: sessao.senha, ficha: sessao.ficha || undefined, codigo: sessao.ficha ? (sessao.codigo || codigosMesa()[sessao.ficha] || "") : undefined });
+    if (r.erro && String(r.erro).startsWith("ficha_")) { await fichaRecusada(r); return; }
     if (r.erro === "senha") {   // senha errada ou faltando: pede de novo, sem ficar tentando
       sessao.pedeSenha = true; sessao.conectado = false; sessao.laco += 1; pintarSessao();
       toast(sessao.senha ? "Senha da mesa incorreta." : "Esta mesa tem senha: peça ao mestre."); if (sessao.fichasLista) pedirFichaMesa(); else pedirNomeSessao(); return;
     }
     if (!r.id) throw new Error("mesa");
     sessao.id = r.id; sessao.chave = r.chave || "";
-    if (r.ficha) sessao.ficha = r.ficha;
+    if (r.ficha) { sessao.ficha = r.ficha; if (sessao.codigo) guardarCodigoMesa(r.ficha, sessao.codigo); }
     try { localStorage.setItem(CH_SESSAO, sessao.id); localStorage.setItem(CH_CHAVE, sessao.chave); localStorage.setItem(CH_FICHA, sessao.ficha || ""); } catch (e) { /* sem storage */ }
     sessao.conectado = true; sessao.ultimo = "";
     if (novo) toast(`Na mesa como <b>${esc(sessao.id)}</b>.`);
@@ -3185,7 +3201,7 @@ function pGrupo() {
     const barra = m.pct == null ? "" : `<div class="gbarra"><i style="width:${m.pct}%;background:${m.pct > 50 ? "var(--c-vigor)" : m.pct > 20 ? "var(--c-per)" : "var(--c-vida)"}"></i></div>`;
     const conds = (m.cond || []).map((c) => `<span class="chip">${esc(c[0])} ${c[1]}/${c[2]}</span>`).join("") + (m.efeitos || []).map((e) => `<span class="chip ef">⏳ ${esc(e)}</span>`).join("");
     return `<div class="cartao aliado ${m.vez ? "vez" : ""} ${m.incapaz ? "caido" : ""}" ${m.eu ? "" : `data-a="g-aliado" data-n="${esc(m.nome)}"`}>
-      <div class="topo-al"><b>${esc(m.nome)}${m.eu ? " (você)" : ""}</b><span class="sub">${esc(m.personagem || "")}${m.nivel ? ` · Nv ${m.nivel}` : ""}${m.vez ? " · ⚔ vez" : ""}${m.sem_sinal ? " · sem sinal" : ""}</span>
+      <div class="topo-al">${m.foto ? fotoMesa(m.foto) : ""}<b>${esc(m.nome)}${m.eu ? " (você)" : ""}</b><span class="sub">${esc(m.personagem || "")}${m.nivel ? ` · Nv ${m.nivel}` : ""}${m.vez ? " · ⚔ vez" : ""}${m.sem_sinal ? " · sem sinal" : ""}</span>
         ${m.vida ? `<span class="vida">${m.vida[0]}/${m.vida[1]}</span>` : m.pct != null ? `<span class="vida">${m.pct}%</span>` : ""}</div>
       ${barra}${m.incapaz ? `<p class="erro" style="margin:6px 0 0"><b>Incapaz</b> — Portão da Morte: ${m.portao ? m.portao[0] : 0} sucesso(s), ${m.portao ? m.portao[1] : 0} falha(s)${m.eu ? "" : ". Toque para ajudar com Medicina."}</p>` : ""}
       ${conds ? `<div class="chips">${conds}</div>` : ""}
@@ -3376,31 +3392,62 @@ const slugNome = (t) => String(t || "").normalize("NFKD").replace(/[̀-ͯ]/g, ""
 const novoIdFicha = () => (sessao.criandoMesa && sessao.ficha) ? (sessao.criandoMesa = false, chaveMesa()) : "ficha-" + Date.now().toString(36);
 const naFichaDaMesa = () => !!(sessao.ficha && S && banco.atual === chaveMesa());
 
+const CH_COD = "prevalecentes.sessao.codigos";
+const codigosMesa = () => { try { return JSON.parse(localStorage.getItem(CH_COD) || "{}") || {}; } catch (e) { return {}; } };
+const guardarCodigoMesa = (slug, cod) => { const c = codigosMesa(); if (cod) c[slug] = cod; else delete c[slug]; try { localStorage.setItem(CH_COD, JSON.stringify(c)); } catch (e) { /* sem storage */ } };
+const fotoMesa = (ref, cls = "avatar") => ref ? `<img class="${cls}" src="/api/foto?f=${ref}" alt="" loading="lazy">` : `<span class="${cls} vazio">☺</span>`;
+async function atualizarFichasLista() {
+  try { const r = await api("/api/sessao?id=" + encodeURIComponent(sessao.id || "")); if (r && Array.isArray(r.fichas)) sessao.fichasLista = r.fichas; } catch (e) { /* fica com a lista que tinha */ }
+}
+// As fichas são criadas pelo mestre. Cada uma fica presa ao primeiro jogador que a escolhe (ele cria um código).
 function pedirFichaMesa() {
-  const lista = sessao.fichasLista || [];
-  folha("Quem é você?", `<p class="sub">Escolha a sua ficha. Ela fica guardada no notebook do mestre e acompanha você durante a sessão.</p>
+  const lista = sessao.fichasLista || [], cod = codigosMesa();
+  folha("Quem é você?", `<p class="sub">Escolha a sua ficha. Ela fica guardada com o mestre e acompanha você na sessão. Na primeira vez você cria um código: só entra nela de novo quem souber o código.</p>
     ${sessao.pedeSenha ? `<label class="campo"><span>Senha da mesa</span><input id="ss-s" value="${esc(sessao.senha)}" maxlength="20" inputmode="numeric" autocomplete="off"></label>` : ""}
-    <div class="lista">${lista.map((f) => `<div class="item" data-a="ficha-mesa" data-s="${esc(f.slug)}" data-n="${esc(f.nome)}"><div class="tx"><b>${esc(f.nome)}</b><small>${f.tem ? "ficha salva no notebook" : "ainda sem ficha: criar"}</small></div><span class="sub">›</span></div>`).join("")}
-    <div class="item" data-a="ficha-mesa-outra"><div class="tx"><b>Outra pessoa…</b><small>Digite um nome e crie uma ficha nova</small></div><span class="sub">›</span></div></div>`,
+    <div class="lista">${lista.map((f) => {
+      const minha = f.minha || (f.presa && cod[f.slug]);
+      const sub = f.uso ? `em uso por ${esc(f.uso)}` : (f.tem ? `${esc(f.personagem || "sem nome")} · nível ${esc(String(f.nivel || 1))}` : "ainda sem ficha: você traz a sua ou cria do zero")
+        + (minha ? " · é a sua" : f.presa ? " · já tem dono (pede o código)" : "");
+      return `<div class="item ${f.uso ? "apagado" : ""}" data-a="ficha-mesa" data-s="${esc(f.slug)}" data-n="${esc(f.nome)}">${fotoMesa(f.foto ? f.slug + "&v=" + f.foto : "")}<div class="tx"><b>${esc(f.nome)}</b><small>${sub}</small></div><span class="sub">›</span></div>`;
+    }).join("") || `<p class="sub">O mestre ainda não criou fichas para esta mesa.</p>`}</div>`,
   `<button class="botao leve" data-a="fechar">Agora não</button>`);
 }
-A["ficha-mesa-menu"] = () => { fecharFolha(); pedirFichaMesa(); };
+A["ficha-mesa-menu"] = async () => { fecharFolha(); await atualizarFichasLista(); pedirFichaMesa(); };
 function lerSenhaFolha() {
   if ($("#ss-s")) { sessao.senha = $("#ss-s").value.trim(); try { localStorage.setItem(CH_SENHA, sessao.senha); } catch (e) { /* sem storage */ } }
 }
-A["ficha-mesa"] = (el) => { lerSenhaFolha(); fecharFolha(); entrarComFicha(el.dataset.n, el.dataset.s); };
-A["ficha-mesa-outra"] = () => {
-  const senha = $("#ss-s") ? `<label class="campo"><span>Senha da mesa</span><input id="ss-s" value="${esc(sessao.senha)}" maxlength="20" inputmode="numeric" autocomplete="off"></label>` : "";
-  folha("Outra pessoa", `<label class="campo"><span>Seu nome</span><input id="fo-n" maxlength="30" autocomplete="off"></label>${senha}`,
-    `<button class="botao leve" data-a="ficha-mesa-menu">‹ Voltar</button><button class="botao prim" data-a="ficha-mesa-outra-ok">Entrar</button>`);
+A["ficha-mesa"] = (el) => {
+  const f = (sessao.fichasLista || []).find((x) => x.slug === el.dataset.s) || { slug: el.dataset.s, nome: el.dataset.n };
+  if (f.uso) { toast(`Esta ficha está em uso por <b>${esc(f.uso)}</b>.`); return; }
+  lerSenhaFolha();
+  const cod = codigosMesa()[f.slug];
+  if (cod && (f.presa || f.minha)) { fecharFolha(); entrarComFicha(f.nome, f.slug, cod); return; }
+  pedirCodigoFicha(f.nome, f.slug, !!f.presa);
 };
-A["ficha-mesa-outra-ok"] = () => {
-  const n = $("#fo-n").value.trim(), s = slugNome(n);
-  if (!s) { $("#fo-n").focus(); toast("Digite um nome com letras ou números."); return; }
-  lerSenhaFolha(); fecharFolha(); entrarComFicha(n, s);
+function pedirCodigoFicha(nome, slug, presa, erro = "") {
+  folha(esc(nome), `${erro ? `<p class="erro">${erro}</p>` : ""}<p class="sub">${presa ? "Esta ficha já tem dono. Digite o código dela (se esqueceu, o mestre vê o código ou libera a ficha)."
+    : "Crie um código para esta ficha (3 a 12 letras ou números). Só entra nela de novo quem souber o código."}</p>
+    <label class="campo"><span>Código da ficha</span><input id="fm-cod" maxlength="12" autocomplete="off" autocapitalize="off"></label>`,
+    `<button class="botao leve" data-a="ficha-mesa-menu">‹ Voltar</button><button class="botao prim" data-a="ficha-mesa-cod" data-s="${esc(slug)}" data-n="${esc(nome)}">Entrar</button>`);
+}
+A["ficha-mesa-cod"] = (el) => {
+  const cod = $("#fm-cod").value.trim();
+  if (cod.length < 3) { $("#fm-cod").focus(); toast("O código precisa de pelo menos 3 caracteres."); return; }
+  fecharFolha(); entrarComFicha(el.dataset.n, el.dataset.s, cod);
 };
-async function entrarComFicha(nome, slug) {
-  sessao.ficha = slug; sessao.fichaOk = false; sessao.fichaVer = ""; sessao.fichaEnviada = 0; sessao.criandoMesa = false;
+// A mesa recusou a ficha: mostra o motivo e volta para a escolha.
+async function fichaRecusada(r) {
+  const slug = sessao.ficha, nome = nomeDaFichaMesa();
+  sessao.conectado = false; sessao.laco += 1; sessao.ficha = ""; sessao.id = "";
+  try { localStorage.setItem(CH_FICHA, ""); } catch (e) { /* sem storage */ }
+  pintarSessao();
+  if (r.erro === "ficha_presa") { guardarCodigoMesa(slug, ""); pedirCodigoFicha(nome, slug, true, "Código errado para esta ficha."); return; }
+  if (r.erro === "ficha_codigo") { pedirCodigoFicha(nome, slug, false); return; }
+  toast(r.erro === "ficha_em_uso" ? `Esta ficha está em uso por <b>${esc(r.por || "outro jogador")}</b>.` : "Essa ficha não existe mais na mesa.", 5000);
+  await atualizarFichasLista(); pedirFichaMesa();
+}
+async function entrarComFicha(nome, slug, codigo = "") {
+  sessao.ficha = slug; sessao.codigo = codigo; sessao.fichaOk = false; sessao.fichaVer = ""; sessao.fichaEnviada = 0; sessao.criandoMesa = false;
   sessao.id = "";                       // nova entrada: a mesa dá o nome da ficha e uma chave deste aparelho
   await entrarSessao(nome, true);
   if (!sessao.conectado) { sessao.ficha = ""; try { localStorage.setItem(CH_FICHA, ""); } catch (e) { /* sem storage */ } }
@@ -3435,11 +3482,44 @@ async function carregarFichaMesa(depois = false) {
     if (local && local.identidade) { sessao.fichaVer = ""; if (!naFichaDaMesa()) abrirFicha(chave); enviarFichaMesa(true); return true; }
     sessao.fichaVer = "";
     sessao.criandoMesa = true;
-    folha("Sem ficha ainda", `<p class="sub">Não há ficha de <b>${esc(nomeDaFichaMesa())}</b> no notebook do mestre. Crie uma agora ou traga a que você já tem no app instalado.</p>`,
-      `<button class="botao leve" data-a="atualizar-ficha-ok">📲 Trazer do app</button><button class="botao prim" data-a="nova-mesa">✦ Criar ficha nova</button>`);
+    semFichaAinda();
     return true;
   } finally { baixandoArq = false; }
 }
+// A ficha da mesa ainda está vazia: o jogador liga uma ficha que já tem (deste aparelho, de um arquivo .json ou do app instalado) ou cria do zero.
+function semFichaAinda() {
+  const locais = Object.keys(banco.fichas).filter((k) => !k.startsWith("mesa-") && banco.fichas[k] && banco.fichas[k].identidade);
+  folha("Sem ficha ainda", `<p class="sub">A ficha de <b>${esc(nomeDaFichaMesa())}</b> ainda está vazia. Ligue uma ficha que você já tem ou crie uma do zero; depois disso ela fica guardada com o mestre.</p>
+    <div class="lista">${locais.map((k) => `<div class="item" data-a="mesa-de-local" data-id="${esc(k)}"><div class="tx"><b>${esc(banco.fichas[k].identidade.nome || "sem nome")}</b><small>ficha deste aparelho · nível ${esc(String(banco.fichas[k].identidade.nivel || 1))}</small></div><span class="sub">usar ›</span></div>`).join("")}
+    <div class="item" data-a="mesa-de-arquivo"><div class="tx"><b>📂 Abrir um arquivo .json</b><small>Uma ficha exportada do app ou do programa de PC</small></div><span class="sub">›</span></div>
+    <div class="item" data-a="atualizar-ficha-ok"><div class="tx"><b>📲 Trazer do app instalado</b><small>Pega a ficha guardada no app deste celular</small></div><span class="sub">›</span></div></div>`,
+    `<button class="botao prim" data-a="nova-mesa">✦ Criar ficha do zero</button>`);
+}
+function adotarFichaMesa(s) {
+  if (!sessao.ficha) return;
+  const n = normalizar(JSON.parse(JSON.stringify(s))); n._salvo = Date.now();
+  banco.fichas[chaveMesa()] = n; gravarLocal();
+  abrirFicha(chaveMesa(), "jogo"); sessao.fichaOk = true; sessao.criandoMesa = false;
+  enviarFichaMesa(true);
+  toast(`Ficha <b>${esc(n.identidade.nome || "sem nome")}</b> ligada à mesa.`);
+}
+A["mesa-de-local"] = (el) => { const s = banco.fichas[el.dataset.id]; fecharFolha(); if (s) adotarFichaMesa(s); };
+A["mesa-de-arquivo"] = () => {
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = ".json,application/json";
+  inp.onchange = () => {
+    const arq = inp.files[0]; if (!arq) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const d = JSON.parse(rd.result);
+        if (!d || !d.identidade) throw new Error("não é ficha");
+        fecharFolha(); adotarFichaMesa(d);
+      } catch (e) { toast("Este arquivo não é uma ficha de Prevalecentes."); }
+    };
+    rd.readAsText(arq);
+  };
+  inp.click();
+};
 A["nova-mesa"] = () => { fecharFolha(); sessao.criandoMesa = true; A["nova"](); };
 
 // Devolve a ficha ao notebook depois de cada mudança (conferido a cada 1,5 s; só usa a rede quando mudou).
@@ -3492,6 +3572,30 @@ A["atualizar-confirma"] = () => {
   enviarFichaMesa(true);
   toast(`Ficha de <b>${esc(nomeDaFichaMesa())}</b> atualizada no notebook.`);
 };
+
+// ------------------------------------------------------------------ foto do personagem
+// A imagem é cortada em quadrado e reduzida a 256 px (JPEG) para caber na ficha e viajar pela sessão.
+A["foto"] = () => {
+  if (banco.modo !== "edicao" && S.foto) return;      // no modo jogo o toque na foto não troca nada
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+  inp.onchange = () => {
+    const arq = inp.files[0]; if (!arq) return;
+    const url = URL.createObjectURL(arq), img = new Image();
+    img.onload = () => {
+      const lado = Math.min(img.width, img.height), cv = document.createElement("canvas");
+      cv.width = cv.height = 256;
+      cv.getContext("2d").drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 256, 256);
+      URL.revokeObjectURL(url);
+      const dados = cv.toDataURL("image/jpeg", 0.82);
+      mudar((s) => { s.foto = dados; });
+      toast("Foto do personagem guardada na ficha.");
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); toast("Não consegui ler essa imagem."); };
+    img.src = url;
+  };
+  inp.click();
+};
+A["foto-tirar"] = () => { mudar((s) => { s.foto = ""; }); };
 // ------------------------------------------------------------------ eventos
 document.addEventListener("click", (ev) => {
   const el = ev.target.closest("[data-a]");

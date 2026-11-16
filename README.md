@@ -97,7 +97,12 @@ Ao abrir a mesa, o programa cria a pasta `fichas/` ao lado dele, com um `.json` 
 - **Mestre muda o arquivo:** se você abrir o `.json` do jogador no programa de PC e salvar, o celular percebe a versão nova e baixa sozinho.
 - **Atualizar minha ficha:** menu ☰ do celular, depois de escolher a ficha. Pega a ficha do app instalado (a editada em casa), pede confirmação e troca o `.json` do jogador no notebook.
 - **Cópias de segurança:** ao abrir a mesa, `fichas/backup/sessao_DATA/` guarda todas as fichas; cada "Atualizar minha ficha" guarda a anterior em `fichas/backup/`.
-- **Quem mudou por último vale.** Não há senha por jogador, só a senha da mesa. A pasta `fichas/` está no `.gitignore`.
+- **Quem mudou por último vale.** A pasta `fichas/` está no `.gitignore`.
+- **O mestre cuida da lista:** botão "📜 Fichas" na mesa do mestre. Ele cria fichas novas, importa um `.json`, abre qualquer ficha (é o próprio arquivo: ao salvar, o jogador recebe na hora), libera e exclui. Os cinco nomes de sempre continuam nascendo sozinhos; excluir um deles só esvazia a ficha. O jogador não cria mais fichas digitando um nome.
+- **Dono da ficha:** quem escolhe uma ficha livre cria um código (3 a 12 caracteres). Ela fica presa a esse jogador: só entra de novo quem souber o código, até o mestre liberar. O mestre vê o código na janela de fichas. Enquanto um jogador conectado usa a ficha, ninguém mais entra nela.
+- **Ficha vazia:** o jogador liga uma ficha que já tem (do aparelho, de um arquivo `.json`, do app instalado ou a que está aberta no PC) ou cria do zero.
+- **No PC também:** o jogador do programa de PC escolhe a ficha ao entrar (conexão direta ou por link); a ficha da mesa troca a ficha aberta e cada mudança volta para o `.json` do mestre.
+- **Foto do personagem:** fica dentro da ficha (256 px). No celular, botão "📷 Foto do personagem" no modo edição; no PC, clique no quadro "＋ foto" do cabeçalho (botão direito tira). Aparece na ficha, no PDF e na folha impressa, na lista de fichas ao entrar, no painel do Grupo e na tela do mestre. No PC, mostrar e converter fotos usa o Pillow (`requirements.txt`); sem ele só PNG ou GIF pequenos.
 
 ### Painel do mestre: inimigos, anotações e combate
 
@@ -205,6 +210,8 @@ Os mesmos testes rodam no GitHub Actions a cada push (`.github/workflows/ci.yml`
 | `ponte_sessao.py` | Liga a ficha do PC aberta à sessão (resumo e eventos do mestre) |
 | `grupo.py`, `grupo_ui.py` | Interação entre jogadores (servidor e janelas) |
 | `fichas_mesa.py` | Pasta `fichas/` com um .json por jogador (lê, grava, versão e backup) |
+| `fichas_ui.py` | Janelas das fichas da mesa no PC (mestre: criar, abrir, liberar; jogador: escolher e sincronizar) |
+| `foto.py` | Foto do personagem (lê, reduz e mostra a imagem) |
 | `bestiario.py`, `mestre_dados.py`, `mestre_web.py`, `pagina_mestre.py` | Painel do mestre: números do bestiário, dados, servidor local e página |
 | `tunel.py` | Mesa pela internet (túnel com o cloudflared) |
 | `pagina_celular.py` | Ficha do celular servida pelo mestre (gerado por `celular/build.py`) |

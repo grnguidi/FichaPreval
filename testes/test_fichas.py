@@ -7,6 +7,7 @@ import queue
 import sys
 import tempfile
 import time
+import urllib.parse
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -42,7 +43,9 @@ try:
     assert [f["nome"] for f in info["fichas"]] == ["Bruno", "Carol", "Kaua", "Enrico", "Guidi"] and not any(f["tem"] for f in info["fichas"])
 
     # a Carol entra com a ficha dela
-    r = http("/api/oi", {"nome": "Carol", "id": "", "ficha": "carol"})
+    # a ficha livre pede um código; quem escolhe primeiro vira o dono
+    assert http("/api/oi", {"nome": "Carol", "id": "", "ficha": "carol"}) == {"erro": "ficha_codigo"}
+    r = http("/api/oi", {"nome": "Carol", "id": "", "ficha": "carol", "codigo": "1234"})
     ident, chave = r["id"], r["chave"]
     assert r["ficha"] == "carol"
     b = http("/api/ficha-arq?id=%s&k=%s" % (ident, chave))
@@ -90,12 +93,61 @@ try:
     assert http("/api/ficha-salvar", {"id": r2["id"], "chave": r2["chave"], "estado": nova})["ok"] is False
     assert http("/api/ficha-salvar", {"id": ident, "chave": chave, "estado": {"lixo": 1}})["ok"] is False
     assert http("/api/ficha-salvar", {"id": ident, "chave": "errada", "estado": nova}).get("ok") is False
-    # nome novo: cria arquivo novo
-    r3 = http("/api/oi", {"nome": "Zé Maria", "id": "", "ficha": "Zé Maria"})
+    # só o mestre cria fichas: nome que não está na lista é recusado; depois de criada, entra
+    assert http("/api/oi", {"nome": "Zé Maria", "id": "", "ficha": "Zé Maria"}) == {"erro": "ficha_inexistente"}
+    assert srv.fichas_arq.criar("Zé Maria") == "ze-maria"
+    r3 = http("/api/oi", {"nome": "Zé Maria", "id": "", "ficha": "Zé Maria", "codigo": "zzz"})
     assert r3["ficha"] == "ze-maria"
     assert http("/api/ficha-salvar", {"id": r3["id"], "chave": r3["chave"], "estado": nova})["ok"]
     assert os.path.exists(os.path.join(pasta, "ze-maria.json"))
     assert any(f["slug"] == "ze-maria" and f["tem"] for f in http("/api/sessao")["fichas"])
+    # a ficha da Carol está em uso por ela; depois de sair, continua presa: só entra com o código dela
+    assert http("/api/oi", {"nome": "Intruso", "id": "", "ficha": "carol", "codigo": "1234"}) == {"erro": "ficha_em_uso", "por": "Carol"}
+    with srv.lock:
+        srv.web["Carol"]["visto"] -= 60
+    assert http("/api/oi", {"nome": "Intruso", "id": "", "ficha": "carol", "codigo": "9999"}) == {"erro": "ficha_presa"}
+    volta = http("/api/oi", {"nome": "Carol", "id": "", "ficha": "carol", "codigo": "1234"})
+    assert volta["ficha"] == "carol"
+    lista = {f["slug"]: f for f in http("/api/sessao?id=" + urllib.parse.quote(volta["id"]))["fichas"]}
+    assert lista["carol"]["presa"] and lista["carol"]["minha"] and lista["carol"]["personagem"] == "Lyra" and not lista["bruno"]["presa"]
+    # o mestre libera: o próximo que escolher vira o dono; excluir manda para o backup (as de sempre só esvaziam)
+    with srv.lock:
+        srv.web[volta["id"]]["visto"] -= 60
+    assert srv.fichas_arq.liberar("carol") and srv.fichas_arq.dono("carol") is None
+    assert http("/api/oi", {"nome": "Novo", "id": "", "ficha": "carol", "codigo": "abc"})["ficha"] == "carol"
+    assert srv.fichas_arq.excluir("ze-maria") and not os.path.exists(os.path.join(pasta, "ze-maria.json"))
+    assert srv.fichas_arq.excluir("carol") and os.path.exists(os.path.join(pasta, "carol.json")) and srv.fichas_arq.dono("carol") is None
+    # foto: sai em /api/foto e marca a lista
+    foto = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    srv.fichas_arq.gravar("bruno", {"identidade": {"nome": "Brasa", "nivel": 2}, "foto": foto}, forcar=True)
+    assert [f["foto"] for f in http("/api/sessao")["fichas"] if f["slug"] == "bruno"][0]
+    with urllib.request.urlopen(BASE + "/api/foto?f=bruno") as resp:
+        assert resp.headers["Content-Type"] == "image/png" and resp.read()[:4] == b"\x89PNG"
+    # jogador do PC (conexão direta): lista, escolhe com código, salva, percebe a mudança do mestre e solta
+    import socket
+    c = socket.create_connection(("127.0.0.1", 5797), timeout=5)
+    arq = c.makefile("r", encoding="utf-8", newline="\n")
+
+    def pc(m=None, oi=None):
+        c.sendall((json.dumps(oi or {"t": "fichas", "m": m}) + "\n").encode())
+        while True:
+            x = json.loads(arq.readline())
+            if x.get("t") in ("ok", "fichas_resp"):
+                return x.get("r", x)
+    assert pc(oi={"t": "oi", "nome": "Dani"})["nome"] == "Dani"
+    assert any(f["slug"] == "enrico" for f in pc({"acao": "listar"})["fichas"])
+    assert pc({"acao": "escolher", "slug": "enrico"})["motivo"] == "ficha_codigo"
+    e1 = pc({"acao": "escolher", "slug": "enrico", "codigo": "dd1"})
+    assert e1["ok"] and not e1["existe"]
+    g = pc({"acao": "salvar", "estado": {"identidade": {"nome": "Faísca", "nivel": 2}}, "base": None})
+    assert g["ok"] and pc({"acao": "ver"})["ver"] == g["ver"]
+    assert pc({"acao": "escolher", "slug": "bruno", "codigo": "x"})["motivo"] == "ficha_codigo"      # código curto demais
+    assert srv.ficha_em_uso("enrico") == "Dani"
+    srv.fichas_arq.gravar("enrico", {"identidade": {"nome": "Faísca", "nivel": 3}}, forcar=True)
+    assert pc({"acao": "ver"})["ver"] != g["ver"] and pc({"acao": "baixar"})["ficha"]["identidade"]["nivel"] == 3
+    assert pc({"acao": "salvar", "estado": {"identidade": {"nome": "Faísca", "nivel": 9}}, "base": g["ver"]}).get("conflito")
+    assert pc({"acao": "soltar"})["ok"] and srv.ficha_em_uso("enrico") == ""
+    c.close()
     print("ok")
 finally:
     srv.parar()

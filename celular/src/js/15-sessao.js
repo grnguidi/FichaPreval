@@ -52,14 +52,15 @@ A["sessao-ok"] = () => {
 async function entrarSessao(nome, novo = false) {
   try {
     if (novo && sessao.id && sessao.id !== nome) sessao.id = "";
-    const r = await api("/api/oi", { nome, id: novo ? "" : sessao.id, senha: sessao.senha, ficha: sessao.ficha || undefined });
+    const r = await api("/api/oi", { nome, id: novo ? "" : sessao.id, senha: sessao.senha, ficha: sessao.ficha || undefined, codigo: sessao.ficha ? (sessao.codigo || codigosMesa()[sessao.ficha] || "") : undefined });
+    if (r.erro && String(r.erro).startsWith("ficha_")) { await fichaRecusada(r); return; }
     if (r.erro === "senha") {   // senha errada ou faltando: pede de novo, sem ficar tentando
       sessao.pedeSenha = true; sessao.conectado = false; sessao.laco += 1; pintarSessao();
       toast(sessao.senha ? "Senha da mesa incorreta." : "Esta mesa tem senha: peça ao mestre."); if (sessao.fichasLista) pedirFichaMesa(); else pedirNomeSessao(); return;
     }
     if (!r.id) throw new Error("mesa");
     sessao.id = r.id; sessao.chave = r.chave || "";
-    if (r.ficha) sessao.ficha = r.ficha;
+    if (r.ficha) { sessao.ficha = r.ficha; if (sessao.codigo) guardarCodigoMesa(r.ficha, sessao.codigo); }
     try { localStorage.setItem(CH_SESSAO, sessao.id); localStorage.setItem(CH_CHAVE, sessao.chave); localStorage.setItem(CH_FICHA, sessao.ficha || ""); } catch (e) { /* sem storage */ }
     sessao.conectado = true; sessao.ultimo = "";
     if (novo) toast(`Na mesa como <b>${esc(sessao.id)}</b>.`);

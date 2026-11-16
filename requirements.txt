@@ -1,3 +1,4 @@
 # Dependências para rodar e gerar o executável (py -m pip install -r requirements.txt)
 reportlab>=5.1,<6
 segno>=1.6,<2
+pillow>=10,<13   # foto do personagem (qualquer imagem, mostrada no PC e no PDF)

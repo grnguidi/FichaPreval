@@ -44,7 +44,8 @@ function normalizar(s) {
   out.usos = Object.assign({}, out.usos || {});
   out.contra_usados = int(out.contra_usados);
   out.fome_usos = Math.max(0, int(out.fome_usos));          // Símbolo da Fome: Poções Espirituais gastas pelo grupo
-  out.casco_tipo = out.casco_tipo || "";                    // set Casco: tipo físico escolhido
+  out.casco_tipo = out.casco_tipo || "";
+  out.foto = typeof out.foto === "string" && out.foto.startsWith("data:image/") && out.foto.length <= 400000 ? out.foto : "";   // foto do personagem (pequena, dentro da ficha)                    // set Casco: tipo físico escolhido
   out.recursos = Object.assign({}, out.recursos || {});
   out.diario = Array.isArray(out.diario) ? out.diario.slice(0, 100) : [];
   out.meta = Object.assign({ caminho: "", mentor: "", etapas: [false, false, false], concluidas: 0, notas: "" }, out.meta || {});

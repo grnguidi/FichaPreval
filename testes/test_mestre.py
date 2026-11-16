@@ -149,7 +149,7 @@ try:
     time.sleep(0.2)
     try:
         assert sessao.SERVIDOR_ATIVO is srv
-        oi = srv.web_entrar("Carol", "", ficha="carol")
+        oi = srv.web_entrar("Carol", "", ficha="carol", codigo="1234")
         srv.receber_ficha("Carol", {"personagem": "Lyra", "nivel": 5, "vida": 40, "vida_max": 51, "ca": 12, "iniciativa": 3, "iniciativa_dados": 1}, web=True)
         e = http("/api/estado")
         assert e["sessao"] and e["jogadores"][0]["nome"] == "Carol" and e["jogadores"][0]["ficha"]["vida"] == 40 and e["nmp"] == 5
