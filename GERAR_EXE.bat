@@ -17,7 +17,7 @@ if not defined PY (
 )
 
 echo == Instalando PyInstaller e reportlab (PDF)...
-%PY% -m pip install --upgrade pyinstaller reportlab segno
+%PY% -m pip install --upgrade -r requirements.txt -r requirements-build.txt
 if errorlevel 1 goto erro
 
 echo == Gerando o executavel...

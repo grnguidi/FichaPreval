@@ -1,0 +1,21 @@
+name: Testes
+on: [push, pull_request]
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
+      - run: pip install -r requirements.txt
+      - name: Testes de mesa, grupo e conexão
+        run: for t in testes/test_*.py; do echo "== $t"; xvfb-run -a python "$t" || exit 1; done
+      - name: PC e celular dão os mesmos resultados
+        run: sh celular/testes/rodar.sh
+      - name: App do celular está atualizado (docs/ e pagina_celular.py)
+        run: |
+          python celular/build.py
+          git diff --exit-code -- docs pagina_celular.py || { echo "Rode py celular/build.py e faça commit do resultado."; exit 1; }

@@ -5,6 +5,7 @@ Não precisa de conta nem de mexer no roteador. O cloudflared é um programa da 
 no PC, é baixado uma vez (do GitHub oficial) para a pasta ~/.prevalecentes. O endereço muda a cada sessão.
 Eventos na fila: ("tunel", estado, texto) com estado em "baixando", "abrindo", "ok", "erro", "fechado".
 """
+import hashlib
 import os
 import platform
 import re
@@ -15,7 +16,14 @@ import threading
 import urllib.request
 
 PASTA = os.path.join(os.path.expanduser("~"), ".prevalecentes")
-BASE = "https://github.com/cloudflare/cloudflared/releases/latest/download/"
+VERSAO_CLOUDFLARED = "2026.11.0"   # versão fixa: o download é conferido pelo SHA-256 abaixo (atualize os dois juntos)
+BASE = f"https://github.com/cloudflare/cloudflared/releases/download/{VERSAO_CLOUDFLARED}/"
+SHA256 = {
+    "cloudflared-windows-amd64.exe": "d5c1d82031da6253dcdcff64c944cd0fe063016edeb2e4fd088075fc9bd52d0a",
+    "cloudflared-windows-386.exe": "dbefbddfe99cf4b6d0fc3bd1b8a7b120d5d207a33e3669b95116f4aa7c130062",
+    "cloudflared-linux-amd64": "51f7c68b57ed7269164075d7e789efce5b59355982f06392deeb037d982a51fd",
+    "cloudflared-linux-arm64": "abe54a006acf9faf2d19ee9d953cb0d0804e92f59c5382a162e57b84d086f56f",
+}
 RE_URL = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
 
 
@@ -83,6 +91,13 @@ class Tunel:
                     self._avisar("baixando", f"{pct}%" if total else f"{lido // 1048576} MB")
         if lido < 1_000_000:
             raise OSError("o download veio incompleto")
+        h = hashlib.sha256()
+        with open(destino + ".parte", "rb") as f:
+            for bloco in iter(lambda: f.read(1048576), b""):
+                h.update(bloco)
+        if h.hexdigest() != SHA256.get(nome):
+            os.remove(destino + ".parte")
+            raise OSError("o arquivo baixado não confere com o SHA-256 esperado (download descartado)")
         os.replace(destino + ".parte", destino)
         if not sys.platform.startswith("win"):
             os.chmod(destino, 0o755)

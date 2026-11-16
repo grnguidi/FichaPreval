@@ -2,13 +2,6 @@
 
 Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.1)**, para PC (Windows) e celular (app instalável, funciona offline), com **sessão de mesa**: o mestre vê Vida, Mana e Vigor dos jogadores em tempo real e envia dano, condições, efeitos e itens.
 
-<p align="center">
-  <img src="s1_ficha.png" width="23%" alt="Ficha no celular">
-  <img src="s3_combate.png" width="23%" alt="Aba Combate">
-  <img src="s6_grimorio.png" width="23%" alt="Grimório">
-  <img src="s10_noite.png" width="23%" alt="Modo noturno">
-</p>
-
 ## Índice
 
 - [Começando](#começando)
@@ -23,16 +16,16 @@ Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.1)**, para 
 
 | Quero usar… | Como |
 |---|---|
-| **No PC (Windows)** | Abra `FichaPrevalecentes.exe`. Não requer Python. |
+| **No PC (Windows)** | Baixe `FichaPrevalecentes.exe` na página de [Releases](../../releases/latest) e abra. Não requer Python. |
 | **No celular** | Abra <https://grnguidi.github.io/FichaPreval/> no Chrome e toque em ⋮ → "Instalar app". |
 | **Pelo código-fonte** | Instale o Python 3 e rode os comandos abaixo. |
 
 ```
-py -m pip install reportlab segno
+py -m pip install -r requirements.txt
 py prevalecentes.py
 ```
 
-Para **gerar o executável**, execute `GERAR_EXE.bat` (requer Python no PATH). Ele instala PyInstaller, reportlab e segno, compila o programa e substitui `FichaPrevalecentes.exe` na pasta.
+Para **gerar o executável**, execute `GERAR_EXE.bat` (requer Python no PATH). Ele instala as dependências (`requirements.txt` e `requirements-build.txt`), compila o programa e substitui `FichaPrevalecentes.exe` na pasta.
 
 ## Funcionalidades
 
@@ -165,6 +158,10 @@ python testes/test_grupo.py       # interação entre jogadores
 python testes/test_conexao.py     # conexão
 ```
 
+Os mesmos testes rodam no GitHub Actions a cada push (`.github/workflows/ci.yml`), que também confere se `docs/` e `pagina_celular.py` estão atualizados com o `celular/build.py`. Veja `celular/testes/LEIAME.md` para o que cada comparador cobre.
+
+**Contribuindo:** rode os testes acima antes de abrir um PR; se mexer em `celular/src/` ou `regras.py`, rode `py celular/build.py` e inclua o resultado no commit. O `cloudflared` usado pela mesa pela internet tem versão e SHA-256 fixos em `tunel.py`: ao atualizar a versão, troque os dois juntos.
+
 ## Dados do livro e fichas salvas
 
 - **Dados do livro:** armas, encantamentos e talentos estão embutidos (`dados_prevalecentes.py`). Para corrigir algum, edite uma cópia de `dados_livro (para editar).json`, renomeie para `dados_prevalecentes.json` e coloque ao lado do executável; ele passa a ser usado no lugar dos dados embutidos.
@@ -190,4 +187,6 @@ python testes/test_conexao.py     # conexão
 | `celular/` | Código do app de celular (`src/js/` e `build.py`) |
 | `docs/` | App de celular pronto, publicado pelo GitHub Pages |
 | `testes/` | Testes de sessão, grupo e conexão |
-| `s*.png` | Capturas de tela usadas neste README |
+| `exemplos/` | Ficha de exemplo (`ficha_exemplo.json`) |
+| `.github/workflows/ci.yml` | Testes automáticos a cada push |
+| `requirements.txt` | Dependências do Python |

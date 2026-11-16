@@ -145,12 +145,17 @@ beto.parar()
 falso = os.path.join(tmp, "cloudflared_falso.py")
 with open(falso, "w") as f:
     f.write("import sys,time\nprint('INF Requesting new quick Tunnel on trycloudflare.com...',file=sys.stderr)\n"
-            "print('INF |  https://mesa-de-teste-abc.trycloudflare.com  |',file=sys.stderr);sys.stderr.flush()\ntime.sleep(30)\n")
+            "print('INF |  https://mesa-de-teste-abc.trycloudflare.com  |',file=sys.stderr);sys.stderr.flush()\ntime.sleep(4)\n")
 ft = queue.Queue()
-lancador = os.path.join(tmp, "cf.sh")
-with open(lancador, "w") as f:
-    f.write(f"#!/bin/sh\nexec {sys.executable} {falso}\n")
-os.chmod(lancador, 0o755)
+if sys.platform.startswith("win"):
+    lancador = os.path.join(tmp, "cf.bat")
+    with open(lancador, "w") as f:
+        f.write(f'@echo off\r\n"{sys.executable}" "{falso}"\r\n')
+else:
+    lancador = os.path.join(tmp, "cf.sh")
+    with open(lancador, "w") as f:
+        f.write(f"#!/bin/sh\nexec {sys.executable} {falso}\n")
+    os.chmod(lancador, 0o755)
 t = tunel.Tunel(5791, ft, programa=lancador)
 assert not t.precisa_baixar()
 t.abrir()

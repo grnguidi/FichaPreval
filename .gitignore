@@ -5,3 +5,9 @@ dist/
 *.spec
 celular/testes/casos*.json
 celular/testes/dados.json
+
+*.exe
+.vscode/
+*.log
+grupo.json
+celular/testes/casos*.json
