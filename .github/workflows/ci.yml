@@ -17,5 +17,13 @@ jobs:
         run: sh celular/testes/rodar.sh
       - name: App do celular está atualizado (docs/ e pagina_celular.py)
         run: |
+          cp pagina_celular.py /tmp/pagina_antes.py
           python celular/build.py
-          git diff --exit-code -- docs pagina_celular.py || { echo "Rode py celular/build.py e faça commit do resultado."; exit 1; }
+          git diff --exit-code -- docs || { echo "Rode py celular/build.py e faça commit do resultado."; exit 1; }
+          # o HTML vem compactado com zlib, cujos bytes variam entre versões: compara o conteúdo descompactado
+          python - <<'PY'
+          import importlib.util as u
+          def html(c):
+              m = u.spec_from_file_location("p", c); x = u.module_from_spec(m); m.loader.exec_module(x); return x.HTML
+          assert html("/tmp/pagina_antes.py") == html("pagina_celular.py"), "pagina_celular.py desatualizado: rode py celular/build.py"
+          PY
