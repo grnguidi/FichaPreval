@@ -92,7 +92,7 @@ Abra **Sessão → "Entrar como mestre"**. O painel tem:
 
 Ao abrir a mesa, o programa cria a pasta `fichas/` ao lado dele, com um `.json` por jogador (`bruno.json`, `carol.json`, `kaua.json`, `enrico.json`, `guidi.json`), no mesmo formato que o app e o programa de PC abrem.
 
-- **Entrar:** no celular, o jogador escolhe o nome dele (ou "Outra pessoa…", que cria uma ficha nova). O celular baixa a ficha do notebook e a sessão segue como antes.
+- **Entrar:** no celular, o jogador escolhe a ficha dele na lista que o mestre montou e cria (ou digita) o código dela. O celular baixa a ficha do notebook e a sessão segue como antes.
 - **Salvar sozinho:** cada mudança na ficha (Vida, rolagens, itens, dano do mestre) volta ao notebook e grava no `.json` em poucos segundos.
 - **Mestre muda o arquivo:** se você abrir o `.json` do jogador no programa de PC e salvar, o celular percebe a versão nova e baixa sozinho.
 - **Atualizar minha ficha:** menu ☰ do celular, depois de escolher a ficha. Pega a ficha do app instalado (a editada em casa), pede confirmação e troca o `.json` do jogador no notebook.
