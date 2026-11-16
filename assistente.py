@@ -321,7 +321,7 @@ class Assistente(tk.Toplevel):
         vals = ["— nenhuma —"]
         oks, bloq = [], []
         for arma in self.app.dados["armas"]:
-            m = R.req_falta(R.req_arma(arma, 1), a)
+            m = R.req_falta(R.req_arma(arma, 1, a), a)
             (bloq if m else oks).append(f"✗ {arma['nome']}  — falta: {', '.join(m)}" if m else f"✓ {arma['nome']}")
         cb.configure(values=vals + oks + bloq)
         cb.grid(row=1, column=0, sticky="w", pady=4)
@@ -451,7 +451,7 @@ class Assistente(tk.Toplevel):
             if n > self.max_pericias():
                 return f"Você marcou {n} perícias; o máximo é {self.max_pericias()}."
             arma = self.app.armas_por_nome.get(self.v["arma"].get())
-            if arma and R.req_falta(R.req_arma(arma, 1), self.atributos()):
+            if arma and R.req_falta(R.req_arma(arma, 1, self.atributos()), self.atributos()):
                 return "Seus atributos não cumprem os requisitos da arma escolhida."
         return None
 

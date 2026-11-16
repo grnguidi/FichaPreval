@@ -11,3 +11,9 @@ celular/testes/dados.json
 *.log
 grupo.json
 celular/testes/casos*.json
+
+# fichas dos jogadores da mesa (dados pessoais)
+fichas/
+
+# inimigos, anotações e combate do mestre (conteúdo da campanha)
+mestre/

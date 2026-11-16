@@ -31,6 +31,7 @@ except ImportError:
 import regras as R
 from grupo import Grupo, CFG_ROTULOS, SUSSURRO_MODOS, REACOES
 from tunel import Tunel
+from fichas_mesa import Fichas, slug as slug_ficha, LIMITE_BYTES as LIMITE_FICHA
 try:
     from dados_prevalecentes import DADOS as _DADOS
     ITENS_LIVRO = _DADOS.get("itens", [])
@@ -80,6 +81,7 @@ def limpar_ficha(dados):
 
 PORTA = 5757
 PORTA_ANUNCIO = 5758   # UDP: o mestre anuncia a sessão e os jogadores a encontram sozinhos
+SERVIDOR_ATIVO = None   # a sessão do mestre aberta agora (o painel do mestre, mestre_web.py, usa)
 PORTA_WEB = 5760       # HTTP: página para o celular (navegador) levantar a mão
 # Celulares: o navegador pausa a página quando a tela bloqueia ou o app vai para segundo plano.
 # Por isso o jogador só é marcado "sem sinal" depois de SEM_SINAL s e só sai da mesa (com a mão)
@@ -215,7 +217,11 @@ class _Pagina(BaseHTTPRequestHandler):
                 else:
                     self._json(self.srv.web_espera(ident, ack, gv, q.get("sig", [""])[0], espera))
             elif u.path == "/api/sessao":
-                self._json({"sessao": True, "rodada": self.srv.rodada, "senha": bool(self.srv.senha)})
+                self._json({"sessao": True, "rodada": self.srv.rodada, "senha": bool(self.srv.senha),
+                            "fichas": self.srv.fichas_arq.lista()})
+            elif u.path == "/api/ficha-arq":
+                q = parse_qs(u.query)
+                self._json(self.srv.ficha_baixar(q.get("id", [""])[0], q.get("k", [""])[0]))
             elif u.path in ("/", "/index.html"):
                 self._resp((PAGINA_FICHA or PAGINA_WEB).encode("utf-8"), "text/html; charset=utf-8")
             elif u.path == "/mao":
@@ -229,7 +235,8 @@ class _Pagina(BaseHTTPRequestHandler):
         if self._fechada():
             return
         try:
-            n = min(int(self.headers.get("Content-Length") or 0), 20000)
+            limite = LIMITE_FICHA if self.path == "/api/ficha-salvar" else 20000
+            n = min(int(self.headers.get("Content-Length") or 0), limite)
             corpo = json.loads(self.rfile.read(n) or b"{}")
             if not isinstance(corpo, dict):
                 corpo = {}
@@ -239,7 +246,8 @@ class _Pagina(BaseHTTPRequestHandler):
         try:
             if self.path == "/api/oi":
                 self._json(self.srv.web_entrar(str(corpo.get("nome", "")).strip()[:30], ident,
-                                               str(corpo.get("senha", "")), str(corpo.get("chave", "")), bool(corpo.get("pc"))))
+                                               str(corpo.get("senha", "")), str(corpo.get("chave", "")), bool(corpo.get("pc")),
+                                               str(corpo.get("ficha", ""))[:40]))
             elif not self.srv.web_confere(ident, str(corpo.get("chave", ""))):
                 self._json({"ok": False, "erro": "Você não está na mesa."})
             elif self.path == "/api/mao":
@@ -248,6 +256,8 @@ class _Pagina(BaseHTTPRequestHandler):
                 self._json({"ok": self.srv.web_mao(ident, False)})
             elif self.path == "/api/ficha":
                 self._json({"ok": self.srv.receber_ficha(ident, corpo.get("dados"), web=True)})
+            elif self.path == "/api/ficha-salvar":
+                self._json(self.srv.ficha_salvar(ident, corpo.get("estado"), corpo.get("base"), bool(corpo.get("forcar"))))
             elif self.path == "/api/grupo":
                 with self.srv.lock:
                     na_mesa = ident in self.srv.web
@@ -383,10 +393,13 @@ class Servidor(Grupo):
         self._seq = 0
         self.ordem = []        # [[nome, iniciativa, bônus]] em ordem de turno (vazia = fora de combate)
         self.vez = -1          # posição de quem age agora em self.ordem
+        self.abertura = ""     # primeiro atacante: age antes de a tabela de iniciativa começar a rodar
+        self.ini_detalhe = {}  # nome -> {rolos, bonus, total, rodadas} da última iniciativa rolada
         self.turno = 0         # conta os turnos passados (o celular usa para o desgaste de armas)
         self.senha = ""        # senha da mesa (vazia = entra quem souber o endereço)
         self._erros_senha = []
         self._salvo = ""
+        self.fichas_arq = Fichas()   # pasta fichas/: um .json por jogador
         self._grupo_init()     # interação entre jogadores (grupo.py)
 
     # --- mesa guardada: se o PC do mestre fechar, dá para retomar de onde parou
@@ -464,6 +477,9 @@ class Servidor(Grupo):
         self.sock.bind(("0.0.0.0", self.porta))
         self.sock.listen(16)
         self.ativo = True
+        global SERVIDOR_ATIVO
+        SERVIDOR_ATIVO = self
+        self.fichas_arq.iniciar()   # cria fichas/ (Bruno, Carol, Kauã, Enrico e Guidi) e guarda uma cópia datada
         threading.Thread(target=self._aceitar, daemon=True).start()
         threading.Thread(target=self._anunciar, daemon=True).start()
         try:
@@ -490,7 +506,7 @@ class Servidor(Grupo):
         time.sleep(0.4)
         return False
 
-    def web_entrar(self, nome, ident, senha="", chave="", pc=False):
+    def web_entrar(self, nome, ident, senha="", chave="", pc=False, ficha=""):
         """Entrada pela página: confere a senha da mesa e devolve o nome e uma chave só deste aparelho
         (sem a chave ninguém age em nome de outro jogador)."""
         with self.lock:
@@ -506,9 +522,11 @@ class Servidor(Grupo):
             if w is None:
                 return {"erro": "mesa"}
             w["pc"] = bool(pc)
+            if ficha:                       # a ficha da pasta fichas/ que este celular está jogando
+                w["ficha"] = slug_ficha(ficha)
             if not w.get("chave"):
                 w["chave"] = "%032x" % random.SystemRandom().getrandbits(128)
-            return {"id": nome, "chave": w["chave"]}
+            return {"id": nome, "chave": w["chave"], "ficha": w.get("ficha", "")}
 
     def web_confere(self, ident, chave):
         """A chave do aparelho bate com a do nome? (Entradas antigas ou de teste, sem chave, passam.)"""
@@ -578,7 +596,7 @@ class Servidor(Grupo):
                 eventos, self.pendentes[ident] = fila, []
             else:
                 eventos = self.pendentes[ident] = [e for e in fila if e["seq"] > ack]
-            r = {"ok": True, "token": self.token, "mao": ident in self.maos, "efeitos": list(self.efeitos.get(ident, [])),
+            r = {"ok": True, "token": self.token, "mao": ident in self.maos, "fv": self.fichas_arq.ver(w.get("ficha", "")), "efeitos": list(self.efeitos.get(ident, [])),
                  "rodada": self.rodada, "vez": self._quem_age(), "turno": self.turno, "ordem": [o[0] for o in self.ordem]}
             r["sig"] = hashlib.md5(json.dumps(r, sort_keys=True).encode("utf-8")).hexdigest()[:12]
             r.update(palavra=palavra, eventos=eventos)
@@ -723,6 +741,34 @@ class Servidor(Grupo):
         self._gmudou()
         return True
 
+    # --- fichas completas na pasta fichas/
+    def _ficha_de(self, ident):
+        with self.lock:
+            w = self.web.get(ident)
+            if w is not None:
+                w["visto"] = time.time()
+            return (w or {}).get("ficha", "")
+
+    def ficha_baixar(self, ident, chave):
+        """Entrega ao celular a ficha dele (a que está no .json) e a versão atual."""
+        if not self.web_confere(ident, chave):
+            return {"ok": False}
+        s = self._ficha_de(ident)
+        if not s:
+            return {"ok": False, "erro": "escolha uma ficha"}
+        ficha, ver, mt = self.fichas_arq.ler(s)
+        return {"ok": True, "existe": ficha is not None, "ficha": ficha, "ver": ver, "mtime": mt, "agora": int(time.time() * 1000)}
+
+    def ficha_salvar(self, ident, estado, base=None, forcar=False):
+        """O celular devolve a ficha depois de cada mudança. Conflito = o .json mudou por outro caminho."""
+        s = self._ficha_de(ident)
+        if not s:
+            return {"ok": False, "erro": "escolha uma ficha"}
+        r = self.fichas_arq.gravar(s, estado, base if isinstance(base, str) else None, forcar)
+        if r.get("ok"):
+            self.fila.put(("mudou",))
+        return r
+
     def _anotar(self, texto):
         with self.lock:
             self.registro.insert(0, (time.strftime("%H:%M"), texto))
@@ -853,24 +899,42 @@ class Servidor(Grupo):
 
     # --- ordem de turno (iniciativa)
     def _quem_age(self):
+        if self.vez == -1 and self.abertura:
+            return self.abertura
         return self.ordem[self.vez][0] if 0 <= self.vez < len(self.ordem) else ""
 
-    def rolar_iniciativa(self, rng=None):
-        """Rola a iniciativa de todos pela ficha (d20 por dado de iniciativa, fica o maior, + bônus) e começa o combate."""
+    def rolar_iniciativa(self, rng=None, extras=(), apenas=None, primeiro=""):
+        """Rola a iniciativa pela regra do livro (1d20 + 1d20 a cada 20 de Destreza, o maior, + Bônus de Combate de Destreza;
+        empates rolam de novo) e começa o combate.
+        extras: [{"nome", "dados", "bonus"}] de quem entra sem ser jogador (os inimigos do painel do mestre).
+        apenas: nomes dos jogadores que entram (todos, se vazio). primeiro: quem deu o golpe que começou o combate."""
         rng = rng or (lambda f: random.randint(1, f))
         with self.lock:
-            ordem = []
+            parts = []
             for n in list(self.clientes) + list(self.web):
+                if apenas is not None and n not in apenas:
+                    continue
                 f = self.fichas.get(n, {})
-                dados, bonus = max(1, int(f.get("iniciativa_dados", 1))), int(f.get("iniciativa", 0))
-                rolos = [rng(20) for _ in range(dados)]
-                ordem.append([n, max(rolos) + bonus, bonus])
-            ordem.sort(key=lambda o: (-o[1], -o[2], o[0]))
-            self.ordem, self.vez = ordem, -1
-        self._anotar("Iniciativa: " + ", ".join(f"{n} {v}" for n, v, _ in ordem))
+                parts.append({"nome": n, "dados": max(1, int(f.get("iniciativa_dados", 1))), "bonus": int(f.get("iniciativa", 0))})
+            parts += [{"nome": str(e["nome"]), "dados": int(e.get("dados", 1)), "bonus": int(e.get("bonus", 0))} for e in extras]
+            ordem, det = R.rolar_ordem_iniciativa(parts, rng, primeiro)
+            self.ordem, self.vez, self.ini_detalhe = ordem, -1, det
+            self.abertura = primeiro if any(o[0] == primeiro for o in ordem) else ""
+        self._anotar("Iniciativa: " + ", ".join(f"{n} {v}" for n, v, _ in ordem) + (f" — {self.abertura} abre o combate" if self.abertura else ""))
         for n in self.jogadores():
             self._evento(n, {"tipo": "combate", "fase": "inicio"})
-        self.passar_turno(inicio=True)
+        if self.abertura:       # o primeiro atacante age antes de a tabela começar; "Passar turno" leva ao primeiro da ordem
+            self._evento(self.abertura, {"tipo": "vez", "rodada": self.rodada})
+            for n in self.jogadores():
+                self._sincronizar(n)
+            if getattr(self, "gancho_vez", None):
+                try:
+                    self.gancho_vez(self.abertura)
+                except Exception:
+                    pass
+            self.fila.put(("mudou",))
+        else:
+            self.passar_turno(inicio=True)
 
     def definir_iniciativa(self, nome, valor):
         """Muda (ou inclui) a iniciativa de alguém sem perder de quem é a vez."""
@@ -883,7 +947,8 @@ class Servidor(Grupo):
             if not achou:
                 self.ordem.append([nome, int(valor), int(self.fichas.get(nome, {}).get("iniciativa", 0))])
             self.ordem.sort(key=lambda o: (-o[1], -o[2], o[0]))
-            self.vez = next((i for i, o in enumerate(self.ordem) if o[0] == atual), self.vez)
+            if self.vez != -1:
+                self.vez = next((i for i, o in enumerate(self.ordem) if o[0] == atual), self.vez)
         self.fila.put(("mudou",))
         for n in self.jogadores():
             self._sincronizar(n)
@@ -934,6 +999,11 @@ class Servidor(Grupo):
         self._evento(agora, {"tipo": "vez", "rodada": rod})
         for n in self.jogadores():
             self._sincronizar(n)
+        if getattr(self, "gancho_vez", None):      # o painel do mestre aplica o que acontece no turno de um inimigo
+            try:
+                self.gancho_vez(agora)
+            except Exception:
+                pass
         for cond, v in dano or []:
             self.enviar_dano([agora], v, "Direto", f"{cond} (início do turno)")
         self._anotar((f"Rodada {rod} — " if nova_rodada else "") + f"vez de {agora}"
@@ -944,7 +1014,7 @@ class Servidor(Grupo):
         """Fim do combate: limpa a ordem e tira os efeitos que duram "até o fim do combate"."""
         fim = []
         with self.lock:
-            self.ordem, self.vez = [], -1
+            self.ordem, self.vez, self.abertura, self.ini_detalhe = [], -1, "", {}
             for n, lista in self.efeitos.items():
                 fim += [(n, e["nome"]) for e in lista if e.get("fim_combate")]
                 self.efeitos[n] = [e for e in lista if not e.get("fim_combate")]
@@ -1001,6 +1071,9 @@ class Servidor(Grupo):
 
     def parar(self):
         self.ativo = False
+        global SERVIDOR_ATIVO
+        if SERVIDOR_ATIVO is self:
+            SERVIDOR_ATIVO = None
         if self.httpd:
             threading.Thread(target=self.httpd.shutdown, daemon=True).start()
             self.httpd.server_close()
@@ -1353,6 +1426,7 @@ class JanelaSessao(tk.Toplevel):
         ttk.Button(topo, text="Fim do combate", command=lambda: self.servidor.encerrar_combate()).pack(side="right", padx=(0, 6))
         ttk.Button(topo, text="🎲 Iniciativa", command=self._iniciativa).pack(side="right", padx=(0, 6))
         ttk.Button(topo, text="👥 Grupo", command=self.abrir_grupo).pack(side="right", padx=(0, 6))
+        ttk.Button(topo, text="👹 Inimigos e anotações", command=self._abrir_painel_mestre).pack(side="right", padx=(0, 6))
         self.lbl_rodada = self._rot(topo, "Rodada 1", 15, c["OURO2"], bold=True)
         self.lbl_rodada.pack(side="right", padx=14)
         ttk.Button(topo, text="🌐 Convidar", command=self._mostrar_qr).pack(side="right", padx=(0, 6))
@@ -1543,6 +1617,14 @@ class JanelaSessao(tk.Toplevel):
             messagebox.showwarning("Mesa pela internet", texto, parent=self)
         if viva and estado in ("ok", "erro", "fechado"):
             self._mostrar_qr()
+
+    def _abrir_painel_mestre(self):
+        """Abre o painel do mestre (inimigos, anotações e combate) no navegador deste computador."""
+        import mestre_web
+        try:
+            mestre_web.abrir_no_navegador()
+        except OSError as e:
+            messagebox.showerror("Painel do mestre", f"Não consegui abrir o painel (porta {mestre_web.PORTA} ocupada?).\n{e}", parent=self)
 
     def _proxima_rodada(self):
         self.servidor.proxima_rodada()

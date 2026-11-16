@@ -464,7 +464,7 @@
     },
     {
      "nome": "Clivagem Final",
-     "texto": "Caso esteja com 5 acúmulos de Momentum e pelo menos metade do seu Vigor restante, você pode gastar todos os acúmulos de Momentum para realizar um corte devastador em linha reta em 4,5 metros. Este ataque atravessa todos os inimigos no caminho, ignorando defesas.",
+     "texto": "Caso esteja com 5 acúmulos de Momentum e pelo menos metade do seu Vigor restante, você pode gastar todos os acúmulos de Momentum para realizar um corte devastador em linha reta em 4,5 metros. Este ataque atravessa todos os inimigos no caminho, ignorando CA e RD.",
      "sub": false
     }
    ]
@@ -592,7 +592,7 @@
     },
     {
      "nome": "Dedicação",
-     "texto": "Você gasta uma ação bônus e realiza um teste de Prevalência contra a Vontade do oponente. Um sucesso faz com que você cause um nível de dano acima da arma. Este efeito reinicia por rodada. Enquanto estiver em Dedicação, várias técnicas exclusivas podem ser ativadas.",
+     "texto": "Você gasta uma ação bônus e o alvo faz um teste de Vontade contra a sua DT (10 + Bônus de Combate de Destreza + nível / 3). Em uma falha, você causa um nível de dano acima da arma. Este efeito reinicia por rodada. Enquanto estiver em Dedicação, várias técnicas exclusivas podem ser ativadas.",
      "sub": false
     },
     {
@@ -735,7 +735,7 @@
     },
     {
      "nome": "Gritar",
-     "texto": "Você grita por guerra, fazendo um teste de acerto como se fosse um ataque. Caso tenha sucesso, o alvo recebe vantagem contra você no próximo turno, mas você também recebe vantagem contra ele.",
+     "texto": "Você grita por guerra. Todos os inimigos a 9 metros fazem um teste de Vontade contra a sua DT (10 + Bônus de Combate de Força + nível / 3). Quem falha deve, até o fim do seu próximo turno, atacar você se puder, e quem falhou recebe vantagem contra você nos ataques que fizer a você, mas você também recebe vantagem contra ele. Não custa Vigor. Contra Prevalecentes e Deuses, o teste usa o valor de Ataque do inimigo no lugar da Vontade, e o efeito dura só até o fim do turno dele.",
      "sub": false
     },
     {
@@ -1066,7 +1066,7 @@
     },
     {
      "nome": "Escudo",
-     "texto": "Sua arma já possui um escudo pequeno junto. Assim que você desbloquear escudos de níveis maiores, sua arma melhora automaticamente, até o Escudo Médio.",
+     "texto": "Sua arma já possui um escudo pequeno junto. Assim que você desbloquear escudos de níveis maiores, sua arma melhora automaticamente, até o Escudo Médio. O escudo embutido soma à CA como um escudo do mesmo tamanho (ver Escudos) e não conta como equipamento separado.",
      "sub": false
     },
     {
@@ -1076,7 +1076,7 @@
     },
     {
      "nome": "Contra-Explosão",
-     "texto": "Se um inimigo acertar você, pode gastar 1 cartucho como reação para liberar uma explosão defensiva, causando dano de 3 niveis abaixo de concussão e empurrando o inimigo 3m para trás.",
+     "texto": "Se um inimigo acertar você, pode gastar 1 cartucho como reação para liberar uma explosão defensiva, causando dano de impacto 3 níveis abaixo da arma e empurrando o inimigo 3m para trás.",
      "sub": false
     },
     {
@@ -1234,7 +1234,7 @@
     },
     {
      "nome": "Escudo",
-     "texto": "Sua arma já possui um escudo pequeno junto. Assim que você desbloquear escudos de níveis maiores, sua arma melhora automaticamente, até o Escudo Médio. Você perde os efeitos do escudo na forma Dínamo.",
+     "texto": "Sua arma já possui um escudo pequeno junto. Assim que você desbloquear escudos de níveis maiores, sua arma melhora automaticamente, até o Escudo Médio. O escudo embutido soma à CA como um escudo do mesmo tamanho (ver Escudos) e não conta como equipamento separado. Você perde os efeitos do escudo na forma Dínamo.",
      "sub": false
     },
     {
@@ -1289,7 +1289,7 @@
     },
     {
      "nome": "Explosão Suprema",
-     "texto": "Se estiver com Escudo Energizado, 5 Frascos carregados e em Sobrecarga ao mesmo tempo, pode gastar tudo em uma ação completa. Este ataque causa uma explosão suprema que atravessa todos os inimigos em linha reta de 3m, ignora defesas e causa dano crítico multiplicado por 4x. Após isso, você retorna automaticamente à forma Espada & Escudo com 0 Frascos e sem Vigor.",
+     "texto": "Se estiver com Escudo Energizado, 5 Frascos carregados e em Sobrecarga ao mesmo tempo, pode gastar tudo em uma ação completa. Este ataque causa uma explosão suprema que atravessa todos os inimigos em linha reta de 3m, ignora CA e RD e causa dano crítico multiplicado por 4x. Após isso, você retorna automaticamente à forma Espada & Escudo com 0 Frascos e sem Vigor.",
      "sub": false
     }
    ]
@@ -1590,7 +1590,7 @@
     },
     {
      "nome": "Anseio por Fogo",
-     "texto": "Você pode mudar o dano de sua flecha para o tipo que quiser. Esta ação pode ser usada com Aumentar distância.",
+     "texto": "Você pode mudar o dano de sua flecha para qualquer tipo de dano, exceto Magia Pura e Sagrado. Esta ação pode ser usada com Aumentar distância.",
      "sub": false
     },
     {
@@ -1617,10 +1617,14 @@
   },
   {
    "nome": "Lira",
-   "ataque": "MEN",
+   "ataque": "INT",
    "req": [
     {
-     "attr": "MEN",
+     "attr": "INT",
+     "alt": [
+      "INT",
+      "FE"
+     ],
      "base": 14,
      "por_nivel": 5
     },
@@ -1796,6 +1800,10 @@
      "texto": "Ao ver dois aliados causando dano melódico de qualquer fonte em um único turno, você se inspira e recebe um bônus musical. Durante um turno, você recebe 4 acúmulos de Melodia por ação de Atacar, invés de 2.",
      "sub": false
     }
+   ],
+   "ataque_alt": [
+    "INT",
+    "FE"
    ]
   },
   {
@@ -16489,7 +16497,7 @@
    "categoria": "Talentos de Uso Duplo",
    "nivel": 10,
    "requisito": "Mãos Gêmeas",
-   "descricao": "Ao empunhar duas armas do mesmo grupo, o ataque bônus recebe +2 de acerto e o limite dos recursos do grupo aumenta em 2."
+   "descricao": "Ao empunhar duas armas do mesmo grupo, o ataque bônus recebe +2 de acerto e o limite dos recursos do grupo (Fragmentos de Combo, Melodias por tipo) aumenta em 2."
   },
   {
    "nome": "Redemoinho",
@@ -16580,7 +16588,7 @@
    "categoria": "Talentos de Combate",
    "nivel": 6,
    "requisito": "",
-   "descricao": "Reação: você resiste a empurrões, derrubadas e agarrões com +2 no teste."
+   "descricao": "Reação: você ganha +2 nos testes de Fortitude contra empurrões, derrubadas e agarrões."
   },
   {
    "nome": "Primeiro passo",
@@ -16867,7 +16875,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 6,
    "requisito": "Katana",
-   "descricao": "Você recebe +2 no teste de Prevalência da Dedicação."
+   "descricao": "Você recebe +2 na DT da Dedicação."
   },
   {
    "nome": "Passo de Peso",
@@ -16902,7 +16910,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 8,
    "requisito": "Machado Grande",
-   "descricao": "Gritar atinge até 3 inimigos ao mesmo tempo."
+   "descricao": "Gritar também faz os inimigos que falham perderem a Reação até o fim do próximo turno deles."
   },
   {
    "nome": "Melodia Longa",
@@ -16958,7 +16966,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 10,
    "requisito": "Katana",
-   "descricao": "1x por combate, você entra em Dedicação sem fazer o teste de Prevalência."
+   "descricao": "1x por combate, você entra em Dedicação sem o teste do alvo."
   },
   {
    "nome": "Momentum Eterno",
@@ -17581,7 +17589,7 @@
    "categoria": "Talentos de Perícia",
    "nivel": 2,
    "requisito": "",
-   "descricao": "Você recebe treinamento em uma perícia (Adestramento, que exige treinamento Agricultura, Medicina, Tecnologia ou Prevalência)."
+   "descricao": "Você recebe treinamento em uma perícia que exige treinamento (Adestramento, Agricultura, Medicina, Tecnologia ou Prevalência)."
   },
   {
    "nome": "Sortudo",
@@ -17595,7 +17603,7 @@
    "categoria": "Talentos de Perícia",
    "nivel": 4,
    "requisito": "",
-   "descricao": "Você recebe 1 vantagem em Atletismo e 1 vantagem nos testes de Agarrar e Derrubar. Ao Agarrar, seu movimento não é reduzido pela metade."
+   "descricao": "Você recebe 1 vantagem em Atletismo e +2 na DT de Agarrar e Derrubar. Ao Agarrar, seu movimento não é reduzido pela metade."
   },
   {
    "nome": "Bússola Interna",
@@ -17773,11 +17781,25 @@
    "descricao": "Você recebe +1 perícia treinada fora de combate."
   },
   {
+   "nome": "Destilador de Campo",
+   "categoria": "Talentos de Perícia",
+   "nivel": 4,
+   "requisito": "Treinado em Alquimia",
+   "descricao": "Ao preparar poções com o Kit de Alquimia, você recebe +5 no teste de Alquimia e uma falha não custa ingrediente."
+  },
+  {
+   "nome": "Mestre Alquimista",
+   "categoria": "Talentos de Perícia",
+   "nivel": 8,
+   "requisito": "Destilador de Campo",
+   "descricao": "Você conta como alquimista dedicado e faz poções de nível 3 em campo, com o Kit de Alquimia."
+  },
+  {
    "nome": "Alquimista de Campo",
    "categoria": "Talentos de Perícia",
    "nivel": 12,
-   "requisito": "Mente Científica",
-   "descricao": "1x por descanso longo, você produz um consumível simples (Antídoto Simples ou Unguento Estancante) com materiais mínimos."
+   "requisito": "Mestre Alquimista",
+   "descricao": "Você faz poções de nível 4 em campo, com o Kit de Alquimia, se tiver Horta e ingredientes."
   },
   {
    "nome": "Companheiro Fiel",
@@ -18162,7 +18184,7 @@
    "categoria": "Talentos de Capacidade",
    "nivel": 6,
    "requisito": "",
-   "descricao": "Você pode levar 1 item diverso adicional, acima do limite do seu Nível de Guilda."
+   "descricao": "Uma vez por turno, você saca ou guarda um item diverso como ação livre."
   },
   {
    "nome": "Horta Ampliada",
@@ -18263,7 +18285,7 @@
    "descricao": "1x por rodada, sem gastar a Reação, quando um ataque o acertaria, você obriga o atacante a rolar de novo e ficar com o pior resultado."
   },
   {
-   "nome": "Muralha Viva",
+   "nome": "Muralha Inabalável",
    "categoria": "Talentos de Ápice",
    "nivel": 22,
    "requisito": "99 de Tenacidade",
@@ -18350,7 +18372,7 @@
   {
    "nome": "Fervor Mortal",
    "p2": "no início de cada turno seu em combate, você recebe 10 pontos de Morte, ignorando resistências e imunidades. Essa Morte soma-se a qualquer outra, inclusive a do Medalhão do Vírus Frenético, e a parte do set zera ao fim do combate. A Morte que vem de efeitos seus (este set e talismãs) nunca passa de 95. Com 60 ou mais de Morte, seus ataques e encantamentos causam +1 dado de dano.",
-   "p4": "com 80 ou mais de Morte, você recebe +1 dado de dano adicional, +2 de acerto e fica imune a Abalado, Amedrontado e Aterrorizado. Com 90 ou mais, você ganha uma ação comum extra por rodada, só para Atacar. Em troca, qualquer Morte que não venha de você (inimigos, armadilhas) vale o dobro. Se a Morte passar de 100, você morre normalmente. Toda a morte deste set é limpa pelo uso ativo do MEDALHÃO DO VÍRUS FRENÉTICO, com os efeitos deste Set mantendo por 2 turnos."
+   "p4": "com 80 ou mais de Morte, você recebe +1 dado de dano adicional, +2 de acerto e fica imune a Abalado, Amedrontado e Aterrorizado. Com 90 ou mais, você ganha uma ação comum extra por rodada, só para Atacar. Em troca, qualquer Morte que não venha de você (inimigos, armadilhas) vale o dobro. Se a Morte passar de 100, você morre normalmente. Usar o Medalhão do Vírus Frenético limpa toda a Morte acumulada por este set, e os efeitos do set se mantêm por mais 2 turnos."
   },
   {
    "nome": "Peçonha",
@@ -18426,6 +18448,31 @@
    "nome": "Sanador",
    "p2": "+3 em Medicina.",
    "p4": "em descanso curto, os aliados recuperam mais 10% da vida máxima. Ao auxiliar um aliado Incapaz, ele rola o d20 de resistir com vantagem."
+  },
+  {
+   "nome": "Alquimista",
+   "p2": "+3 em Alquimia.",
+   "p4": "vantagem em testes de Alquimia, e uma falha não faz perder ingrediente."
+  },
+  {
+   "nome": "General",
+   "p2": "+3 em Tática.",
+   "p4": "aliados a até 9 m têm vantagem em Iniciativa."
+  },
+  {
+   "nome": "Agronômico",
+   "p2": "+3 em Agricultura.",
+   "p4": "sua Horta conta com 1 nível de qualidade acima, até o teto da Base."
+  },
+  {
+   "nome": "Pecuário",
+   "p2": "+3 em Adestramento.",
+   "p4": "seu Pasto conta com 1 nível de qualidade acima, até o teto da Base."
+  },
+  {
+   "nome": "Tutor",
+   "p2": "+3 em Adestramento ao acalmar ou adestrar um animal.",
+   "p4": "você pode ter +1 animal adestrado."
   },
   {
    "nome": "Sangue Arcano",
@@ -18504,8 +18551,8 @@
   },
   {
    "nome": "Presença",
-   "p2": "+3 em testes de Provocar e de intimidar.",
-   "p4": "a DT dos seus Provocar sobe em 3 e alcança um alvo a mais."
+   "p2": "+3 em testes de Provocar.",
+   "p4": "seu Provocar alcança um alvo a mais."
   },
   {
    "nome": "Máscara",
@@ -18556,6 +18603,12 @@
    "bonus": {}
   },
   {
+   "familia": "Anel do Destilador",
+   "nome": "Anel do Destilador",
+   "efeito": "Suas poções arremessadas têm +1,5 metro de raio de área e +2 na DT.",
+   "bonus": {}
+  },
+  {
    "familia": "Anel do Gladiador",
    "nome": "Anel do Gladiador",
    "efeito": "+2d6 de dano físico por 3 turnos após crítico",
@@ -18603,6 +18656,12 @@
    "familia": "Chave da Primeira Pedra",
    "nome": "Chave da Primeira Pedra",
    "efeito": "Enquanto estiver em sua Base, encantamentos você pode equipados trocar seus também em descansos curtos.",
+   "bonus": {}
+  },
+  {
+   "familia": "Colar do Herbolário",
+   "nome": "Colar do Herbolário",
+   "efeito": "Você recebe +3 em testes de Alquimia e coleta 1 unidade a mais de plantas ao colher na natureza.",
    "bonus": {}
   },
   {
@@ -18773,6 +18832,12 @@
    "familia": "Fio de Ligação",
    "nome": "Fio de Ligação +3",
    "efeito": "Troca o set como ação bônus em combate",
+   "bonus": {}
+  },
+  {
+   "familia": "Frasco Inesgotável",
+   "nome": "Frasco Inesgotável",
+   "efeito": "1x por descanso longo, uma poção que você bebe não é gasta.",
    "bonus": {}
   },
   {
@@ -19452,25 +19517,25 @@
   {
    "familia": "Símbolo da Fome",
    "nome": "Símbolo da Fome +0",
-   "efeito": "Quanto menos poções no inventário, maior o dano (+1 de dano por espaço vazio, entre 5 espaços de poção)",
+   "efeito": "Para cada uso da Poção Espiritual gasto pelo grupo desde o último descanso longo, +1 de dano fixo",
    "bonus": {}
   },
   {
    "familia": "Símbolo da Fome",
    "nome": "Símbolo da Fome +1",
-   "efeito": "+2 por poção ausente",
+   "efeito": "+2 por uso gasto",
    "bonus": {}
   },
   {
    "familia": "Símbolo da Fome",
    "nome": "Símbolo da Fome +2",
-   "efeito": "+3 por poção ausente",
+   "efeito": "+3 por uso gasto",
    "bonus": {}
   },
   {
    "familia": "Símbolo da Fome",
    "nome": "Símbolo da Fome +3",
-   "efeito": "+4 por poção ausente",
+   "efeito": "+4 por uso gasto",
    "bonus": {}
   },
   {
@@ -19647,7 +19712,7 @@
    "nome": "Poção de Mana Superior",
    "categoria": "Consumíveis e remédios",
    "peso": 1.0,
-   "preco": "4 Contos de prata",
+   "preco": "Feita por Alquimia (nível 3)",
    "desc": "Cristais moídos e refinados três vezes, com brilho próprio. Restaura 50 pontos de Mana. Consumir exige uma ação comum.",
    "uso": {
     "mana": "50",
@@ -19658,7 +19723,7 @@
    "nome": "Poção de Mana Magna",
    "categoria": "Consumíveis e remédios",
    "peso": 1.0,
-   "preco": "12 Contos de prata",
+   "preco": "Feita por Alquimia (nível 4)",
    "desc": "Mistura rara preparada em laboratório de ocultista. Restaura 100 pontos de Mana. Consumir exige uma ação comum.",
    "uso": {
     "mana": "100",
@@ -19669,7 +19734,7 @@
    "nome": "Elixir de Mana",
    "categoria": "Consumíveis e remédios",
    "peso": 1.0,
-   "preco": "2 Contos de ouro",
+   "preco": "Feito por Alquimia (nível 4)",
    "desc": "Um frasco de luz líquida, feito com um cristal inteiro. Restaura toda a Mana de quem o bebe. Consumir exige uma ação completa.",
    "uso": {
     "mana": "tudo",
@@ -19702,7 +19767,7 @@
    "nome": "Frasco de Vigor Maior",
    "categoria": "Consumíveis e remédios",
    "peso": 1.0,
-   "preco": "3 Contos de prata",
+   "preco": "15 Contos",
    "desc": "Raízes e sal curados por semanas em óleo de cervo. Restaura 25 pontos de Vigor. Consumir exige uma ação bônus.",
    "uso": {
     "vigor": "25",
@@ -19713,7 +19778,7 @@
    "nome": "Frasco de Vigor Superior",
    "categoria": "Consumíveis e remédios",
    "peso": 1.0,
-   "preco": "8 Contos de prata",
+   "preco": "Feito por Alquimia (nível 3)",
    "desc": "Concentrado de tônico de guerra, de sabor quase insuportável. Restaura 50 pontos de Vigor. Consumir exige uma ação comum.",
    "uso": {
     "vigor": "50",
@@ -19724,7 +19789,7 @@
    "nome": "Frasco de Vigor Magno",
    "categoria": "Consumíveis e remédios",
    "peso": 1.0,
-   "preco": "15 Contos de prata",
+   "preco": "Feito por Alquimia (nível 4)",
    "desc": "Tônico fervido com carne de animal predador. Restaura 100 pontos de Vigor. Consumir exige uma ação comum.",
    "uso": {
     "vigor": "100",
@@ -19735,7 +19800,7 @@
    "nome": "Elixir de Vigor",
    "categoria": "Consumíveis e remédios",
    "peso": 1.0,
-   "preco": "2 Contos de ouro",
+   "preco": "Feito por Alquimia (nível 4)",
    "desc": "Um líquido espesso e quente que devolve o fôlego de um dia inteiro. Restaura todo o Vigor de quem o bebe. Consumir exige uma ação completa.",
    "uso": {
     "vigor": "tudo",
@@ -19817,10 +19882,7 @@
    "categoria": "Consumíveis e remédios",
    "peso": 1.0,
    "preco": "8 Contos",
-   "desc": "Recipiente de couro curtido. Guarda água para um dia de marcha.",
-   "uso": {
-    "consome": true
-   }
+   "desc": "Recipiente de couro curtido. Guarda água para um dia de marcha."
   },
   {
    "nome": "Tocha",
@@ -20057,6 +20119,13 @@
    "desc": "Agulha, linha encerada e retalhos. Repara roupas, mochilas e lonas em um descanso curto."
   },
   {
+   "nome": "Kit de Alquimia",
+   "categoria": "Ofício e registro",
+   "peso": 3.0,
+   "preco": "4 Contos de prata",
+   "desc": "Almofariz, destilador de bolso e frascos vazios. Permite fazer poções de nível 1 e 2 em campo, com teste de Alquimia."
+  },
+  {
    "nome": "Bigorna Portátil",
    "categoria": "Ofício e registro",
    "peso": 8.0,
@@ -20113,5 +20182,5 @@
    "desc": "Dois metros de elos de ferro. Tranca uma porta, prende um prisioneiro ou ancora equipamento."
   }
  ],
- "itens_regras": "Você só pode beber uma poção de Mana e uma de Vigor por combate. O Elixir de Mana e o Elixir de Vigor só podem ser usados uma vez por descanso longo."
+ "itens_regras": "Poções de Mana e de Vigor são poções da perícia Alquimia e não têm limite por combate; o freio é a ação de beber, a Carga e o preço. As de nível 3 e 4 só se fazem por Alquimia (laboratório da Base). O Elixir de Mana e o Elixir de Vigor só podem ser usados uma vez por descanso longo."
 }

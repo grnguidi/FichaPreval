@@ -22,8 +22,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   render();
   setTimeout(ligarNuvem, 50);
   window.__fichaChegou = !!chegou;
-  if (recebida) toast(chegou ? `Ficha <b>${esc(chegou.nome)}</b> ${chegou.atualizou ? "atualizada" : "recebida"}.` : "Não consegui ler a ficha enviada. Tente de novo ou use Abrir arquivo .json.", 5000);
+  if (recebida && !(chegou && chegou.mesa)) toast(chegou ? `Ficha <b>${esc(chegou.nome)}</b> ${chegou.atualizou ? "atualizada" : "recebida"}.` : "Não consegui ler a ficha enviada. Tente de novo ou use Abrir arquivo .json.", 5000);
   await detectarSessao();
+  if (fichaDoApp) confirmarAtualizacao();
+  else if (atualizarSlug && mesaAlvo && !recebida) {   // no app instalado: acha a ficha desse jogador e manda para a mesa
+    const ids = Object.keys(banco.fichas).filter((k) => [banco.fichas[k].identidade.player, banco.fichas[k].identidade.nome].some((t) => slugNome(t) === atualizarSlug));
+    if (ids.length === 1) enviarParaMesa(ids[0]);
+    else toast(ids.length ? "Achei mais de uma ficha desse jogador: toque em <b>Enviar</b> na certa." : "Não achei a ficha deste jogador. Toque em <b>Enviar</b> na ficha certa.", 6000);
+  }
   if (chegou && sessao.ativa && !sessao.id) entrarSessao((S.identidade.nome || "").trim() || "Jogador", true);
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost") && !window.claude) navigator.serviceWorker.register("sw.js").catch(() => {});
 });

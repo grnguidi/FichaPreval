@@ -37,7 +37,7 @@ def regras_js():
     """regras.js com as tabelas que vêm de regras.py (efeitos de talento e listas do livro), para PC e celular ficarem iguais."""
     efeitos = json.dumps(regras.EFEITOS_TALENTOS, ensure_ascii=False)
     livro = json.dumps({k: (sorted(v) if isinstance(v, (set, frozenset)) else v) for k, v in {
-        "TIPOS_DANO": regras.TIPOS_DANO, "DANO_SEM_RD": regras.DANO_SEM_RD, "EFEITOS_LIVRO": regras.EFEITOS_LIVRO,
+        "TIPOS_DANO": regras.TIPOS_DANO, "DANO_SEM_RD": regras.DANO_SEM_RD, "DANO_ALIAS_RESISTENCIA": regras.DANO_ALIAS_RESISTENCIA, "EFEITOS_SETS": regras.EFEITOS_SETS, "EFEITOS_TALISMAS": regras.EFEITOS_TALISMAS, "EFEITOS_LIVRO": regras.EFEITOS_LIVRO,
         "NOTA_EFEITOS": regras.NOTA_EFEITOS, "CONDICAO_TESTE": regras.CONDICAO_TESTE, "CONDICAO_ATIVA": regras.CONDICAO_ATIVA,
         "CONDICAO_DESCANSO_CURTO": regras.CONDICAO_DESCANSO_CURTO, "DESCANSOS_CURTOS_MAX": regras.DESCANSOS_CURTOS_MAX,
         "DESGASTE_TURNOS": regras.DESGASTE_TURNOS, "PECAS_SET_PESO": regras.PECAS_SET_PESO, "DADO_INFERIOR": regras.DADO_INFERIOR,

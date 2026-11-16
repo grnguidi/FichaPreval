@@ -18,6 +18,7 @@ async function detectarSessao() {
     const r = await api("/api/sessao");
     if (!r || !r.sessao) return;
     sessao.pedeSenha = !!r.senha;
+    sessao.fichasLista = Array.isArray(r.fichas) ? r.fichas : null;   // o mestre tem a pasta fichas/: o jogador escolhe a ficha
   } catch (e) { return; }
   sessao.ativa = true;
   try {
@@ -26,10 +27,13 @@ async function detectarSessao() {
     sessao.senha = localStorage.getItem(CH_SENHA) || "";
     sessao.chave = localStorage.getItem(CH_CHAVE) || "";
     sessao.id = localStorage.getItem(CH_SESSAO) || "";
+    sessao.ficha = localStorage.getItem(CH_FICHA) || "";
     const [tk, n] = JSON.parse(localStorage.getItem(CH_ACK) || "[]");   // recarregou a página: não repete o que já aplicou
     if (tk) { sessao.token = tk; sessao.ackEv = int(n); }
   } catch (e) { /* sem storage */ }
-  if (sessao.id) entrarSessao(sessao.id); else if (!window.__fichaChegou) pedirNomeSessao();
+  if (sessao.fichasLista && !sessao.ficha) sessao.id = "";         // só entra com uma ficha escolhida
+  if (sessao.id) await entrarSessao(sessao.id);
+  else if (!window.__fichaChegou || sessao.fichasLista) { if (sessao.fichasLista) pedirFichaMesa(); else pedirNomeSessao(); }
   pintarSessao();
 }
 function pedirNomeSessao() {
@@ -48,16 +52,18 @@ A["sessao-ok"] = () => {
 async function entrarSessao(nome, novo = false) {
   try {
     if (novo && sessao.id && sessao.id !== nome) sessao.id = "";
-    const r = await api("/api/oi", { nome, id: novo ? "" : sessao.id, senha: sessao.senha });
+    const r = await api("/api/oi", { nome, id: novo ? "" : sessao.id, senha: sessao.senha, ficha: sessao.ficha || undefined });
     if (r.erro === "senha") {   // senha errada ou faltando: pede de novo, sem ficar tentando
       sessao.pedeSenha = true; sessao.conectado = false; sessao.laco += 1; pintarSessao();
-      toast(sessao.senha ? "Senha da mesa incorreta." : "Esta mesa tem senha: peça ao mestre."); pedirNomeSessao(); return;
+      toast(sessao.senha ? "Senha da mesa incorreta." : "Esta mesa tem senha: peça ao mestre."); if (sessao.fichasLista) pedirFichaMesa(); else pedirNomeSessao(); return;
     }
     if (!r.id) throw new Error("mesa");
     sessao.id = r.id; sessao.chave = r.chave || "";
-    try { localStorage.setItem(CH_SESSAO, sessao.id); localStorage.setItem(CH_CHAVE, sessao.chave); } catch (e) { /* sem storage */ }
+    if (r.ficha) sessao.ficha = r.ficha;
+    try { localStorage.setItem(CH_SESSAO, sessao.id); localStorage.setItem(CH_CHAVE, sessao.chave); localStorage.setItem(CH_FICHA, sessao.ficha || ""); } catch (e) { /* sem storage */ }
     sessao.conectado = true; sessao.ultimo = "";
     if (novo) toast(`Na mesa como <b>${esc(sessao.id)}</b>.`);
+    if (sessao.ficha && !sessao.fichaOk) await carregarFichaMesa();   // baixa a ficha do notebook do mestre
   } catch (e) { sessao.conectado = false; toast("Não consegui falar com o mestre. Confira a internet ou o Wi-Fi."); }
   pintarSessao(); lacoSessao();
 }
@@ -97,6 +103,7 @@ async function consultarSessao(espera = 0) {
   } catch (e) { if (sessao.conectado) { sessao.conectado = false; pintarSessao(); } return false; }
   if (!r.ok) { entrarSessao(sessao.id); return false; }   // o mestre reiniciou: entra de novo com o mesmo nome
   sessao.sig = r.sig || "";
+  if (sessao.ficha && sessao.fichaOk && r.fv && r.fv !== sessao.fichaVer && !enviandoArq && !baixandoArq) carregarFichaMesa(true);   // o .json mudou no notebook
   const mudou = !sessao.conectado || sessao.mao !== r.mao || sessao.rodada !== r.rodada || sessao.vez !== (r.vez || "") || JSON.stringify(sessao.efeitos) !== JSON.stringify(r.efeitos || []);
   sessao.conectado = true; sessao.mao = r.mao; sessao.rodada = r.rodada; sessao.vez = r.vez || ""; sessao.turno = r.turno || 0;
   sessao.efeitos = r.efeitos || [];
@@ -138,9 +145,11 @@ function receberEvento(ev) {
       const c = calcular(), max = c.d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? max : int(S.vida.atual, max);
       const nomes = new Set(sessao.efeitos.map((e) => e.nome));
       const [final, notas] = valor > 0 ? R.defesasContraDano(valor, ev.dano_tipo || "", c.d, rng, nomes.has("Fragilizado"), nomes.has("Loucura")) : [valor, []];
-      const depois = Math.max(0, Math.min(max, antes - final));
+      const incapazCurado = valor < 0 && antes === 0;      // 3.2: nenhuma cura acorda um Incapaz
+      const depois = incapazCurado ? 0 : Math.max(0, Math.min(max, antes - final));
       S.vida.atual = String(depois); salvar(); render();
       linha = (valor > 0 && notas.length ? `Recebeu <b>${final}</b> <span class="sub">(${esc(notas.join("; "))})</span><br>` : "")
+        + (incapazCurado ? `<b class="erro">Incapaz</b>: nenhuma cura acorda você; só os testes do Portão da Morte.<br>` : "")
         + `Vida: ${antes} → <b>${depois}</b>${depois === 0 && antes > 0 ? ` — <b class="erro">INCAPAZ</b>: role o Portão da Morte no início do turno.${final > Math.floor(max / 2) ? " Dano maior que metade da Vida: 1 falha automática." : ""}` : ""}`;
       relatar(valor > 0 && notas.length ? `recebeu ${final} de ${valor} (${notas.join("; ")}), Vida ${depois}/${max}` : `Vida ${depois}/${max}${depois === 0 && antes > 0 ? " — INCAPAZ" : ""}`);
     }
@@ -156,11 +165,11 @@ function receberEvento(ev) {
     return ev.fase === "inicio" ? "⚔ <b>Começou o combate!</b> Ações e usos por combate renovados." : "🕊 <b>Fim do combate.</b> Usos por combate renovados. <button class=\"botao leve\" data-a=\"levar-app\" style=\"min-height:32px;padding:4px 10px\">📲 Levar ficha ao app</button>";
   } else if (ev.tipo === "vez") {
     sessao.meusTurnos += 1;
-    if (S) novoTurno(true);
+    const cura = S ? novoTurno(true) : "";
     for (const dg of Object.values(S ? S.desgaste : {})) if (dg.desgastada && sessao.meusTurnos >= (dg.em || 0) + 2) Object.assign(dg, { usados: 0, desgastada: false, contado: -1 });
     if (S) { salvar(); render(); }
     vibrar([150, 80, 150, 80, 300]);
-    return "⚔ <b>É a sua vez!</b>";
+    return "⚔ <b>É a sua vez!</b>" + (cura ? "<br>" + cura : "");
   } else if (ev.tipo === "condicao") {
     const dur = durEfeito(ev);
     registrarDiario({ titulo: "📣 Condição", linhas: [`${esc(ev.nome)} (${dur})${ev.desc ? " — " + esc(ev.desc) : ""}`], hora });

@@ -52,8 +52,29 @@ function pBolsa() {
   h += at.length ? `<div class="lista">${at.map(([n, q]) => `<div class="item" style="display:block"><b style="color:var(--vinho)">Set ${esc(n)} — ${q} peças</b>
       <div class="sub" style="margin-top:3px"><b>2 peças:</b> ${esc(SETS[n].p2)}${q >= 4 ? `<br><b>4 peças:</b> ${esc(SETS[n].p4)}` : `<br><span style="opacity:.7">4 peças: falta ${4 - q}</span>`}</div></div>`).join("")}</div>`
     : `<p class="sub">Duas peças do mesmo set ativam o bônus de 2; quatro ativam o de 4.</p>`;
+  h += painelEquip();
   return h;
 }
+// Efeitos de sets e talismãs: o que vale agora, e os interruptores dos que dependem de uma situação
+function painelEquip() {
+  const lista = C.eq.lista;
+  if (!lista.length) return "";
+  const temCasco = lista.some((x) => x.chave.startsWith("set:Casco:")), temFome = lista.some((x) => x.chave === "tal:Símbolo da Fome");
+  let h = secao("Efeitos de sets e talismãs") + `<p class="sub" style="margin:0 2px 8px">Entram na ficha sozinhos enquanto a peça ou o talismã estiver equipado. Os que dependem de uma situação ficam desligados até você ligar.</p><div class="lista">`
+    + lista.map((x) => `<div class="item" style="display:block"><b style="color:var(--vinho)">${esc(x.fonte)}</b>
+      <div class="sub" style="margin-top:3px">${esc(x.txt)}${x.sit ? `<br><i>quando: ${esc(x.sit)}</i>` : ""}</div>
+      ${x.sit ? `<div class="linhabts" style="margin-top:6px"><button class="botao ${x.ligado ? "prim" : "leve"} mini" data-a="eq-ativo" data-k="${esc(x.chave)}">${x.ligado ? "✔ Ligado agora" : "Ligar agora"}</button></div>` : ""}</div>`).join("") + `</div>`;
+  if (temCasco) h += `<div class="linhabts"><button class="botao leve" data-a="casco-tipo">Casco protege contra: <b>${esc(S.casco_tipo || "Cortante")}</b> (trocar)</button></div>`;
+  if (temFome) h += `<div class="cartao" style="padding:10px;display:flex;align-items:center;gap:10px"><span style="flex:1">Poções Espirituais gastas pelo grupo (Símbolo da Fome): <b>${int(S.fome_usos)}</b></span>
+    <button class="botao leve mini" data-a="fome" data-d="-1">−</button><button class="botao leve mini" data-a="fome" data-d="1">+</button></div>`;
+  const r = [];
+  if (C.eq.dano) r.push(`+${C.eq.dano} de dano`); if (C.eq.acerto) r.push(`+${C.eq.acerto} de acerto`); if (C.eq.acerto_dist) r.push(`+${C.eq.acerto_dist} à distância`);
+  if (C.eq.dano_mag) r.push(`+${C.eq.dano_mag} dano de encantamento`);
+  return h + (r.length ? `<p class="sub">Somando agora: ${r.join(" · ")} (entram nas rolagens de ataque e conjuração).</p>` : "");
+}
+A["eq-ativo"] = (el) => mudar((s) => { const k = el.dataset.k; s.talentos_ativos = s.talentos_ativos.includes(k) ? s.talentos_ativos.filter((x) => x !== k) : s.talentos_ativos.concat([k]); });
+A["casco-tipo"] = () => mudar((s) => { const o = ["Cortante", "Perfurante", "Impacto"]; s.casco_tipo = o[(o.indexOf(s.casco_tipo || "Cortante") + 1) % 3]; });
+A["fome"] = (el) => mudar((s) => { s.fome_usos = Math.max(0, int(s.fome_usos) + int(el.dataset.d)); });
 A["dinheiro"] = () => {
   const mo = R.separarMoedas(S.dinheiro_c);
   folha("Dinheiro", `<p class="sub">10 Contos = 1 de prata · 100 de prata = 1 de ouro · 1000 de ouro = 1 Contilha. Pode digitar sem converter: a ficha arruma.</p>
@@ -77,6 +98,7 @@ A["comprar"] = () => {
 };
 A["comprar-item"] = (el) => {
   const x = itemLivro(el.dataset.n), pr = R.precoEmContos(x.preco) || 0;
+  if (R.precoEmContos(x.preco) == null) { folha(esc(x.nome), `<div class="desc">${esc(x.desc)}</div><p class="meta">${esc(x.preco)} · peso ${x.peso}</p><p class="sub">Não se compra: só sai de um alquimista (perícia Alquimia).</p>`, `<button class="botao leve" data-a="comprar">‹ Lista</button>`); return; }
   folha(esc(x.nome), `<div class="desc">${esc(x.desc)}</div><p class="meta">${esc(x.preco)} cada · peso ${x.peso}</p>
     <label class="campo"><span>Quantidade</span><input id="cp-q" type="number" inputmode="numeric" min="1" value="1"></label>
     <p class="sub" id="cp-t"></p>`,

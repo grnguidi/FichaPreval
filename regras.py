@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Regras de Prevalecentes (PREVA 3.1) — cálculos puros, sem interface."""
+"""Regras de Prevalecentes (PREVA 3.2) — cálculos puros, sem interface."""
 import math
 import re
 
@@ -8,46 +8,48 @@ NOMES_ATR = {"VIT": "Vitalidade", "MEN": "Mente", "TEN": "Tenacidade", "FOR": "F
              "DES": "Destreza", "INT": "Inteligência", "FE": "Fé", "ARC": "Arcano"}
 ATR_POR_NOME = {v: k for k, v in NOMES_ATR.items()}
 VALORES_INICIAIS = [16, 14, 12, 11, 10, 9, 8, 7]
+CA_MAX = 30          # 3.2: máxima 30; o que passar é perdido
 NIVEL_MAX = 30
 
 # Perícias fora de combate: nome -> atributos possíveis (usa o maior), requer treino
 PERICIAS = [
     ("Acrobacia", ["DES"], False), ("Adestramento", ["MEN"], True),
-    ("Agricultura", ["INT", "DES"], True), ("Artes", ["MEN"], False),
+    ("Agricultura", ["INT"], True), ("Alquimia", ["INT"], True), ("Artes", ["MEN"], False),
     ("Atletismo", ["FOR"], False), ("Ciências", ["INT"], False),
     ("Costura", ["INT", "DES"], True), ("Crime", ["DES"], False),
     ("Furtividade", ["DES"], False), ("Gastronomia", ["INT", "DES"], False),
     ("História", ["FE"], False), ("Intuição", ["FE"], False),
     ("Investigação", ["INT"], False), ("Medicina", ["INT"], True),
-    ("Navegação", ["INT", "DES"], False), ("Percepção", ["ARC"], False),
+    ("Navegação", ["INT"], False), ("Percepção", ["ARC"], False),
     ("Performance", ["MEN"], False), ("Persuasão", ["MEN"], False),
     ("Prevalência", None, True), ("Religião", ["FE"], False),
-    ("Sorte", ["ARC"], False), ("Tática", ["ARC"], False),
+    ("Sorte", ["ARC"], False), ("Tática", ["INT", "MEN"], False),
     ("Tecnologia", ["INT"], True),
 ]
 # O que cada perícia faz (resumo do capítulo de Perícias e das regras que pedem o teste) e onde o livro a usa.
 PERICIAS_RESUMO = {
     "Acrobacia": ("Equilíbrio, saltos, quedas, piruetas e escapar de situações que pedem agilidade do corpo, como pular uma barreira com segurança.", ""),
-    "Agricultura": ("Plantar, colher, cuidar de animais de criação e tirar sustento da terra.", "Agricultura & Pasto"),
+    "Agricultura": ("Horta e Pasto (no livro 3.2 a perícia se chama Horta e Pasto): plantar, colher, cuidar de animais de criação e coletar ervas na natureza (DT 10/20/30/40 + metade do NMP, 1 tentativa por local por dia).", "Horta e Pasto"),
+    "Alquimia": ("A perícia das poções: Poções de Mana e de Vigor, antídotos e tônicos. Poções de nível 1 a 4 (DT 10/20/30/40 pela raridade mais rara usada); sucesso rende 2 poções por ingrediente principal, falha perde 1 ingrediente. Quem não é treinado só usa poções compradas ou encontradas. Poções não restauram Vida, só dão vida temporária.", "Poções, Horta, Funções"),
     "Artes": ("Pintura, escultura, escrita e qualquer ofício artístico; também criar e sustentar um disfarce (o teste é contra quem observa e se repete a cada interação).", "Disfarce"),
-    "Atletismo": ("Força física aplicada: escalar, nadar, empurrar, arrombar, segurar ou se soltar. Agarrar e Derrubar são Atletismo contra o Atletismo da criatura.", ""),
-    "Ciências": ("Conhecimento acadêmico e natural: alquimia, matemática, astronomia, criaturas e fenômenos estudados.", ""),
+    "Atletismo": ("Força física aplicada: escalar, nadar, empurrar, arrombar, segurar ou se soltar. Agarrar e Derrubar agora são testes de Fortitude do alvo contra a sua DT (10 + BC de Força + nível ÷ 3).", ""),
+    "Ciências": ("Conhecimento acadêmico e natural: matemática, astronomia, criaturas e fenômenos estudados.", ""),
     "Costura": ("Confeccionar e consertar as cinco peças de armadura dos sets com os materiais da receita; a DT é a da raridade do item e uma falha perde materiais.", "Sets"),
     "Crime": ("Abrir fechaduras, desarmar armadilhas, furtar, falsificar e circular no submundo.", "Infiltração"),
     "Furtividade": ("Mover-se sem ser visto ou ouvido. Esconder é Furtividade contra a Percepção de quem pode ver você; cada falha numa infiltração sobe o Alerta.", "Infiltração"),
-    "Gastronomia": ("Cozinhar refeições que dão bônus ao grupo e conservar alimentos na estrada; a DT sobe com o nível da receita.", "Alimentos/Expedição"),
+    "Gastronomia": ("Cozinhar refeições que dão bônus ao grupo e conservar alimentos na estrada; a DT é fixa pelo nível da refeição (10/20/30/40) e não exige treino.", "Alimentos/Expedição"),
     "História": ("Saber sobre o passado, reinos, guerras, linhagens e lendas; argumento de peso num conflito social.", "Conflito Social"),
     "Intuição": ("Perceber intenções, mentiras e o clima de uma conversa; sentir quando algo está errado.", ""),
     "Investigação": ("Procurar pistas, examinar cenas e documentos e ligar os fatos; encontrar o que está escondido numa expedição.", "Expedição"),
     "Medicina": ("Tratar ferimentos, doenças e venenos. No Portão da Morte, um aliado faz Medicina (DT 15) para dar 1 sucesso a quem está Incapaz.", "Portão da Morte"),
-    "Navegação": ("Orientar-se e guiar o grupo em viagens por terra e mar; define o tempo da viagem e evita se perder.", "Viagens"),
+    "Navegação": ("Orientar-se e guiar o grupo em viagens por terra e mar; define o tempo da viagem e evita se perder. Não exige treino.", "Viagens"),
     "Percepção": ("Notar o que está à volta: emboscadas, criaturas escondidas, sons e detalhes. É contra ela que os outros testam Furtividade.", ""),
     "Performance": ("Cantar, tocar, atuar e discursar para uma plateia; impressionar ou distrair num conflito social.", "Conflito Social"),
     "Persuasão": ("Convencer, negociar, barganhar e acalmar pela conversa; a principal perícia do conflito social.", "Conflito Social"),
-    "Prevalência": ("A força da vontade do personagem ligada à alma, com o atributo que o jogador escolher; usada por almas e por técnicas como a Dedicação da Katana (Prevalência contra Vontade).", "Almas"),
+    "Prevalência": ("A força da vontade do personagem ligada à alma, com o atributo que o jogador escolher; usada pelas almas e por talentos como Mente de Aço e Lâmina Dedicada (que agora mexem na DT da Dedicação da Katana).", "Almas"),
     "Religião": ("Deuses, cultos, ritos e criaturas sagradas ou profanas; alguns Feitiços pedem este teste.", "Alguns Feitiços"),
     "Sorte": ("O acaso a seu favor: achar o que precisa, escapar por pouco, encontros e espólios na expedição.", "Expedição"),
-    "Tática": ("Ler o campo de batalha, prever o inimigo e planejar o grupo; algumas habilidades e o clima adverso nas viagens pedem este teste.", "Algumas Habilidades"),
+    "Tática": ("Ler o campo de batalha, prever o inimigo e planejar o grupo (Inteligência ou Mente, o maior); algumas habilidades e o clima adverso nas viagens pedem este teste.", "Algumas Habilidades"),
     "Tecnologia": ("Mecanismos, ferramentas, forja e engenhocas: consertar, montar e operar; serviços de ferraria pedem este teste.", ""),
     "Luta": ("Ataques corpo a corpo: 1d20 + BC do atributo da arma + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque corpo a corpo"),
     "Pontaria": ("Ataques à distância (Arco, Besta): 1d20 + BC de Destreza + nível ÷ 3 + acerto da arma, contra a CA do alvo.", "Ataque a distância"),
@@ -85,9 +87,9 @@ ATRIBUTOS_RESUMO = {
            ["Desejo: acerto e DT dos Feitiços", "+1 dado nos Feitiços a cada 30 pontos",
             "Espaços de encantamento: 1 + (Inteligência + Fé) ÷ 6", "Contradomínio: 1 por combate a cada 10 pontos", "Vontade (defesa)",
             "História, Intuição e Religião"]),
-    "ARC": ("A afinidade com mistérios ocultos e energias sutis: perceber o extraordinário e mexer com as condições dos inimigos.",
+    "ARC": ("A afinidade com mistérios ocultos e energias sutis: perceber o extraordinário, ampliar as condições dos seus encantamentos e coordenar o uso de cajado e selo.",
             ["Escalonamento das condições dos encantamentos: 1 cópia dos dados a cada 20 e 1 dado inferior a cada 15",
-             "Descoberta: +10 a cada 15 pontos", "Percepção, Sorte e Tática", "Coordenação do Uso duplo ao conjurar"]),
+             "Descoberta: +10 a cada 15 pontos", "Percepção e Sorte", "Coordenação do Uso duplo ao conjurar"]),
 }
 
 
@@ -206,7 +208,7 @@ def derivadas(a, nivel, talentos, vida_dados_soma, armadura_ca=0, escudo_ca=0, c
     d["descoberta"] = 10 + 10 * (cap(a["ARC"]) // 15)
     ca_ten = min(4, cap(a["TEN"]) // 20)
     d["ca_ten"] = ca_ten
-    d["ca"] = max(10, min(25, 10 + ca_ten + armadura_ca + escudo_ca + ca_extra))
+    d["ca"] = max(10, min(CA_MAX, 10 + ca_ten + armadura_ca + escudo_ca + ca_extra))
     carga = 10 + 2 * cap(a["TEN"]) + cap(a["FOR"]) // 2 + c["TEN"]
     carga += (10 if "Mochileiro" in talentos else 0) + (30 if "Mula de Carga" in talentos else 0)
     d["carga"] = carga
@@ -217,7 +219,7 @@ def derivadas(a, nivel, talentos, vida_dados_soma, armadura_ca=0, escudo_ca=0, c
     if "Mão Extra" in talentos and des >= 40:
         acoes += 1
     d["acoes_extras"] = acoes
-    d["iniciativa_dados"] = 1 + des // 20
+    d["iniciativa_dados"] = 1 + des // 20 + (1 if "Animado" in talentos else 0)
     d["iniciativa_bonus"] = bc["DES"]
     d["rd"] = min(4, cap(a["TEN"]) // 20)
     ten_res = cap(a["TEN"]) + (10 if "Pele Grossa" in talentos else 0)
@@ -248,8 +250,22 @@ def pericia_fora(a, nivel, atrs, treinada):
 
 
 # ---------------- Armas ----------------
-def req_arma(arma, nv):
-    return {r["attr"]: r["base"] + r["por_nivel"] * (nv - 1) for r in arma["req"]}
+def atributo_ataque(arma, a=None):
+    """Atributo de ataque da arma. A Lira (3.2) usa Inteligência ou Fé, à escolha: com os atributos (a), vale o maior."""
+    alt = arma.get("ataque_alt")
+    if alt and a:
+        return max(alt, key=lambda k: cap(a[k]))
+    return arma["ataque"]
+
+
+def req_arma(arma, nv, a=None):
+    out = {}
+    for r in arma["req"]:
+        attr = r["attr"]
+        if r.get("alt") and a:
+            attr = max(r["alt"], key=lambda k: cap(a[k]))
+        out[attr] = r["base"] + r["por_nivel"] * (nv - 1)
+    return out
 
 
 def req_falta(reqs, a):
@@ -431,11 +447,14 @@ TIPOS_DANO = [  # (nome, grupo, nota)
     ("Fogo", "Elemental", ""), ("Veneno", "Elemental", ""), ("Magia", "Elemental", ""),
     ("Magia Pura", "Elemental", "ignora RD"), ("Sagrado", "Elemental", ""), ("Relâmpago", "Elemental", "não tem RD"),
     ("Elétrico", "Elemental", ""), ("Necrótico", "Elemental", ""), ("Glacial", "Elemental", ""),
+    ("Sangramento", "Físico", "dano de ferimentos abertos; conta como físico"),
+    ("Podridão", "Elemental", "conta como Necrótico para resistências"), ("Congelamento", "Elemental", "conta como Glacial para resistências"),
     ("Psíquico", "Mental", ""), ("Êxtase", "Mental", ""), ("Melódico", "Mental", ""), ("Radiante", "Mental", ""),
     ("Direto", "Outro", "ignora RD e resistências (perda de Vida de condição, quedas…)"),
 ]
 NOMES_DANO = [t[0] for t in TIPOS_DANO]
 DANO_SEM_RD = {"Magia Pura", "Relâmpago", "Direto"}
+DANO_ALIAS_RESISTENCIA = {"Podridão": "Necrótico", "Congelamento": "Glacial"}   # 3.2: tratados como outro tipo para resistências
 DANO_MENTAL = {t[0] for t in TIPOS_DANO if t[1] == "Mental"}
 
 EFEITOS_LIVRO = [  # (nome, gravidade, descrição) — capítulo "Efeitos"
@@ -503,7 +522,16 @@ def defesas_contra_dano(valor, tipo, d, rng, fragilizado=False, loucura=False):
         notas.append(f"RD {rd}d4 [{', '.join(map(str, rolos))}] −{sum(rolos)}")
     elif fragilizado and d.get("rd"):
         notas.append("Fragilizado: sem RD")
-    if tipo and tipo in d.get("resistencias", []) and not fragilizado:
+    if not fragilizado:       # redução de talismãs e sets por tipo de dano (Pele de Ferro, Escama de Dragão, Casco...)
+        for r in d.get("rd_tipo", []):
+            if tipo in r["tipos"]:
+                q, f = (int(x) for x in r["dados"].split("d"))
+                rolos = [rng(f) for _ in range(q)]
+                red = sum(rolos) + int(r.get("fixo", 0))
+                total = max(0, total - red)
+                notas.append(f"redução {r['dados']}{'+%d' % r['fixo'] if r.get('fixo') else ''} [{', '.join(map(str, rolos))}] −{red}")
+    tipo_res = DANO_ALIAS_RESISTENCIA.get(tipo, tipo)
+    if tipo and (tipo in d.get("resistencias", []) or tipo_res in d.get("resistencias", [])) and not fragilizado:
         total //= 2
         notas.append(f"resistência a {tipo}: metade")
     return total, notas
@@ -524,14 +552,15 @@ def rolar_defesa(bonus, com_vantagem, rng):
 DESCANSOS_CURTOS_MAX = 2
 
 
-def descanso(tipo, maximos, atuais, condicoes):
+def descanso(tipo, maximos, atuais, condicoes, curto_vida_pct=0):
     """tipo 'curto': recupera metade de Vida, Mana e Vigor e 25 pontos de cada condição.
     'longo': recupera tudo e zera as condições. maximos/atuais: {'vida','mana','vigor'};
     condicoes: {nome: acumulado}. Devolve (novos_atuais, novas_condicoes)."""
     novos = {}
     for k, mx in maximos.items():
         at = atuais.get(k, mx)
-        novos[k] = mx if tipo == "longo" else min(mx, at + mx // 2)
+        extra = mx * curto_vida_pct // 100 if k == "vida" and tipo == "curto" else 0     # set Eremita
+        novos[k] = mx if tipo == "longo" else min(mx, at + mx // 2 + extra)
     cond = {n: (0 if tipo == "longo" else max(0, v - CONDICAO_DESCANSO_CURTO)) for n, v in condicoes.items()}
     return novos, cond
 
@@ -624,6 +653,158 @@ REFEICOES = {
     4: (40, "Pacote completo: +2 de acerto, +1 de CA e de resistências, 4d10 de vida temporária para cada 4 níveis, "
             "−15% de dano recebido e +1 dado de dano para cada 8 níveis durante 1 combate."),
 }
+
+
+# ---------------- Sets e talismãs: efeitos de valor fixo ----------------
+# Cada bloco: "sit": rótulo da condição (o efeito só vale com o interruptor ligado; sem "sit" vale sempre), "txt": o que a ficha mostra,
+# e os números. Um número em lista é por nível do talismã (+0 a +3).
+#   atr {atributo: n} · per {perícia: n} · def {defesa: n} · ca · mov (m) · mana · vigor · acerto · acerto_dist (Arco, Besta)
+#   dano · dano_mag (encantamentos) · dano_nivel · dados [[expr, tipo, alvo]] (alvo: "arma", "mag", "tudo" ou lista de armas)
+#   rd [{tipos, dados, fixo}] · espacos · contra · cond {condição: n} · mana_pct · cura [expr] · provocar · curto_vida_pct
+#   dano_carga (por 20% de peso) · dano_fome (por Poção Espiritual do grupo) · mov_dobra_carga (10% ou menos de peso)
+FISICOS = ["Cortante", "Perfurante", "Impacto"]
+EFEITOS_SETS = {
+    "Predador": {2: {"sit": "primeiro ataque do combate, alvo que ainda não agiu", "txt": "+3 de acerto (e +1 dado de dano)", "acerto": 3}},
+    "Mira": {2: {"sit": "ataque à distância contra alvo a mais de 9 m", "txt": "+3 de acerto", "acerto_dist": 3}},
+    "Rancor": {2: {"sit": "com menos de 50% da vida", "txt": "+3 de acerto e +3 de dano", "acerto": 3, "dano": 3}},
+    "Anatomista": {2: {"sit": "estudando animais", "txt": "+3 em Investigação e Ciências", "per": {"Investigação": 3, "Ciências": 3}},
+                   4: {"sit": "atacando um Ponto Chave revelado", "txt": "+2 de acerto (e +1 dado de dano)", "acerto": 2}},
+    "Vento": {2: {"txt": "+4,5 m de deslocamento", "mov": 4.5}, 4: {"txt": "mais +4,5 m de deslocamento (total +9 m)", "mov": 4.5}},
+    "Fervor Mortal": {4: {"sit": "com 80 ou mais de Morte", "txt": "+2 de acerto (e +1 dado de dano)", "acerto": 2}},
+    "Casco": {2: {"txt": "reduz 1d4 + 3 do dano de um tipo físico (o escolhido)", "rd": [{"tipos": "escolha", "dados": "1d4", "fixo": 3}]},
+              4: {"txt": "reduz 1d4 + 5 do dano dos três tipos físicos", "subst": True, "rd": [{"tipos": FISICOS, "dados": "1d4", "fixo": 5}]}},
+    "Âncora": {2: {"sit": "não se moveu no seu turno", "txt": "+2 de CA (e −3 de dano por golpe)", "ca": 2}},
+    "Esquiva": {2: {"txt": "+3 em Reflexo", "def": {"Reflexo": 3}}},
+    "Tenaz": {2: {"txt": "+3 em Fortitude", "def": {"Fortitude": 3}}},
+    "Lúcido": {2: {"txt": "+3 em Vontade", "def": {"Vontade": 3}}, 4: {"txt": "+15 de vida de condição em Loucura e Sono", "cond": {"Loucura": 15, "Sono": 15}}},
+    "Sanador": {2: {"txt": "+3 em Medicina", "per": {"Medicina": 3}}},
+    "Alquimista": {2: {"txt": "+3 em Alquimia", "per": {"Alquimia": 3}}},
+    "General": {2: {"txt": "+3 em Tática", "per": {"Tática": 3}}},
+    "Agronômico": {2: {"txt": "+3 em Agricultura", "per": {"Agricultura": 3}}},
+    "Pecuário": {2: {"txt": "+3 em Adestramento", "per": {"Adestramento": 3}}},
+    "Tutor": {2: {"sit": "acalmando ou adestrando um animal", "txt": "+3 em Adestramento", "per": {"Adestramento": 3}}},
+    "Fluxo": {2: {"txt": "+15 de mana máxima", "mana": 15}},
+    "Alma Prevalente": {2: {"txt": "+3 em Prevalência", "per": {"Prevalência": 3}}},
+    "Ocultista": {2: {"txt": "+3 em Religião", "per": {"Religião": 3}}},
+    "Rastreador": {2: {"txt": "+3 em Percepção e Investigação", "per": {"Percepção": 3, "Investigação": 3}}},
+    "Navegante": {2: {"txt": "+3 em Navegação", "per": {"Navegação": 3}}},
+    "Colhedor": {2: {"sit": "coletando recursos", "txt": "+3 em Sorte e Investigação", "per": {"Sorte": 3, "Investigação": 3}}},
+    "Banquete": {2: {"txt": "+3 em Gastronomia", "per": {"Gastronomia": 3}}},
+    "Tecelão": {2: {"txt": "+3 em Costura", "per": {"Costura": 3}}},
+    "Forjador": {2: {"sit": "subindo o nível de uma arma", "txt": "+3 em Tecnologia", "per": {"Tecnologia": 3}}},
+    "Eremita": {2: {"txt": "descansos curtos recuperam mais 15% da Vida", "curto_vida_pct": 15}},
+    "Voz do Povo": {2: {"sit": "cenas sociais com NPCs", "txt": "+3 em Persuasão e Intuição", "per": {"Persuasão": 3, "Intuição": 3}}},
+    "Presença": {2: {"txt": "+3 em testes de Provocar (sobe a DT do Provocar)", "provocar": 3}},
+    "Máscara": {2: {"txt": "+3 em Artes (Disfarce) e em Crime", "per": {"Artes": 3, "Crime": 3}}},
+    "Mercador": {2: {"sit": "negociando preços", "txt": "+3 em Persuasão", "per": {"Persuasão": 3}}},
+}
+EFEITOS_TALISMAS = {
+    "Insígnia do Berserker": {"sit": "perdeu 25% da vida", "txt": ["+5 em Força", "+7 em Força", "+9 em Força", "+10 em Força"], "atr": {"FOR": [5, 7, 9, 10]}},
+    "Medalhão da Dor Oculta": {"sit": "sofrendo Sangramento", "txt": ["+2 em Destreza", "+4 em Destreza", "+6 em Destreza", "+8 em Destreza"], "atr": {"DES": [2, 4, 6, 8]}},
+    "Medalhão da Fúria do Guerreiro": {"sit": "derrotou um inimigo (2 turnos)", "txt": ["+2 em Força", "+4 em Força", "+6 em Força", "+8 em Força"], "atr": {"FOR": [2, 4, 6, 8]}},
+    "Medalhão da Podridão": {"sit": "aplicou Veneno (2 turnos)", "txt": ["+2 em Arcano", "+4 em Arcano", "+6 em Arcano", "+8 em Arcano"], "atr": {"ARC": [2, 4, 6, 8]}},
+    "Pingente da Dor": {"sit": "sofreu um crítico", "txt": ["+2 em Força", "+4 em Força", "+6 em Força", "+8 em Força"], "atr": {"FOR": [2, 4, 6, 8]}},
+    "Símbolo da Chaga": {"sit": "está envenenado", "txt": ["+2 em Força", "+4 em Força", "+6 em Força", "+8 em Força"], "atr": {"FOR": [2, 4, 6, 8]}},
+    "Pingente da Loucura": {"sit": "sofreu feitiço mental (2 turnos)", "txt": ["+2 em Fé", "+4 em Fé", "+6 em Fé", "+8 em Fé"], "atr": {"FE": [2, 4, 6, 8]}},
+    "Relíquia do Místico": {"sit": "lançou uma magia (2 turnos)", "txt": ["+3 em Inteligência", "+5 em Inteligência", "+8 em Inteligência", "+10 em Inteligência"], "atr": {"INT": [3, 5, 8, 10]}},
+    "Pingente da Fúria Implacável": {"sit": "causou um crítico", "txt": ["+2 m de movimento", "+4 m de movimento", "+6 m de movimento", "+8 m de movimento"], "mov": [2, 4, 6, 8]},
+    "Marca do Caçador": {"txt": ["+1 em ataques à distância", "+2 em ataques à distância", "+3 em ataques à distância", "+4 em ataques à distância"], "acerto_dist": [1, 2, 3, 4]},
+    "Marca da Chama": {"txt": ["+1d4 de dano de fogo", "+2d4 de dano de fogo", "+3d4 de dano de fogo", "+4d4 de dano de fogo"], "dados": [[["1d4", "2d4", "3d4", "4d4"], "Fogo", "arma"]]},
+    "Medalhão da Lâmina Flamejante": {"txt": ["Espadas: +1d4 de fogo", "Espadas: +2d4 de fogo", "Espadas: +3d4 de fogo", "Espadas: +4d4 de fogo"],
+                                      "dados": [[["1d4", "2d4", "3d4", "4d4"], "Fogo", ["Espada", "Espada Grande"]]]},
+    "Símbolo da Tempestade": {"txt": ["+1d4 de dano elétrico", "+2d4 de dano elétrico", "+3d4 de dano elétrico", "+4d4 de dano elétrico"], "dados": [[["1d4", "2d4", "3d4", "4d4"], "Elétrico", "tudo"]]},
+    "Símbolo do Arcano": {"txt": ["+1d4 em magias elementais", "+2d4 em magias elementais", "+3d4 em magias elementais", "+4d4 em magias elementais"], "dados": [[["1d4", "2d4", "3d4", "4d4"], "Elemental", "mag"]]},
+    "Estatueta da Bruxa": {"txt": ["+1d6 em encantamentos de Veneno ou Podridão", "+2d6 em encantamentos de Veneno ou Podridão", "+3d6 em encantamentos de Veneno ou Podridão", "+4d6 em encantamentos de Veneno ou Podridão"],
+                           "dados": [[["1d6", "2d6", "3d6", "4d6"], "Veneno/Podridão", "mag"]]},
+    "Símbolo da Lâmina Sangrenta": {"sit": "alvo sangrando, arma cortante", "txt": ["+1d4 de dano", "+2d4 de dano", "+3d4 de dano", "+4d4 de dano"], "dados": [[["1d4", "2d4", "3d4", "4d4"], "Cortante", "arma"]]},
+    "Anel do Gladiador": {"sit": "até 3 turnos depois de um crítico", "txt": "+2d6 de dano físico", "dados": [["2d6", "Físico", "arma"]]},
+    "Insígnia do Lorde de Sangue": {"sit": "aplicou Sangramento (3 turnos)", "txt": "+1 nível de dano das armas", "dano_nivel": 1},
+    "Contos de Rhadi": {"sit": "Arco ou Besta em curto alcance", "txt": "+1 de dano nas duas armas", "dano": 1},
+    "Estresse acumulado em Frasco": {"sit": "com menos da metade da vida", "txt": "+2 de dano em feitiços e magias", "dano_mag": 2},
+    "Símbolo da Carga": {"txt": ["+1 de dano físico a cada 20% de peso", "+2 de dano físico a cada 20% de peso", "+3 de dano físico a cada 20% de peso", "+4 de dano físico a cada 20% de peso"], "dano_carga": [1, 2, 3, 4]},
+    "Símbolo da Fome": {"txt": ["+1 de dano por Poção Espiritual gasta pelo grupo", "+2 de dano por Poção Espiritual gasta pelo grupo", "+3 de dano por Poção Espiritual gasta pelo grupo", "+4 de dano por Poção Espiritual gasta pelo grupo"], "dano_fome": [1, 2, 3, 4]},
+    "Símbolo da Carne": {"sit": "abaixo de 50% da vida, contra ataques físicos", "txt": ["+1 de CA", "+2 de CA", "+3 de CA", "+4 de CA"], "ca": [1, 2, 3, 4]},
+    "Medalhão da Pele de Ferro": {"txt": ["Reduz dano cortante em 1d6", "Reduz dano cortante em 2d6", "Reduz dano cortante em 3d6", "Reduz dano cortante em 4d6"],
+                                  "rd": [{"tipos": ["Cortante"], "dados": ["1d6", "2d6", "3d6", "4d6"], "fixo": 0}]},
+    "Escama de Dragão": {"txt": ["Reduz dano físico em 1d4", "Reduz dano físico em 2d4", "Reduz dano físico em 3d4", "Reduz dano físico em 4d4"],
+                         "rd": [{"tipos": FISICOS, "dados": ["1d4", "2d4", "3d4", "4d4"], "fixo": 0}]},
+    "Coração de Pedra": {"txt": ["Redução de Dano 1d4 contra Magia", "Redução de Dano 2d4 contra Magia", "Redução de Dano 3d4 contra Magia", "Redução de Dano 4d4 contra Magia"],
+                         "rd": [{"tipos": ["Magia"], "dados": ["1d4", "2d4", "3d4", "4d4"], "fixo": 0}]},
+    "Escudo Espiritual": {"txt": "Reduz dano mágico em 2d4", "rd": [{"tipos": ["Magia"], "dados": "2d4", "fixo": 0}]},
+    "Amuleto da Regeneração": {"txt": ["Cura 1d8 por turno", "Cura 2d8 por turno", "Cura 3d8 por turno", "Cura 4d8 por turno"], "cura": [["1d8", "2d8", "3d8", "4d8"]]},
+    "Pulmão de Ferro": {"txt": "+30 de Vigor máximo", "vigor": 30},
+    "Anel das Muitas Vozes": {"txt": "+3 espaços de encantamento (só de Espaço 1 ou 2)", "espacos": 3},
+    "Selo da Réplica Voraz": {"txt": "+2 contra-encantamentos", "contra": 2},
+    "Pergaminho do Oculto": {"txt": ["Reduz o custo de mana em 5%", "Reduz o custo de mana em 10%", "Reduz o custo de mana em 15%", "Reduz o custo de mana em 20%"], "mana_pct": [5, 10, 15, 20]},
+    "Colar do Herbolário": {"txt": "+3 em Alquimia", "per": {"Alquimia": 3}},
+    "Símbolo Dançante": {"txt": "dobra o movimento com 10% ou menos do inventário ocupado", "mov_dobra_carga": 10},
+}
+
+
+def _v(x, i):
+    """Valor de um nível do talismã (lista) ou valor único."""
+    return x[min(i, len(x) - 1)] if isinstance(x, list) else x
+
+
+def talisma_familia_nivel(nome):
+    """'Marca do Caçador +2' -> ('Marca do Caçador', 2); sem sufixo -> (nome, 0)."""
+    m = re.match(r"^(.*?)\s*\+(\d)$", nome or "")
+    return (m.group(1), int(m.group(2))) if m else (nome or "", 0)
+
+
+def efeitos_equipamento(sets, talismas, ativos=(), ctx=None):
+    """Soma os efeitos fixos dos sets (sets: {nome: peças}; 2 peças dão o bônus de 2, 4 dão também o de 4) e dos talismãs
+    equipados (talismas: nomes dentro das vagas). Efeitos com condição ("sit") só entram com o interruptor ligado (chave em `ativos`).
+    ctx: {"carga_pct": peso carregado em % da carga, "fome": usos de Poção Espiritual do grupo, "casco": tipo físico do Casco}.
+    Tirar a peça ou o talismã tira o efeito: nada fica guardado na ficha."""
+    ctx = ctx or {}
+    out = {"atr": {}, "per": {}, "def": {}, "ca": 0, "mov": 0, "mana": 0, "vigor": 0, "acerto": 0, "acerto_dist": 0, "dano": 0,
+           "dano_mag": 0, "dano_nivel": 0, "dados": [], "rd": [], "espacos": 0, "contra": 0, "cond": {}, "mana_pct": 0, "cura": [],
+           "provocar": 0, "curto_vida_pct": 0, "lista": []}
+    blocos = []
+    for nome in sorted(sets):
+        for n in (2, 4):
+            fx = EFEITOS_SETS.get(nome, {}).get(n)
+            if fx and sets[nome] >= n:
+                blocos.append((f"set:{nome}:{n}", f"Set {nome} ({n} peças)", fx, 0, nome))
+    for t in talismas:
+        fam, idx = talisma_familia_nivel(t)
+        if fam in EFEITOS_TALISMAS:
+            blocos.append((f"tal:{fam}", t, EFEITOS_TALISMAS[fam], idx, fam))
+    for chave, rotulo, fx, i, fonte in blocos:
+        sit = fx.get("sit", "")
+        ligado = (not sit) or chave in ativos
+        out["lista"].append({"chave": chave, "fonte": rotulo, "sit": sit, "ligado": ligado, "txt": _v(fx["txt"], i)})
+        if not ligado:
+            continue
+        for k, v in (fx.get("atr") or {}).items():
+            out["atr"][k] = out["atr"].get(k, 0) + _v(v, i)
+        for k, v in (fx.get("per") or {}).items():
+            out["per"][k] = out["per"].get(k, 0) + _v(v, i)
+        for k, v in (fx.get("def") or {}).items():
+            out["def"][k] = out["def"].get(k, 0) + _v(v, i)
+        for k in ("ca", "mov", "mana", "vigor", "acerto", "acerto_dist", "dano", "dano_mag", "dano_nivel", "espacos", "contra",
+                  "mana_pct", "provocar", "curto_vida_pct"):
+            if k in fx:
+                out[k] += _v(fx[k], i)
+        for k, v in (fx.get("cond") or {}).items():
+            out["cond"][k] = out["cond"].get(k, 0) + _v(v, i)
+        for expr, tipo, alvo in fx.get("dados", []):
+            out["dados"].append([_v(expr, i), tipo, alvo])
+        for c in fx.get("cura", []):
+            out["cura"].append(_v(c, i))
+        if "dano_carga" in fx:
+            out["dano"] += _v(fx["dano_carga"], i) * int(int(ctx.get("carga_pct", 0)) // 20)
+        if "dano_fome" in fx:
+            out["dano"] += _v(fx["dano_fome"], i) * max(0, int(ctx.get("fome", 0)))
+        if "mov_dobra_carga" in fx and ctx.get("carga_pct", 100) <= fx["mov_dobra_carga"]:
+            out["mov"] += ctx.get("mov_base", 0)
+        if fx.get("subst"):
+            out["rd"] = [r for r in out["rd"] if r["fonte"] != fonte]
+        for r in fx.get("rd", []):
+            tipos = [ctx.get("casco") or "Cortante"] if r["tipos"] == "escolha" else list(r["tipos"])
+            out["rd"].append({"tipos": tipos, "dados": _v(r["dados"], i), "fixo": r["fixo"], "fonte": fonte})
+    return out
 
 
 # ---------------- Carga extra ----------------
@@ -831,15 +1012,15 @@ def req_com_props(reqs, props):
 TIPOS_ACAO = ["Comum", "Bônus", "Movimento", "Reação"]
 ACOES_LIVRO = [  # (nome, tipo, teste, descrição) — teste: "ataque", uma perícia, "provocar" ou ""
     ("Atacar", "Comum", "ataque", "Golpe com arma ou encantamento contra a CA do alvo."),
-    ("Agarrar", "Comum", "Atletismo", "O alvo fica imóvel enquanto você vencer testes de ataque ou Atletismo; seu movimento cai à metade."),
-    ("Derrubar", "Comum", "Atletismo", "Atletismo contra o Atletismo do alvo; numa vitória ele fica Caído."),
+    ("Agarrar", "Comum", "dt_forca", "O alvo faz Fortitude contra a sua DT; se falhar, fica imóvel e repete o teste no início do turno dele (ação de movimento). Seu movimento cai à metade."),
+    ("Derrubar", "Comum", "dt_forca", "O alvo faz Fortitude contra a sua DT; se falhar, fica Caído."),
     ("Preparar", "Comum", "", "Prepara uma ação para um evento que você define; ela gasta a sua Reação."),
     ("Apoiar", "Comum", "", "A criatura apoiada tem vantagem no próximo teste."),
     ("Trocar de arma", "Comum", "", "Guarda uma arma e saca outra. Armas de Vigor gastam também a ação bônus; entre arma e cajado/selo custa só 3 m de movimento."),
     ("Usar item", "Comum", "", "Beber uma poção, comer uma refeição pronta, usar um item ou entregá-lo a 1,5 m."),
     ("Esconder", "Comum", "Furtividade", "Furtividade contra a Percepção de quem vê você; fica escondido até atacar, conjurar ou ser achado."),
     ("Mirar", "Bônus", "", "Vantagem na próxima jogada de ataque contra o alvo declarado."),
-    ("Provocar", "Bônus", "provocar", "Alvo a 9 m faz Vontade contra a sua DT; se falhar, tem desvantagem contra quem não for você até o fim do próximo turno dele."),
+    ("Provocar", "Bônus", "provocar", "Alvo a 9 m faz Vontade contra a sua DT (+3); se falhar, tem desvantagem contra quem não for você até o fim do próximo turno dele."),
     ("Movimentar", "Movimento", "", "Anda até o seu valor de movimento."),
     ("Levantar", "Movimento", "", "Sai da condição Caído."),
     ("Desengajar", "Movimento", "", "Anda metade do movimento sem provocar golpe de oportunidade."),
@@ -849,8 +1030,43 @@ ACOES_LIVRO = [  # (nome, tipo, teste, descrição) — teste: "ataque", uma per
 
 
 def dt_provocar(d, nivel):
-    """Provocar: Vontade do alvo contra 10 + BC de Mente + nível ÷ 3."""
-    return 10 + d["bc"]["MEN"] + nivel // 3
+    """Provocar (3.2): Vontade do alvo contra 10 + BC de Força + nível ÷ 3 + 3."""
+    return 10 + d["bc"]["FOR"] + nivel // 3 + 3 + d.get("provocar_extra", 0)
+
+
+def dt_forca(d, nivel):
+    """Agarrar e Derrubar (3.2): Fortitude do alvo contra 10 + BC de Força + nível ÷ 3."""
+    return 10 + d["bc"]["FOR"] + nivel // 3
+
+
+def rolar_ordem_iniciativa(participantes, rng, primeiro="", tentativas=40):
+    """Iniciativa do livro: cada um rola 1d20 (mais 1d20 a cada 20 de Destreza), fica com o maior e soma o Bônus de Combate de
+    Destreza. Quem empata rola de novo, só os empatados, até todos terem valores diferentes. O primeiro atacante (quem deu o
+    golpe que começou o combate) rola com vantagem (o dobro de dados) e age antes de a tabela começar a rodar.
+    participantes: [{"nome", "dados", "bonus"}]. Devolve (ordem [[nome, total, bônus]], detalhe {nome: {rolos, bonus, total, rodadas}})."""
+    det = {}
+
+    def rolar(p):
+        n = max(1, int(p.get("dados", 1))) * (2 if p["nome"] == primeiro else 1)
+        rolos = [rng(20) for _ in range(n)]
+        b = int(p.get("bonus", 0))
+        d = det.setdefault(p["nome"], {"rolos": [], "bonus": b, "total": 0, "rodadas": 0})
+        d.update(rolos=rolos, bonus=b, total=max(rolos) + b, rodadas=d["rodadas"] + 1)
+
+    for p in participantes:
+        rolar(p)
+    for _ in range(tentativas):
+        por_valor = {}
+        for p in participantes:
+            por_valor.setdefault(det[p["nome"]]["total"], []).append(p)
+        empatados = [p for g in por_valor.values() if len(g) > 1 for p in g]
+        if not empatados:
+            break
+        for p in empatados:
+            rolar(p)
+    ordem = [[p["nome"], det[p["nome"]]["total"], det[p["nome"]]["bonus"]] for p in participantes]
+    ordem.sort(key=lambda o: (-o[1], -o[2], o[0]))
+    return ordem, det
 
 
 def acoes_do_turno(acoes_extras, tipos_extras):
@@ -912,6 +1128,8 @@ def acao_arma(nome, texto):
     out["nota"] = (nome.strip() in ("•", "Nota", "Acúmulos de Melodia", "Paz", "Calma", "Melancolia") or len(nome) > 34
                    or nome[:1].islower())
     out["ataque"] = bool(_ATAQUE_RE.search(nome + " " + t)) and not out["passiva"]
+    if re.search(r"(?:fazem|faz) um teste de \w+ contra a sua dt", tl) and "teste de acerto" not in tl and "rolar" not in tl:
+        out["ataque"] = False      # Gritar, Dedicação: o alvo testa contra a DT; não há jogada de ataque
     delta = 0
     for m in re.finditer(r"([+\-−]?\s*\d+|um|uma|dois|duas|três)\s*n[íi]ve(?:l|is)\s*(?:de dano\s*)?(acima|a mais|abaixo|a menos|inferior)?", tl):
         q = m.group(1).replace("−", "-").replace(" ", "")
@@ -934,7 +1152,7 @@ def acao_arma(nome, texto):
     m = re.search(r"multiplicador do cr[íi]tico [^.]*?para (\d+)x", tl) or re.search(r"x2\s*->\s*x(\d)", tl)
     if m:
         out["mult"] = int(m.group(1))
-    m = re.search(r"teste de (fortitude|reflexos?|vontade|ast[úu]cia)\s*\(dt 10 \+ b[ôo]nus de combate de (\w+)", tl)
+    m = re.search(r"teste de (fortitude|reflexos?|vontade|ast[úu]cia)\s*(?:contra a sua )?\(?dt\s*\(?10 \+ b[ôo]nus de combate de (\w+)", tl)
     if m:
         out["teste"] = m.group(1).capitalize()
         out["dt_attr"] = ATR_POR_NOME.get(m.group(2).capitalize(), "")
@@ -1039,10 +1257,10 @@ CAMINHOS = [
     ("Ferreiro", "Tecnologia", ["Subir uma arma de nível na Bigorna Portátil diante do ferreiro mentor.",
                                 "Forjar armas de 3 Animais diferentes do Andar.", "Forjar a arma de um Prevalecente do Andar."]),
     ("Cozinheiro", "Gastronomia", ["Preparar uma refeição de nível 2 diante de um chef.", "Criar 5 receitas novas com ingredientes do Andar.",
-                                   "Preparar um Banquete de nível 4 para todo o grupo (horta e pasto S, Base nível 6 ou mais)."]),
+                                   "Preparar um Banquete de nível 4 para todo o grupo (exige horta e pasto S, na Base nível 6 ou mais)."]),
     ("Cultivador", "Agricultura", ["Cuidar de uma horta por 2 semanas sem perder nenhuma planta.", "Colher 3 espécies diferentes com qualidade A.",
                                    "Colher uma planta com a qualidade máxima que a Base permite (mínimo A)."]),
-    ("Pastor", "Agricultura", ["Adestrar um animal da Base.", "Manter 3 animais produzindo por 4 semanas, sem nenhum rejeitar o dono.",
+    ("Pastor", "Adestramento", ["Adestrar um animal da Base.", "Manter 3 animais produzindo por 4 semanas, sem nenhum rejeitar o dono.",
                                "Obter produto de pasto com a qualidade máxima que a Base permite (mínimo A) de dois animais."]),
     ("Explorador", "Navegação", ["Guiar o grupo em 2 viagens sem se perder.", "Registrar 3 rotas novas do Andar (cada uma vira um Mapa Regional).",
                                 "Descobrir o caminho até o covil do Prevalecente de um país do Andar."]),
@@ -1050,6 +1268,8 @@ CAMINHOS = [
                                  "Descobrir o Coração, o Ponto Chave do Prevalecente de um país do Andar."]),
     ("Curandeiro", "Medicina", ["Tratar 3 aliados com uma condição ativada.", "Preparar 5 poções ou remédios.",
                                 "Curar um mal que atinge uma comunidade inteira do Andar (um contágio, por exemplo)."]),
+    ("Alquimista", "Alquimia", ["Preparar uma poção de nível 2 diante do alquimista mentor.", "Preparar poções únicas com itens G de 3 Animais diferentes do Andar.",
+                                "Preparar uma poção única de nível 4 com um item de um Prevalecente do Andar (exige Horta S, na Base nível 6 ou mais)."]),
     ("Diplomata", "Persuasão", ["Ganhar a confiança de uma tribo ou facção do Andar.", "Resolver 3 conflitos por negociação, sem violência.",
                                 "Unir facções do Andar em torno de uma causa, de modo que 3 NPCs com Funções diferentes aceitem acompanhar o grupo."]),
 ]

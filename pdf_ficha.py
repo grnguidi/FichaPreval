@@ -250,7 +250,7 @@ def gerar_pdf(caminho, app):
 
     e = []
     e.append(Paragraph(L("Prevalecentes"), s_tit))
-    e.append(Paragraph(L("Ficha do Sonhador · edição 3.1"), s_sub))
+    e.append(Paragraph(L("Ficha do Sonhador · edição 3.2"), s_sub))
     e.append(Spacer(1, 22))
     ident = [["Nome", idt.get("nome", ""), "Player", idt.get("player", ""), "Nível", str(idt.get("nivel", 1))],
              ["Espécie", idt.get("especie", ""), "Sonho", idt.get("sonho", ""), "Guilda", idt.get("guilda", "")]]

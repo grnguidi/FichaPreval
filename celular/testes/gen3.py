@@ -74,6 +74,24 @@ for _ in range(300):
     ae = list(R.arcano_escala(arc, set(tal)))
     sets_t.append({"at": at, "conds": R.condicoes_de_set(at), "arc": arc, "tal": tal, "ae": ae, "ex": ex, "cn": cn,
                    "esc": R.escalar_arcano(ex, ae[0], cn, ae[1])})
+equip_t = []
+fam_tal = [t["nome"] for t in DADOS["talismas"]]
+for _ in range(400):
+    sets_q = {x["nome"]: rnd.choice([1, 2, 3, 4]) for x in rnd.sample(DADOS["sets"], rnd.randint(0, 8))}
+    tals = rnd.sample(fam_tal, rnd.randint(0, 6))
+    chaves = [f"set:{n}:{k}" for n in sets_q for k in (2, 4)] + [f"tal:{R.talisma_familia_nivel(t)[0]}" for t in tals]
+    ativos = rnd.sample(chaves, rnd.randint(0, len(chaves))) if chaves else []
+    ctx = {"carga_pct": rnd.randint(0, 100), "fome": rnd.randint(0, 6), "casco": rnd.choice(["", "Impacto", "Perfurante"]), "mov_base": rnd.choice([9, 12, 15])}
+    r_ = R.efeitos_equipamento(sets_q, tals, set(ativos), ctx)
+    fila_ = [rnd.randint(1, 20) for _ in range(40)]
+    it_ = iter(fila_)
+    d_ = {"rd": rnd.randint(0, 3), "resistencias": [], "rd_tipo": r_["rd"]}
+    valor_, tipo_ = rnd.randint(1, 90), rnd.choice(R.NOMES_DANO)
+    dano_ = list(R.defesas_contra_dano(valor_, tipo_, d_, lambda f, it=it_: (next(it) - 1) % f + 1))
+    pct_, tp_ = rnd.randint(0, 30), rnd.choice(["curto", "longo"])
+    mx_ = {"vida": 100, "mana": 50, "vigor": 20}
+    equip_t.append({"sets": sets_q, "tals": tals, "ativos": ativos, "ctx": ctx, "r": r_, "fila": fila_, "d": d_, "valor": valor_, "tipo": tipo_,
+                    "dano": dano_, "pct": pct_, "tp": tp_, "mx": mx_, "desc": list(R.descanso(tp_, mx_, {"vida": 10, "mana": 5, "vigor": 3}, {}, pct_))})
 rec = [[p_, e, R.recarrega(p_, e)] for p_ in list(R.NIVEL_RECARGA) for e in R.EVENTO_RECARGA]
-json.dump({"casos": casos, "itens": DADOS["itens"], "acoes": acoes, "usos": usos, "extras": extras, "rec": rec, "sets": sets_t}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
+json.dump({"casos": casos, "itens": DADOS["itens"], "acoes": acoes, "usos": usos, "extras": extras, "rec": rec, "sets": sets_t, "equip": equip_t}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
 print(len(casos), "casos")

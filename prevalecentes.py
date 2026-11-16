@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Ficha de Personagem — Prevalecentes (PREVA 3.1)
+"""Ficha de Personagem — Prevalecentes (PREVA 3.2)
 Calcula características derivadas, controla pontos por nível e oferece menus
 de armas, encantamentos e talentos marcando o que pode ou não ser aprendido.
 Layout segue a ficha oficial (páginas I a VII).
@@ -18,7 +18,7 @@ from ponte_sessao import PonteSessao
 from regras_texto import REGRAS_TXT
 from dados_prevalecentes import DADOS as _DADOS_EMBUTIDOS
 
-APP_NOME = "Ficha Prevalecentes 3.1"
+APP_NOME = "Ficha Prevalecentes 3.2"
 OK, NO = "✓", "✗"
 META_SLOTS = [f"meta{i}" for i in range(1, 6)]   # talento extra de cada Meta de Vida concluída
 
@@ -496,6 +496,9 @@ class App(tk.Tk):
         se = tk.Menu(m, tearoff=0)
         se.add_command(label="Levantar a mão / Mesa do mestre…", command=self.abrir_sessao)
         m.add_cascade(label="Sessão", menu=se)
+        ms = tk.Menu(m, tearoff=0)
+        ms.add_command(label="Inimigos, anotações e combate (painel do mestre)…", command=self.abrir_painel_mestre)
+        m.add_cascade(label="Mestre", menu=ms)
         ex = tk.Menu(m, tearoff=0)
         ex.add_command(label="Trocar tema (diurno, noturno, Vitral)", command=self.alternar_tema, accelerator="Ctrl+T")
         m.add_cascade(label="Exibir", menu=ex)
@@ -522,7 +525,7 @@ class App(tk.Tk):
             arco.pack(side="left", anchor="n", padx=(0, 10), before=tit)
             desenhar_arco(arco)
         tk.Label(tit, text="Prevalecentes" if TEMA == "vitral" else "⚜ Prevalecentes", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
-        tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.1", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
+        tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.2", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
         self.lbl_modo.pack(anchor="w", pady=(4, 0))
 
@@ -1321,7 +1324,7 @@ class App(tk.Tk):
 
     def aplicar_efeitos(self, d, ef, manual=None):
         """Soma os efeitos de talento e os valores manuais de Vida/Mana às características derivadas."""
-        d["ca"] = max(10, min(25, d["ca"] + ef["ca"]))
+        d["ca"] = max(10, min(R.CA_MAX, d["ca"] + ef["ca"]))
         d["movimento"] += ef["mov"]
         d["iniciativa_bonus"] += ef["iniciativa"]
         d["descoberta"] += ef["descoberta"]
@@ -1519,6 +1522,15 @@ class App(tk.Tk):
         arm, esc = self._protecao("armadura"), self._protecao("escudo")
         return ((arm or {}).get("ca", 0), (esc or {}).get("ca", 0), (arm or {}).get("peso", 0), (esc or {}).get("peso", 0))
 
+    def efeitos_equipamento(self, nivel, tal):
+        """Efeitos fixos dos sets (2 ou 4 peças do mesmo set) e dos talismãs equipados. Os que dependem de uma situação
+        (interruptores) e os que dependem do peso carregado ficam para o app de celular."""
+        if not hasattr(self, "talismas") or not hasattr(self, "set_pecas"):
+            return R.efeitos_equipamento({}, [])
+        cont = self.sets_ativos()[0]
+        nomes = [t["nome"].get() for t in self.talismas[:R.slots_talismas(nivel, tal)] if t["nome"].get()]
+        return R.efeitos_equipamento(cont, nomes)
+
     def sets_ativos(self):
         cont = {}
         for sp in self.set_pecas.values():
@@ -1556,6 +1568,17 @@ class App(tk.Tk):
         d = R.derivadas(a, nivel, tal, self.soma_dados_vida(n_vida),
                         *self.ca_peso_protecao()[:2], to_int(self.arm["ca_extra"].get()))
         ef = R.efeitos_talentos(tal, self.talentos_ativos(), self.arm["armadura"].get())
+        eq = self.efeitos_equipamento(nivel, tal)
+        ef["ca"] += eq["ca"]
+        ef["mov"] += eq["mov"]
+        ef["contra"] += eq["contra"]
+        for k, v in eq["per"].items():
+            ef["pericia"][k] = ef["pericia"].get(k, 0) + v
+        d["mana"] += eq["mana"]
+        d["vigor"] += eq["vigor"]
+        d["espacos_encant"] += eq["espacos"]
+        d["rd_tipo"], d["provocar_extra"], d["curto_vida_pct"] = eq["rd"], eq["provocar"], eq["curto_vida_pct"]
+        self.eq = eq
         self.aplicar_efeitos(d, ef)
         d["carga"] += R.carga_extra_itens(self._inventario(), self.itens_livro)   # Mochila: +5
         self.d, self.a, self.ef = d, a, ef
@@ -1750,7 +1773,7 @@ class App(tk.Tk):
             self.l_atk[n].configure(text="  /  ".join(partes))
         bonus_def = {"Fortitude de Ferro", "Reflexos de Gato", "Mente Blindada", "Vontade Inabalável"}
         for n, k, tname in R.PERICIAS_DEFESA:
-            extra = 2 if tname in tal else 0
+            extra = (2 if tname in tal else 0) + self.eq["def"].get(n, 0)
             self.l_def[n].configure(text=f"+{d['bc'][k] + n3 + extra}" + (" (vant.)" if R.vantagem(a[k]) else ""))
         self.l_dts.configure(text=f"DT encantamentos/alma/armas: Feitiçaria {d['dt_feiticaria']} • Desejo {d['dt_desejo']}")
         self._recalc_armas(a, nivel, avisos)
@@ -1864,7 +1887,7 @@ class App(tk.Tk):
         mot = []
         if nv > self.d.get("max_nivel_arma", 1):
             mot.append(f"nível de personagem {2 * nv - 1}")
-        mot += R.req_falta(R.req_com_props(R.req_arma(arma, nv), list(props)), self.a)
+        mot += R.req_falta(R.req_com_props(R.req_arma(arma, nv, self.a), list(props)), self.a)
         return mot
 
     def props_max(self, i):
@@ -1997,7 +2020,7 @@ class App(tk.Tk):
             arma = self.armas_por_nome[g]
             nv = to_int(ui["nivel"].get(), 1)
             l = self._linha_arma(g, nv)
-            k = arma["ataque"]
+            k = R.atributo_ataque(arma, a)
             extra = R.cap(a[k]) // 30
             props = R.ler_props(ui["props"].get())
             ep = R.efeito_props(props, R.dano_com_dados(l["dano"], extra), to_int(l["critico"], 20))
@@ -2019,7 +2042,7 @@ class App(tk.Tk):
             vig = 10 if nv >= 8 else 8 if nv >= 4 else 5
             ui["l_vigor"].configure(text=str(vig) if arma.get("vigor") else "—")
             ui["l_dt"].configure(text=str(10 + d["bc"][k] + nivel // 3))
-            rq = R.req_com_props(R.req_arma(arma, nv), props)
+            rq = R.req_com_props(R.req_arma(arma, nv, a), props)
             falta = self._status_arma(g, nv, props)
             ui["l_req"].configure(text="Requisitos: " + ", ".join(f"{v} {R.NOMES_ATR[x]}" for x, v in rq.items())
                                        + (f"   {NO} falta: {', '.join(falta)}" if falta else f"   {OK}"),
@@ -2495,7 +2518,7 @@ class App(tk.Tk):
             return
         self.recalc()
         nv = to_int(ui["nivel"].get(), 1)
-        k = arma["ataque"]
+        k = R.atributo_ataque(arma, self.a)
         ef = self.ef
         nv_dano = max(1, min(10, nv + ef["dano_nivel"] + int(o.get("delta") or 0)))
         linha = self._linha_arma(arma["nome"], nv)
@@ -2703,7 +2726,7 @@ class App(tk.Tk):
         vars_ = {"vida": self.v_vida_atual, "mana": self.v_mana_atual, "vigor": self.v_vigor_atual}
         ats = {k: self._atual(v, maxs[k]) for k, v in vars_.items()}
         conds = {n: to_int(c["atual"].get()) for n, c in self.cond.items()}
-        novos, ncond = R.descanso(tipo, maxs, ats, conds)
+        novos, ncond = R.descanso(tipo, maxs, ats, conds, self.d.get("curto_vida_pct", 0))
         for k, v in vars_.items():
             v.set(str(novos[k]))
         for n, c in self.cond.items():
@@ -2731,6 +2754,9 @@ class App(tk.Tk):
         total, partes = R.rolar_expr(f"{n}d10", self._rng)
         mx = self.d["vida"]
         antes = self._atual(self.v_vida_atual, mx)
+        if antes <= 0:
+            messagebox.showinfo(APP_NOME, "Incapaz: nenhuma cura, nem a Poção Espiritual, acorda um Incapaz. Só os testes do Portão da Morte.")
+            return
         self.desfazer.append((self.v_vida_atual, self.v_vida_atual.get(), "Poção Espiritual"))
         self.v_vida_atual.set(str(min(mx, antes + total)))
         self.registrar("⚗ Poção Espiritual", [f"Cura: {total}  ({n}d10 {partes[0][1]})", f"Vida: {antes} → {min(mx, antes + total)}",
@@ -2989,7 +3015,7 @@ class App(tk.Tk):
     def rolar_defesa(self, n):
         self.recalc()
         _, k, tn = next(x for x in R.PERICIAS_DEFESA if x[0] == n)
-        b = self.d["bc"][k] + self.nivel() // 3 + (2 if tn in self.talentos_escolhidos() else 0)
+        b = self.d["bc"][k] + self.nivel() // 3 + (2 if tn in self.talentos_escolhidos() else 0) + self.eq["def"].get(n, 0)
         r = R.rolar_defesa(b, R.vantagem(self.a[k]), self._rng)
         r.setdefault("bonus", b)
         self.registrar(f"🛡 {n}", [self._txt_d20(n, dict(r, bonus=b)), "Compare com a DT do efeito ou da habilidade do inimigo."])
@@ -3102,7 +3128,8 @@ class App(tk.Tk):
                 lin.pack(fill="x", pady=2)
                 ttk.Button(lin, text=("🎲 " if teste else "✓ ") + n, width=24,
                            command=lambda n=n: (w.destroy(), self.acao_livro(n))).pack(side="left", anchor="n")
-                extra = f" DT {R.dt_provocar(self.d, self.nivel())}." if teste == "provocar" else ""
+                extra = (f" DT {R.dt_provocar(self.d, self.nivel())}." if teste == "provocar"
+                         else f" DT {R.dt_forca(self.d, self.nivel())}." if teste == "dt_forca" else "")
                 tk.Label(lin, text=desc + extra, bg=PERG, fg=TINTA2, font=(FONTE, 9), wraplength=380, justify="left").pack(side="left", padx=8)
 
     def acao_livro(self, nome):
@@ -3125,7 +3152,9 @@ class App(tk.Tk):
         self.recalc()
         linhas = [desc]
         if teste == "provocar":
-            linhas.append(f"O alvo faz Vontade contra DT {R.dt_provocar(self.d, self.nivel())} (10 + BC de Mente + nível ÷ 3).")
+            linhas.append(f"O alvo faz Vontade contra DT {R.dt_provocar(self.d, self.nivel())} (10 + BC de Força + nível ÷ 3 + 3).")
+        elif teste == "dt_forca":
+            linhas.append(f"O alvo faz Fortitude contra DT {R.dt_forca(self.d, self.nivel())} (10 + BC de Força + nível ÷ 3).")
         elif teste:
             pinfo = self.per.get(teste)
             if pinfo and "calc" in pinfo:
@@ -3299,7 +3328,7 @@ class App(tk.Tk):
             tk.Label(g, text="Disparos/golpes", bg=PERG, fg=TINTA2, font=(FONTE, 9)).grid(row=0, column=3, sticky="w")
             ttk.Combobox(g, values=[str(x) for x in range(1, p["golpes"] + 1)] if p["ate"] else [str(p["golpes"])], textvariable=vg,
                          width=6, state="readonly").grid(row=1, column=3, sticky="w")
-        dt = 10 + self.d["bc"][p["dt_attr"] or arma["ataque"]] + self.nivel() // 3 if p["teste"] else 0
+        dt = 10 + self.d["bc"][p["dt_attr"] or R.atributo_ataque(arma, self.a)] + self.nivel() // 3 if p["teste"] else 0
         self._txt(f, "Os ajustes vêm do texto da ação; confira antes de rolar." + (f" Crítico ×{p['mult']}." if p["mult"] else "")
                   + (f" {p['golpes']} disparos/golpes{' (até)' if p['ate'] else ''}, "
                      + ("uma jogada de acerto para todos." if p["um_acerto"] else "um teste de acerto para cada.") if p["golpes"] > 1 else "")
@@ -4322,6 +4351,14 @@ class App(tk.Tk):
                 except tk.TclError:
                     pass
             self.destroy()
+
+    def abrir_painel_mestre(self):
+        """Painel do mestre no navegador: biblioteca de inimigos, anotações e combate. Funciona mesmo sem sessão aberta."""
+        import mestre_web
+        try:
+            mestre_web.abrir_no_navegador()
+        except OSError as e:
+            messagebox.showerror(APP_NOME, f"Não consegui abrir o painel do mestre (porta {mestre_web.PORTA} ocupada?).\n{e}")
 
     def abrir_sessao(self):
         """Janela de sessão em rede: o jogador levanta a mão, o mestre recebe o aviso."""

@@ -1,18 +1,19 @@
-/* Regras de Prevalecentes (PREVA 3.1) — tradução fiel de regras.py */
+/* Regras de Prevalecentes (PREVA 3.2) — tradução fiel de regras.py */
 (function (raiz) {
   "use strict";
   const ATRIBUTOS = ["VIT", "MEN", "TEN", "FOR", "DES", "INT", "FE", "ARC"];
   const NOMES_ATR = { VIT: "Vitalidade", MEN: "Mente", TEN: "Tenacidade", FOR: "Força", DES: "Destreza", INT: "Inteligência", FE: "Fé", ARC: "Arcano" };
   const ATR_POR_NOME = Object.fromEntries(Object.entries(NOMES_ATR).map(([k, v]) => [v, k]));
   const VALORES_INICIAIS = [16, 14, 12, 11, 10, 9, 8, 7];
+  const CA_MAX = 30;   // 3.2: máxima 30; o que passar é perdido
   const NIVEL_MAX = 30;
   const PERICIAS = [
-    ["Acrobacia", ["DES"], false], ["Adestramento", ["MEN"], true], ["Agricultura", ["INT", "DES"], true], ["Artes", ["MEN"], false],
+    ["Acrobacia", ["DES"], false], ["Adestramento", ["MEN"], true], ["Agricultura", ["INT"], true], ["Alquimia", ["INT"], true], ["Artes", ["MEN"], false],
     ["Atletismo", ["FOR"], false], ["Ciências", ["INT"], false], ["Costura", ["INT", "DES"], true], ["Crime", ["DES"], false],
     ["Furtividade", ["DES"], false], ["Gastronomia", ["INT", "DES"], false], ["História", ["FE"], false], ["Intuição", ["FE"], false],
-    ["Investigação", ["INT"], false], ["Medicina", ["INT"], true], ["Navegação", ["INT", "DES"], false], ["Percepção", ["ARC"], false],
+    ["Investigação", ["INT"], false], ["Medicina", ["INT"], true], ["Navegação", ["INT"], false], ["Percepção", ["ARC"], false],
     ["Performance", ["MEN"], false], ["Persuasão", ["MEN"], false], ["Prevalência", null, true], ["Religião", ["FE"], false],
-    ["Sorte", ["ARC"], false], ["Tática", ["ARC"], false], ["Tecnologia", ["INT"], true],
+    ["Sorte", ["ARC"], false], ["Tática", ["INT", "MEN"], false], ["Tecnologia", ["INT"], true],
   ];
   const PERICIAS_ATAQUE = [["Luta", ["FOR", "DES"]], ["Pontaria", ["DES"]], ["Feitiçaria", ["INT"]], ["Desejo", ["FE"]]];
   const PERICIAS_DEFESA = [["Fortitude", "TEN", "Fortitude de Ferro"], ["Reflexo", "DES", "Reflexos de Gato"],
@@ -71,7 +72,7 @@
     d.descoberta = 10 + 10 * fdiv(cap(a.ARC), 15);
     const caTen = Math.min(4, fdiv(cap(a.TEN), 20));
     d.ca_ten = caTen;
-    d.ca = Math.max(10, Math.min(25, 10 + caTen + armCa + escCa + caExtra));
+    d.ca = Math.max(10, Math.min(CA_MAX, 10 + caTen + armCa + escCa + caExtra));
     let carga = 10 + 2 * cap(a.TEN) + fdiv(cap(a.FOR), 2) + c.TEN;
     carga += (tal.has("Mochileiro") ? 10 : 0) + (tal.has("Mula de Carga") ? 30 : 0);
     d.carga = carga;
@@ -80,7 +81,7 @@
     let acoes = LIMIARES_ACOES.filter((t) => des >= t).length;
     if (tal.has("Mão Extra") && des >= 40) acoes += 1;
     d.acoes_extras = acoes;
-    d.iniciativa_dados = 1 + fdiv(des, 20);
+    d.iniciativa_dados = 1 + fdiv(des, 20) + (tal.has("Animado") ? 1 : 0);
     d.iniciativa_bonus = bc.DES;
     d.rd = Math.min(4, fdiv(cap(a.TEN), 20));
     const tenRes = cap(a.TEN) + (tal.has("Pele Grossa") ? 10 : 0);
@@ -108,9 +109,18 @@
     return [melhor, fdiv(nivel, 2) + (treinada ? curva(val) : 0), 1 + fdiv(val, 20)];
   }
 
-  function reqArma(arma, nv) {
+  // A Lira (3.2) ataca com Inteligência ou Fé, à escolha: com os atributos (a), vale o maior.
+  function atributoAtaque(arma, a) {
+    const alt = arma.ataque_alt;
+    if (alt && a) return alt.reduce((m, k) => (cap(a[k]) > cap(a[m]) ? k : m), alt[0]);
+    return arma.ataque;
+  }
+  function reqArma(arma, nv, a) {
     const out = {};
-    for (const r of arma.req) out[r.attr] = r.base + r.por_nivel * (nv - 1);
+    for (const r of arma.req) {
+      const attr = r.alt && a ? r.alt.reduce((m, k) => (cap(a[k]) > cap(a[m]) ? k : m), r.alt[0]) : r.attr;
+      out[attr] = r.base + r.por_nivel * (nv - 1);
+    }
     return out;
   }
   function reqFalta(reqs, a) {
@@ -208,7 +218,7 @@
   // ---------------- Livro: tipos de dano, efeitos e condições (gerado de regras.py pelo build) ----------------
   const LIVRO = {};
   const { TIPOS_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, CONDICAO_DESCANSO_CURTO,
-    DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS, PECAS_SET_PESO, DADO_INFERIOR } = LIVRO;
+    DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS, PECAS_SET_PESO, DADO_INFERIOR, DANO_ALIAS_RESISTENCIA, EFEITOS_SETS, EFEITOS_TALISMAS } = LIVRO;
   const NOMES_DANO = (TIPOS_DANO || []).map((t) => t[0]);
   const DANO_MENTAL = new Set((TIPOS_DANO || []).filter((t) => t[1] === "Mental").map((t) => t[0]));
   function receberCondicao(acumulado, maximo, pontos, sucesso) {
@@ -226,7 +236,15 @@
       const rolos = [...Array(rd)].map(() => rng(4)), s = rolos.reduce((a, b) => a + b, 0);
       total = Math.max(0, total - s); notas.push(`RD ${rd}d4 [${rolos.join(", ")}] −${s}`);
     } else if (fragilizado && d.rd) notas.push("Fragilizado: sem RD");
-    if (tipo && (d.resistencias || []).includes(tipo) && !fragilizado) { total = Math.floor(total / 2); notas.push(`resistência a ${tipo}: metade`); }
+    if (!fragilizado) {   // redução de talismãs e sets por tipo de dano (Pele de Ferro, Escama de Dragão, Casco...)
+      for (const r of d.rd_tipo || []) {
+        if (!r.tipos.includes(tipo)) continue;
+        const [q, f] = r.dados.split("d").map(Number), rolos = [...Array(q)].map(() => rng(f)), red = rolos.reduce((a, b) => a + b, 0) + (r.fixo | 0);
+        total = Math.max(0, total - red);
+        notas.push(`redução ${r.dados}${r.fixo ? "+" + r.fixo : ""} [${rolos.join(", ")}] −${red}`);
+      }
+    }
+    if (tipo && ((d.resistencias || []).includes(tipo) || (d.resistencias || []).includes((DANO_ALIAS_RESISTENCIA || {})[tipo])) && !fragilizado) { total = Math.floor(total / 2); notas.push(`resistência a ${tipo}: metade`); }
     return [total, notas];
   }
   function rolarPericia(bonus, dados, rng) {
@@ -234,11 +252,46 @@
     return { d20: d, natural: nat, bonus, total: nat + bonus };
   }
   function rolarDefesa(bonus, comVantagem, rng) { return rolarPericia(bonus, comVantagem ? 2 : 1, rng); }
-  function descanso(tipo, maximos, atuais, condicoes) {
+  function descanso(tipo, maximos, atuais, condicoes, curtoVidaPct = 0) {
     const novos = {}, cond = {};
-    for (const [k, mx] of Object.entries(maximos)) { const at = k in atuais ? atuais[k] : mx; novos[k] = tipo === "longo" ? mx : Math.min(mx, at + Math.floor(mx / 2)); }
+    for (const [k, mx] of Object.entries(maximos)) {
+      const at = k in atuais ? atuais[k] : mx, extra = k === "vida" && tipo === "curto" ? Math.floor(mx * curtoVidaPct / 100) : 0;   // set Eremita
+      novos[k] = tipo === "longo" ? mx : Math.min(mx, at + Math.floor(mx / 2) + extra);
+    }
     for (const [n, v] of Object.entries(condicoes)) cond[n] = tipo === "longo" ? 0 : Math.max(0, v - CONDICAO_DESCANSO_CURTO);
     return [novos, cond];
+  }
+  // Sets e talismãs: efeitos de valor fixo (veja EFEITOS_SETS e EFEITOS_TALISMAS em regras.py)
+  const vNivel = (x, i) => (Array.isArray(x) ? x[Math.min(i, x.length - 1)] : x);
+  function talismaFamiliaNivel(nome) { const m = String(nome || "").match(/^(.*?)\s*\+(\d)$/); return m ? [m[1], +m[2]] : [nome || "", 0]; }
+  function efeitosEquipamento(sets, talismas, ativos = [], ctx = {}) {
+    const out = { atr: {}, per: {}, def: {}, ca: 0, mov: 0, mana: 0, vigor: 0, acerto: 0, acerto_dist: 0, dano: 0, dano_mag: 0, dano_nivel: 0, dados: [], rd: [], espacos: 0,
+      contra: 0, cond: {}, mana_pct: 0, cura: [], provocar: 0, curto_vida_pct: 0, lista: [] };
+    const blocos = [];
+    for (const nome of Object.keys(sets).sort()) for (const n of [2, 4]) {
+      const fx = (EFEITOS_SETS[nome] || {})[n];
+      if (fx && sets[nome] >= n) blocos.push([`set:${nome}:${n}`, `Set ${nome} (${n} peças)`, fx, 0, nome]);
+    }
+    for (const t of talismas) { const [fam, idx] = talismaFamiliaNivel(t); if (EFEITOS_TALISMAS[fam]) blocos.push([`tal:${fam}`, t, EFEITOS_TALISMAS[fam], idx, fam]); }
+    const soma = (o, k, v) => { o[k] = (o[k] || 0) + v; };
+    for (const [chave, rotulo, fx, i, fonte] of blocos) {
+      const sit = fx.sit || "", ligado = !sit || ativos.includes(chave);
+      out.lista.push({ chave, fonte: rotulo, sit, ligado, txt: vNivel(fx.txt, i) });
+      if (!ligado) continue;
+      for (const [k, v] of Object.entries(fx.atr || {})) soma(out.atr, k, vNivel(v, i));
+      for (const [k, v] of Object.entries(fx.per || {})) soma(out.per, k, vNivel(v, i));
+      for (const [k, v] of Object.entries(fx.def || {})) soma(out.def, k, vNivel(v, i));
+      for (const k of ["ca", "mov", "mana", "vigor", "acerto", "acerto_dist", "dano", "dano_mag", "dano_nivel", "espacos", "contra", "mana_pct", "provocar", "curto_vida_pct"]) if (k in fx) out[k] += vNivel(fx[k], i);
+      for (const [k, v] of Object.entries(fx.cond || {})) soma(out.cond, k, vNivel(v, i));
+      for (const [expr, tipo, alvo] of fx.dados || []) out.dados.push([vNivel(expr, i), tipo, alvo]);
+      for (const c of fx.cura || []) out.cura.push(vNivel(c, i));
+      if ("dano_carga" in fx) out.dano += vNivel(fx.dano_carga, i) * Math.floor(Math.trunc(ctx.carga_pct || 0) / 20);
+      if ("dano_fome" in fx) out.dano += vNivel(fx.dano_fome, i) * Math.max(0, Math.trunc(ctx.fome || 0));
+      if ("mov_dobra_carga" in fx && (ctx.carga_pct == null ? 100 : ctx.carga_pct) <= fx.mov_dobra_carga) out.mov += ctx.mov_base || 0;
+      if (fx.subst) out.rd = out.rd.filter((r) => r.fonte !== fonte);
+      for (const r of fx.rd || []) out.rd.push({ tipos: r.tipos === "escolha" ? [ctx.casco || "Cortante"] : r.tipos.slice(), dados: vNivel(r.dados, i), fixo: r.fixo, fonte });
+    }
+    return out;
   }
   const pocaoEspiritualDados = (nivel, curvaVit) => Math.max(2, Math.floor(nivel / 2) + Math.floor(curvaVit / 2));
   function desgasteAposAtaque(usados, critico, limite = DESGASTE_TURNOS) {
@@ -391,7 +444,8 @@
     else if (k === "ARC") out.push(`Condições dos encantamentos: +${Math.floor(v / 20)} cópia(s) dos dados e +${Math.floor(v / 15)} dado(s) inferior(es) · Descoberta ${d.descoberta}`);
     return out;
   }
-  const dtProvocar = (d, nivel) => 10 + d.bc.MEN + Math.floor(nivel / 3);
+  const dtProvocar = (d, nivel) => 10 + d.bc.FOR + Math.floor(nivel / 3) + 3 + (d.provocar_extra || 0);   // 3.2: BC de Força + 3
+  const dtForca = (d, nivel) => 10 + d.bc.FOR + Math.floor(nivel / 3);          // Agarrar e Derrubar (Fortitude do alvo)
   function acoesDoTurno(extras, tipos) {
     const q = { Comum: 1, "Bônus": 1, Movimento: 1, "Reação": 1 };
     let faltam = 0;
@@ -424,6 +478,7 @@
     const c0 = nome.charAt(0);
     out.nota = ["•", "Nota", "Acúmulos de Melodia", "Paz", "Calma", "Melancolia"].includes(nome.trim()) || nome.length > 34 || (c0 !== c0.toUpperCase() && c0 === c0.toLowerCase());
     out.ataque = /\batac|\bataque|\bgolpe|\bestocada|\bdispar|\bcorte\b|teste de acerto|\btiro\b|explos/i.test(nome + " " + t) && !out.passiva;
+    if (/(?:fazem|faz) um teste de \w+ contra a sua dt/.test(tl) && !tl.includes("teste de acerto") && !tl.includes("rolar")) out.ataque = false;   // Gritar, Dedicação: o alvo testa contra a DT
     let delta = 0;
     for (const m of tl.matchAll(/([+\-−]?\s*\d+|um|uma|dois|duas|três)\s*n[íi]ve(?:l|is)\s*(?:de dano\s*)?(acima|a mais|abaixo|a menos|inferior)?/g)) {
       const q = m[1].replace("−", "-").replace(/ /g, "");
@@ -442,7 +497,7 @@
     out.acerto_garantido = tl.includes("acerto garantido");
     let m = tl.match(/multiplicador do cr[íi]tico [^.]*?para (\d+)x/) || tl.match(/x2\s*->\s*x(\d)/);
     if (m) out.mult = +m[1];
-    m = tl.match(/teste de (fortitude|reflexos?|vontade|ast[úu]cia)\s*\(dt 10 \+ b[ôo]nus de combate de (\w+)/);
+    m = tl.match(/teste de (fortitude|reflexos?|vontade|ast[úu]cia)\s*(?:contra a sua )?\(?dt\s*\(?10 \+ b[ôo]nus de combate de (\p{L}+)/u);
     if (m) { out.teste = capitaliza(m[1]); out.dt_attr = ATR_POR_NOME[capitaliza(m[2])] || ""; }
     else { m = tl.match(/(?:resist[êe]ncia com|teste de) (fortitude|reflexos?|vontade|ast[úu]cia)/); if (m) out.teste = capitaliza(m[1]); }
     // vários disparos/golpes e munição gasta (flechas, virotes, cartuchos, frascos)
@@ -511,7 +566,7 @@
     ATRIBUTOS, NOMES_ATR, ATR_POR_NOME, VALORES_INICIAIS, NIVEL_MAX, PERICIAS, PERICIAS_ATAQUE, PERICIAS_DEFESA, RESISTENCIAS,
     CONDICOES, LIMIARES_ACOES, ACERTO_ARMA, GRUPOS_ARMA, BONUS_SEM_ALMA,
     cap, curva, bonusCombate, vantagem, pontosDeNivel, ganhoNoNivel, nivelAlma, maxNivelArma, slotsTalismas, derivadas,
-    periciaFora, reqArma, reqFalta, reqUsoDuplo, danoComDados, statusVersao, statusTalento,
+    periciaFora, reqArma, atributoAtaque, reqFalta, reqUsoDuplo, danoComDados, statusVersao, statusTalento,
     EFEITOS_TALENTOS, ARMADURAS_PESADAS, efeitosTalentos, rolarExpr, rolarAtaque, custoMana, danoDoEncantamento,
     TIPOS_DANO, NOMES_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS,
     receberCondicao, defesasContraDano, rolarPericia, rolarDefesa, descanso, pocaoEspiritualDados, desgasteAposAtaque,
@@ -519,7 +574,7 @@
     ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
     PROPRIEDADES, NOMES_PROPRIEDADES, ELEMENTOS_PROP, lerProps, nomeProp, problemasProps, subirDado, efeitoProps, reqComProps,
     TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO, REFEICOES, efeitosAtributo,
-    dtProvocar, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
+    CA_MAX, dtProvocar, dtForca, efeitosEquipamento, talismaFamiliaNivel, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
     precoEmContos, separarMoedas, formatarDinheiro, lerDinheiro,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = R; else raiz.R = R;

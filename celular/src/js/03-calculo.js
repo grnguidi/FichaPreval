@@ -16,11 +16,16 @@ function protecao(tipo) {
   const lista = tipo === "armadura" ? D.armaduras : D.escudos;
   return lista.find((x) => x.nome === S.equip[tipo]) || null;
 }
+// Sets e talismãs: efeitos fixos (veja EFEITOS_SETS e EFEITOS_TALISMAS em regras.py). Tirar a peça ou o talismã tira o efeito.
+const nomesTalismasEquip = (nv, tal) => S.talismas.slice(0, R.slotsTalismas(nv, tal)).map((t) => t.nome).filter(Boolean);
+const chavesEquipAtivas = () => S.talentos_ativos.filter((k) => k.startsWith("set:") || k.startsWith("tal:"));
+const efeitosEquip = (nv, tal, ctx) => R.efeitosEquipamento(setsAtivos(), nomesTalismasEquip(nv, tal), chavesEquipAtivas(), Object.assign({ casco: S.casco_tipo, fome: int(S.fome_usos) }, ctx || {}));
 const custoEnc = (e, v, escolha) => R.descontoMatricula(escolha || C.escolha, e.categoria, v ? R.custoMana(v) : null, e.espaco);
-const condMax = (n) => int((S.condicoes[n] || {}).max, 100) + ((C && C.escolha && C.escolha.cond_extra[n]) || 0);
+const condMax = (n) => int((S.condicoes[n] || {}).max, 100) + ((C && C.escolha && C.escolha.cond_extra[n]) || 0) + ((C && C.eq && C.eq.cond[n]) || 0);
 function calcular() {
   const nv = nivel(), tal = talentos();
   const tb = bonusTalismas(nv, tal);
+  for (const [k, v] of Object.entries(efeitosEquip(nv, tal).atr)) tb[k] = (tb[k] || 0) + v;   // talismãs de atributo com condição ligada
   const a = {};
   for (const k of R.ATRIBUTOS) {
     const x = S.atributos[k];
@@ -33,16 +38,21 @@ function calcular() {
   const d = R.derivadas(a, nv, tal, soma, arm ? arm.ca : 0, esc ? esc.ca : 0, int(S.equip.ca_extra));
   const ativos = new Set(S.talentos_ativos.filter((n) => tal.has(n) && (R.EFEITOS_TALENTOS[n] || {}).tipo === "sit"));
   const ef = R.efeitosTalentos(tal, ativos, S.equip.armadura || "");
-  d.ca = Math.max(10, Math.min(25, d.ca + ef.ca)); d.movimento += ef.mov; d.iniciativa_bonus += ef.iniciativa;
+  d.ca += ef.ca; d.movimento += ef.mov; d.iniciativa_bonus += ef.iniciativa;
   d.descoberta += ef.descoberta; d.contra_encant += ef.contra;
-  d.vida_auto = d.vida; d.mana_auto = d.mana;
-  if (S.manual.vida != null) d.vida = int(S.manual.vida);
-  if (S.manual.mana != null) d.mana = int(S.manual.mana);
   d.carga += R.cargaExtraItens(S.inventario || [], ITENS);   // Mochila: +5
   let carga = R.pesoInventario(S.inventario || []) + R.pesoPecasSet(S.set || {});
   carga += (arm ? arm.peso : 0) + (esc ? esc.peso : 0) - (tal.has("Veterano de Armadura") && arm ? 2 : 0);
   carga += S.talismas.filter((t) => t.nome).length;
   S.armas.forEach((w) => { const ar = ARMAS[w.grupo]; if (ar) { const l = ar.tabela.find((x) => x.nivel === int(w.nivel, 1)); if (l) carga += l.espaco; } });
+  const eq = efeitosEquip(nv, tal, { carga_pct: d.carga > 0 ? Math.floor(carga * 100 / d.carga) : 100, mov_base: d.movimento });
+  d.ca = Math.max(10, Math.min(R.CA_MAX, d.ca + eq.ca)); d.movimento += eq.mov; d.mana += eq.mana; d.vigor += eq.vigor;
+  d.espacos_encant += eq.espacos; d.contra_encant += eq.contra; d.rd_tipo = eq.rd; d.provocar_extra = eq.provocar; d.curto_vida_pct = eq.curto_vida_pct;
+  ef.dano_nivel += eq.dano_nivel;
+  ef.pericia = Object.assign({}, ef.pericia); for (const [k, v] of Object.entries(eq.per)) ef.pericia[k] = (ef.pericia[k] || 0) + v;
+  d.vida_auto = d.vida; d.mana_auto = d.mana;
+  if (S.manual.vida != null) d.vida = int(S.manual.vida);
+  if (S.manual.mana != null) d.mana = int(S.manual.mana);
   const limLent = tal.has("Mochileiro") ? 0.6 : 0.5;
   const lentidao = carga > 0 && carga >= d.carga * limLent, exaustao = carga > 0 && d.carga - carga <= 10;
   const disp = R.pontosDeNivel(nv, S.sem_alma) + R.recompensaMetas(S.meta.concluidas).pontos;
@@ -50,7 +60,7 @@ function calcular() {
   const ini = R.ATRIBUTOS.map((k) => int(S.atributos[k].inicial)).filter(Boolean);
   const treinadas = new Set(S.pericias);
   const escolha = R.efeitosEscolhas(S.talentos, S.talentos_escolha || {});
-  const C = { escolha, nv, tal, a, tb, d, ef, ativos, nVida, soma, arm, esc, carga, lentidao, exaustao, mov: lentidao ? Math.min(6, d.movimento) : d.movimento, disp, gastos, resto: disp - gastos, treinadas, avisos: [] };
+  const C = { escolha, nv, tal, a, tb, d, ef, eq, ativos, nVida, soma, arm, esc, carga, lentidao, exaustao, mov: lentidao ? Math.min(6, d.movimento) : d.movimento, disp, gastos, resto: disp - gastos, treinadas, avisos: [] };
   // avisos
   const av = C.avisos;
   for (const k of Object.keys(S.manual)) av.push(["info", `${R.NOMES_ATR[k] || (k === "vida" ? "Vida máx." : "Mana máx.")} com valor manual (${S.manual[k]}).`]);
@@ -87,11 +97,11 @@ function calcular() {
 function statusArma(C, grupo, nv, props = []) {
   const m = [];
   if (nv > C.d.max_nivel_arma) m.push(`nível de personagem ${2 * nv - 1}`);
-  return m.concat(R.reqFalta(R.reqComProps(R.reqArma(ARMAS[grupo], nv), props), C.a));
+  return m.concat(R.reqFalta(R.reqComProps(R.reqArma(ARMAS[grupo], nv, C.a), props), C.a));
 }
 function efeitoArma(w, nv) {
   const ar = ARMAS[w.grupo], l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0];
-  return R.efeitoProps(R.lerProps(w.props), R.danoComDados(l.dano, Math.floor(R.cap(C.a[ar.ataque]) / 30)), int(l.critico, 20));
+  return R.efeitoProps(R.lerProps(w.props), R.danoComDados(l.dano, Math.floor(R.cap(C.a[R.atributoAtaque(ar, C.a)]) / 30)), int(l.critico, 20));
 }
 const propsMax = (w) => { const ar = ARMAS[w.grupo]; if (!ar) return 0; const l = ar.tabela.find((x) => x.nivel === int(w.nivel, 1)) || ar.tabela[0]; return l.propriedades + (C.escolha.dominio[w.grupo] || 0); };
 function statusProtecao(C, tipo, it) {

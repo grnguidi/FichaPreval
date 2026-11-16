@@ -34,6 +34,16 @@ for (const x of (dados.sets || [])) {
   const ae = R.arcanoEscala(x.arc, new Set(x.tal)); if (!igual(ae, x.ae)) falha(null, "arcanoEscala", ae, x.ae);
   const e = R.escalarArcano(x.ex, ae[0], x.cn, ae[1]); if (!igual(e, x.esc)) falha(null, "escalar", e, x.esc);
 }
+for (const x of (dados.equip || [])) {
+  const r = R.efeitosEquipamento(x.sets, x.tals, x.ativos, x.ctx);
+  const norm = (o) => JSON.stringify(o, (k, v) => (v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v));
+  if (norm(r) !== norm(x.r)) falha(x, "efeitos de equipamento", r, x.r);
+  let i = 0; const rng = (f) => ((x.fila[i++] - 1) % f) + 1;
+  const dano = R.defesasContraDano(x.valor, x.tipo, x.d, rng);
+  if (!igual(dano, x.dano)) falha(x, "redução por tipo", dano, x.dano);
+  const ds = R.descanso(x.tp, x.mx, { vida: 10, mana: 5, vigor: 3 }, {}, x.pct);
+  if (!igual(ds, x.desc)) falha(x, "descanso Eremita", ds, x.desc);
+}
 for (const [n, t, esp] of acoes) { const r = R.acaoArma(n, t); if (!igual(r, esp)) falha(null, "ação de arma " + n, r, esp); }
 for (const [t, esp] of usos) { const r = R.usosLimitados(t); if (!igual(r, esp)) falha(null, "usos", r, esp); }
 for (const e of extras) {

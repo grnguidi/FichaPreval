@@ -60,12 +60,13 @@ function gastarMunicao(i, tipo, qtd) {
 }
 function atacar(i, o = {}) {
   const w = S.armas[i], ar = ARMAS[w.grupo]; if (!ar) return;
-  const nv = int(w.nivel, 1), k = ar.ataque;
+  const nv = int(w.nivel, 1), k = R.atributoAtaque(ar, C.a);
   const l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0];
   const [lD, nvD] = R.linhaDanoNivel(ar.tabela, nv, C.ef.dano_nivel + int(o.delta));
   const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0, props = R.lerProps(w.props);
   const ep = R.efeitoProps(props, R.danoComDados(lD.dano, Math.floor(R.cap(C.a[k]) / 30)), int(l.critico, 20));
-  const bonus = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + maestria + ep.acerto;
+  const dist = ["Arco", "Besta Pesada"].includes(w.grupo), acEq = C.eq.acerto + (dist ? C.eq.acerto_dist : 0);
+  const bonus = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + acEq + maestria + ep.acerto;
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : 0;
   const dg = S.desgaste[i] = Object.assign({ usados: 0, desgastada: false, em: 0, contado: -1 }, S.desgaste[i] || {});
   if (dg.desgastada) {
@@ -108,6 +109,13 @@ function atacar(i, o = {}) {
         soma += t2;
         linhas.push(pre + txtDano(t2, p2, `+ ${esc(tipo)}`) + (cnd ? ` <span class="sub">(${esc(cnd)})</span>` : ""));
       }
+      for (const [x, tipo, alvo] of C.eq.dados) {   // dados de sets e talismãs
+        if (!(alvo === "arma" || alvo === "tudo" || (Array.isArray(alvo) && alvo.includes(w.grupo)))) continue;
+        const [t2, p2] = R.rolarExpr(x, rng, a.critico, mult);
+        soma += t2;
+        linhas.push(pre + txtDano(t2, p2, `+ ${esc(tipo)}`) + ` <span class="sub">(set ou talismã)</span>`);
+      }
+      if (C.eq.dano) { soma += C.eq.dano; linhas.push(pre + `+<b>${C.eq.dano}</b> de dano fixo <span class="sub">(sets e talismãs)</span>`); }
     });
     if (!at.desastre) linhas.push(...linhasSet(at.critico));
     if (golpes > 1 && !at.desastre) linhas.push(`Dano somado se todos acertarem: <b>${soma}</b> <span class="sub">— desconte os que errarem a CA do alvo.</span>`);
@@ -127,6 +135,7 @@ function atacar(i, o = {}) {
     for (const x of o.extra || []) linhas.push(x);
     if (props.length) linhas.push(`<span class="sub">Propriedades: ${esc(props.join(", "))}</span>`);
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
+    if (acEq) linhas.push(`<span class="sub">Inclui +${acEq} de acerto de sets e talismãs.</span>`);
     if (C.ef.acerto) linhas.push(`<span class="sub">Inclui +${C.ef.acerto} de acerto de talento situacional.</span>`);
     if (maestria) linhas.push(`<span class="sub">Inclui +1 de Maestria nesta arma.</span>`);
     linhas.push(`<span class="sub">${at.critico ? `Desgaste: o crítico reafiou a arma.` : dg.desgastada ? `<b class="erro">A arma desgastou</b>: sem uso no próximo turno.` : `Desgaste: restam ${ep.desgaste - dg.usados} turno(s) afiado(s).`}</span>`);
@@ -185,7 +194,7 @@ A["descanso"] = (el) => {
   const d = C.d, maxs = { vida: d.vida, mana: d.mana, vigor: d.vigor }, ch = { vida: "atual", mana: "mana_atual", vigor: "vigor_atual" };
   const ats = Object.fromEntries(Object.entries(ch).map(([k, c]) => [k, S.vida[c] === "" || S.vida[c] == null ? maxs[k] : int(S.vida[c], maxs[k])]));
   const conds = Object.fromEntries(R.CONDICOES.map((n) => [n, int(S.condicoes[n].atual)]));
-  const [novos, nc] = R.descanso(tipo, maxs, ats, conds);
+  const [novos, nc] = R.descanso(tipo, maxs, ats, conds, d.curto_vida_pct || 0);
   for (const [k, c] of Object.entries(ch)) S.vida[c] = String(novos[k]);
   for (const n of R.CONDICOES) S.condicoes[n].atual = nc[n] ? String(nc[n]) : "";
   S.descansos_curtos = tipo === "longo" ? 0 : S.descansos_curtos + 1;
@@ -199,6 +208,7 @@ A["descanso"] = (el) => {
 A["pocao"] = () => {
   const n = R.pocaoEspiritualDados(C.nv, C.d.curva.VIT), [tot, partes] = R.rolarExpr(`${n}d10`, rng);
   const mx = C.d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? mx : int(S.vida.atual, mx);
+  if (antes <= 0) { toast("Incapaz: nenhuma cura, nem a Poção Espiritual, acorda um Incapaz. Só os testes do Portão da Morte."); return; }
   desfazer.push({ chave: "atual", antigo: S.vida.atual, desc: "Poção Espiritual" });
   S.vida.atual = String(Math.min(mx, antes + tot)); salvar(); render();
   mostrarRolagem("⚗ Poção Espiritual", [txtDano(tot, partes, "Cura"), `Vida: ${antes} → <b>${Math.min(mx, antes + tot)}</b>`, `<span class="sub">Ação comum para beber; uma por jogador por descanso longo.</span>`]);
@@ -217,7 +227,9 @@ A["conjurar"] = (el, ev) => {
   const k = e.dominio === "Magia" ? "INT" : "FE", per = k === "INT" ? "Feitiçaria" : "Desejo";
   const x = S.encantamentos.find((y) => y.familia === e.nome) || {};
   const impl = Math.max(0, ...S.armas.filter((w) => w.grupo === (k === "INT" ? "Cajado" : "Selo")).map((w) => int(w.nivel, 1)));
-  const manaC = custoEnc(e, v)[0], desc = manaC != null && manaC !== R.custoMana(v);
+  let manaC = custoEnc(e, v)[0];
+  const manaMat = manaC, desc = manaC != null && manaC !== R.custoMana(v);
+  if (C.eq.mana_pct && manaC != null) manaC = Math.max(1, Math.round(manaC * (100 - C.eq.mana_pct) / 100));   // Pergaminho do Oculto
   pagar("mana_atual", C.d.mana, manaC, "Mana", (custo) => {
     const acImpl = impl ? (R.ACERTO_ARMA[impl] || 0) : 0;   // "+ acerto do cajado" (Magias) ou do selo (Feitiços)
     const at = R.rolarAtaque(C.d.bc[k] + C.d.n3 + acImpl, R.vantagem(C.a[k]), 20, rng);
@@ -240,7 +252,16 @@ A["conjurar"] = (el, ev) => {
       linhas.push(txtDano(tot, partes, "Dados do encantamento") + (extra ? ` · +${extra} dado por ${k}` : ""));
     } else if (!expr && !conds.length) linhas.push(`<span class="sub">Este encantamento não tem dados na descrição.</span>`);
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
-    if (desc) linhas.push(`<span class="sub">Matrícula: custa ${manaC} de Mana em vez de ${R.custoMana(v)}.</span>`);
+    if (desc) linhas.push(`<span class="sub">Matrícula: custa ${manaMat} de Mana em vez de ${R.custoMana(v)}.</span>`);
+    if (C.eq.mana_pct && manaC !== manaMat) linhas.push(`<span class="sub">Pergaminho: −${C.eq.mana_pct}% de custo (${manaMat} → ${manaC} de Mana).</span>`);
+    if (!at.desastre) {
+      for (const [x, tipo, alvo] of C.eq.dados) {
+        if (!(alvo === "mag" || alvo === "tudo")) continue;
+        const [t2, p2] = R.rolarExpr(x, rng, at.critico);
+        linhas.push(txtDano(t2, p2, `+ ${esc(tipo)}`) + ` <span class="sub">(set ou talismã)</span>`);
+      }
+      if (C.eq.dano_mag) linhas.push(`+<b>${C.eq.dano_mag}</b> de dano fixo <span class="sub">(sets e talismãs)</span>`);
+    }
     if (!x.equipado) linhas.push(`<span class="erro">Atenção: não está equipado.</span>`);
     if (impl < v.nivel) linhas.push(`<span class="erro">Atenção: precisa de ${k === "INT" ? "cajado" : "selo"} nv ${v.nivel}+ equipado.</span>`);
     mostrarRolagem(`✧ ${e.nome} (${v.tier} nv ${v.nivel})`, linhas);
@@ -299,7 +320,7 @@ A["esc-arma"] = (el) => {
   const i = int(el.dataset.i);
   seletor({
     titulo: `Arma ${i + 1}`, busca: false, extraTopo: `<div class="item" data-a="sel-item" data-id="__nenhum"><span class="marca">—</span><div class="tx"><b>Nenhuma</b></div></div>`,
-    itens: () => D.armas.map((a) => ({ id: a.nome, nome: a.nome, sub: `ataque por ${a.ataque}${a.uso_duplo ? " · uso duplo" : ""}`, motivo: statusArma(C, a.nome, 1) })),
+    itens: () => D.armas.map((a) => ({ id: a.nome, nome: a.nome, sub: `ataque por ${a.ataque_alt ? a.ataque_alt.join(" ou ") : a.ataque}${a.uso_duplo ? " · uso duplo" : ""}`, motivo: statusArma(C, a.nome, 1) })),
     detalhe: (id) => { const a = ARMAS[id]; return `<p class="sub">${esc(a.descricao || "")}</p>${(a.acoes || []).map((x) => `<div class="acao ${x.sub ? "sub" : ""}"><b>${esc(x.nome)}</b> — ${esc(x.texto)}</div>`).join("")}`; },
     rotuloOk: "Equipar",
     escolher: (id) => mudar((s) => { s.armas[i].grupo = id; s.armas[i].nivel = "1"; }),

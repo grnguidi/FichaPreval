@@ -21,15 +21,22 @@ async function desempacotarFicha(txt) {
 }
 let mesaAlvo = "";   // endereço da mesa (http://IP:5760) quando a página foi aberta pelo QR/botão do mestre
 const mesaValida = (u) => /^http:\/\/[\w.\-]+(:\d{1,5})?$/.test(u);
+let atualizarSlug = "";   // "Atualizar minha ficha": o app abre com este jogador da mesa e já manda a ficha dele
 function lerHash() {
   const h = new URLSearchParams(location.hash.slice(1));
   if (h.get("mesa") && mesaValida(h.get("mesa"))) mesaAlvo = h.get("mesa");
+  atualizarSlug = h.get("atualizar") ? slugNome(h.get("atualizar")) : "";
   return h.get("f") || "";
 }
 async function receberFichaDaUrl(txt) {
   try {
     const s = normalizar(await desempacotarFicha(txt));
     if (!s.identidade) throw new Error();
+    if (intencaoAtualizar()) {   // veio do "Atualizar minha ficha": não vira ficha avulsa, a mesa pergunta antes de trocar
+      fichaDoApp = s;
+      try { history.replaceState(null, "", location.pathname); } catch (e) { /* sem history */ }
+      return { nome: (s.identidade.nome || "").trim() || "sem nome", atualizou: true, mesa: true };
+    }
     const nome = (s.identidade.nome || "").trim();
     let id = nome && Object.keys(banco.fichas).find((k) => (banco.fichas[k].identidade.nome || "").trim() === nome);
     const atualizou = !!id;
@@ -100,14 +107,14 @@ A["trazer-ficha"] = () => { location.href = PAGINA_APP + "#mesa=" + encodeURICom
 
 function telaInicial() {
   const ids = Object.keys(banco.fichas);
-  return `<div class="capa"><div class="orn">❦</div><h1>Prevalecentes</h1><p class="sub">Ficha de mesa · edição 3.1</p></div>
+  return `<div class="capa"><div class="orn">❦</div><h1>Prevalecentes</h1><p class="sub">Ficha de mesa · edição 3.2</p></div>
     ${avisoIos()}
     ${secao("Suas fichas")}
     ${ids.length ? `<div class="lista">${ids.map((id) => { const f = banco.fichas[id]; return `<div class="item" data-a="abrir" data-id="${id}"><div class="tx"><b>${esc(f.identidade.nome || "Sem nome")}</b><small>Nível ${f.identidade.nivel} · ${esc(f.identidade.especie || "—")}${f.sem_alma ? " · sem alma" : ""}</small></div>${mesaAlvo && !sessao.ativa ? `<button class="botao prim" data-a="enviar-mesa" data-id="${id}" style="min-height:36px">Enviar</button>` : `<span class="sub">›</span>`}</div>`; }).join("")}</div>`
       : `<div class="vazio-msg">Nenhuma ficha neste aparelho ainda.</div>`}
     ${mesaAlvo && !sessao.ativa ? `<div class="item" style="border-color:var(--ouro,#b8860b)"><div class="tx"><b>🛡 Mesa do mestre</b><small>${esc(mesaAlvo)} · toque em “Enviar” na ficha que vai jogar</small></div></div>` : ""}
     <div class="linhabts"><button class="botao prim" data-a="nova">✦ Nova ficha</button><button class="botao leve" data-a="importar">Abrir arquivo .json</button></div>
-    ${sessao.ativa ? `<div class="linhabts"><button class="botao prim" data-a="trazer-ficha">📲 Trazer minha ficha do app</button></div><p class="sub">Atualizou a ficha em casa no app instalado? Toque acima: ela vem para esta mesa já atualizada.</p>` : `<div class="linhabts"><button class="botao leve" data-a="mesa-endereco">🛡 Entrar na mesa do mestre</button></div>`}
+    ${sessao.ativa && sessao.fichasLista ? `<div class="linhabts"><button class="botao prim" data-a="ficha-mesa-menu">🛡 Escolher minha ficha da mesa</button></div>` : sessao.ativa ? `<div class="linhabts"><button class="botao prim" data-a="trazer-ficha">📲 Trazer minha ficha do app</button></div><p class="sub">Atualizou a ficha em casa no app instalado? Toque acima: ela vem para esta mesa já atualizada.</p>` : `<div class="linhabts"><button class="botao leve" data-a="mesa-endereco">🛡 Entrar na mesa do mestre</button></div>`}
     <p class="sub" style="margin-top:14px">Abra aqui o mesmo arquivo .json do programa de PC. As fichas ficam guardadas neste aparelho; use “Exportar” no menu para levar de volta ao PC.</p>`;
 }
 
@@ -147,7 +154,7 @@ function linhaArma(i) {
     <button class="sel ${ar ? "" : "vazio"}" data-a="esc-arma" data-i="${i}">${ar ? esc(w.grupo) : "Escolher arma"}</button>
     ${ar ? `<button class="sel" style="width:96px" data-a="esc-nivel-arma" data-i="${i}">Nv ${int(w.nivel, 1)}</button>` : ""}</div>`;
   if (!ar) return h + "</div>";
-  const nv = int(w.nivel, 1), l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0], k = ar.ataque;
+  const nv = int(w.nivel, 1), l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0], k = R.atributoAtaque(ar, C.a);
   const props = R.lerProps(w.props), ep = efeitoArma(w, nv);
   const extra = Math.floor(R.cap(C.a[k]) / 30), acerto = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + (C.escolha.maestria.includes(w.grupo) ? 1 : 0) + ep.acerto;
   const dom = C.escolha.dominio[w.grupo] || 0, pmax = l.propriedades + dom, prob = R.problemasProps(props, pmax);
@@ -208,7 +215,7 @@ function pCombate() {
   if (w0 && w1) {
     if (!w0.uso_duplo || !w1.uso_duplo) h += `<p class="erro">${NO} ${!w0.uso_duplo ? w0.nome : w1.nome} não permite uso duplo.</p>`;
     else {
-      const rq = R.reqUsoDuplo(R.reqArma(w0, int(S.armas[0].nivel, 1)), R.reqArma(w1, int(S.armas[1].nivel, 1)));
+      const rq = R.reqUsoDuplo(R.reqArma(w0, int(S.armas[0].nivel, 1), C.a), R.reqArma(w1, int(S.armas[1].nivel, 1), C.a));
       const f = R.reqFalta(rq, C.a), conj = ["Cajado", "Selo"].includes(w0.nome) || ["Cajado", "Selo"].includes(w1.nome);
       h += `<p class="${f.length ? "erro" : "sub"}">Uso duplo: ${Object.entries(rq).map(([k, v]) => `${v} ${k}`).join(", ")} ${f.length ? `— falta ${f.join(", ")}` : OK}.
         Coordenação contra DT ${8 + Math.max(int(S.armas[0].nivel, 1), int(S.armas[1].nivel, 1))} no começo do turno em que atacar com as duas.</p>

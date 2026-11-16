@@ -1,6 +1,6 @@
-# Ficha Prevalecentes 3.1
+# Ficha Prevalecentes 3.2
 
-Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.1)**, para PC (Windows) e celular (app instalável, funciona offline), com **sessão de mesa**: o mestre vê Vida, Mana e Vigor dos jogadores em tempo real e envia dano, condições, efeitos e itens.
+Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.2)**, para PC (Windows) e celular (app instalável, funciona offline), com **sessão de mesa**: o mestre vê Vida, Mana e Vigor dos jogadores em tempo real e envia dano, condições, efeitos e itens.
 
 ## Índice
 
@@ -36,9 +36,10 @@ As fórmulas usadas estão em **Ajuda > Regras usadas nos cálculos**.
 - Cálculo automático de Curva, Bônus de Combate, Vida, Mana, Vigor, CA, Carga, Movimento, Iniciativa, ações extras, Redução de Dano, Resistências, Descoberta, perícias, ataques, defesas e DTs.
 - Pontos de atributo por nível, com painel de avisos para pendências.
 - Assistente de criação de personagem, seguindo o capítulo "Criando seu Personagem" (o personagem novo entra no nível do grupo, com Caminho da Meta de Vida). No celular, o mesmo passo a passo.
-- **Metas de Vida:** os 9 Caminhos do livro, com as 3 etapas em ordem e o mentor. Cada Meta concluída abre um slot de talento (M1–M5); a primeira dá +5 pontos de atributo.
+- **Metas de Vida:** os 10 Caminhos do livro (com o Alquimista), com as 3 etapas em ordem e o mentor. Cada Meta concluída abre um slot de talento (M1–M5); a primeira dá +5 pontos de atributo.
 - Clicar no nome de uma **perícia** mostra o que ela faz, o atributo, se exige treino e onde o livro a usa. Clicar no nome de um **atributo** mostra o que o valor atual dá na ficha. No celular, toque no nome (perícia: no Modo Edição).
 - **Modo Edição e Modo Jogo.** Criar, subir de nível e escolher talentos, armas, encantamentos e equipamento só no Modo Edição (ficha nova abre nele). No Modo Jogo, usado na mesa, essas escolhas ficam travadas, e continuam liberados Vida/Mana/Vigor, rolagens, condições, Portão da Morte, inventário e anotações. Fichas abertas do disco começam no Modo Jogo.
+- **Novidades do livro 3.2:** perícia **Alquimia** (poções; Kit de Alquimia, Colar do Herbolário e outros talismãs, talentos Destilador de Campo e Mestre Alquimista), 5 sets novos (50 no total), CA máxima 30, Agarrar e Derrubar como Fortitude do alvo contra a sua DT, Lira com Inteligência ou Fé à escolha (o programa usa o maior), Incapaz que nenhuma cura acorda e os tipos de dano Sangramento, Podridão e Congelamento. Poções de Mana e Vigor não têm mais limite por combate e as de nível 3 e 4 só saem por Alquimia (o preço aparece como "Feita por Alquimia" e não se compra).
 - Comparação entre duas fichas.
 - Temas diurno, noturno e **Vitral** (creme, dourado e verde musgo, com vinhas e vitrais).
 - Exportação da ficha em PDF no visual Vitral, com as características de espécie (ajustes de atributo e par descritivo).
@@ -50,6 +51,7 @@ As fórmulas usadas estão em **Ajuda > Regras usadas nos cálculos**.
 - **Talentos com escolha** (Maestria, Maestria dupla, Domínio, Matrícula, Matrícula avançada, Condição Endurecida, Mestre das Perícias): você escolhe a arma, a escola, a condição ou a perícia, e o efeito vale só para ela.
 - **Encantamentos** com dados de condição já escalados pelo Arcano (cópias a cada 20, dados inferiores a cada 15), com Mente Arcana (+10 de Arcano) e Senhor das Condições (+1 cópia).
 - **Sets** que aplicam pontos de condição (Sangria, Peçonha, Miasma, Geada, Delírio, Torpor, Gume) mostram os pontos em cada acerto ou crítico, com valor fixo (os números dos sets não escalam com o Arcano, como diz o livro).
+- **Sets e talismãs automáticos:** ao pôr 2 (ou 4) peças do mesmo set, o set vale sozinho; ao tirar a peça ou o talismã, o efeito some. Entram nas contas: perícias, Reflexo/Fortitude/Vontade, CA, movimento, Mana e Vigor máximos, espaços de encantamento, contra-encantamentos, Redução de Dano por tipo (Pele de Ferro, Escama de Dragão, Casco...), acerto e dano nas rolagens de ataque e conjuração (incluindo dados extras, como Marca da Chama), custo de mana (Pergaminho do Oculto), cura por turno (Amuleto da Regeneração) e o descanso curto do Eremita. Efeitos que dependem de uma situação (Rancor com menos de 50% da vida, Insígnia do Berserker...) aparecem na aba Bolsa com um botão "Ligar agora". No PC entram só os que valem sempre; os interruptores e os que dependem do peso carregado ficam no app de celular.
 - **Alma:** montador de habilidades pela Tabela de valores do livro (categorias, ajustes, execução), com valor e DT calculados; "Usar e rolar" gasta um uso e rola o dano.
 - **Inventário** com a lista de Itens Diversos do livro (peso preenchido), quantidade e botão de usar consumíveis. A Mochila soma +5 de Carga; peças de set pesam 1.
 - **Dinheiro** em Contos, prata, ouro e Contilha, com conversão e compra de itens do livro.
@@ -85,6 +87,27 @@ Abra **Sessão → "Entrar como mestre"**. O painel tem:
 
 - **No computador:** abra a ficha, depois **Sessão → "Entrar como jogador"**. O programa localiza o mestre; se não achar, informe o IP exibido na tela do mestre.
 - **No celular:** aponte a câmera para o QR code da tela do mestre ou abra o endereço mostrado (`http://IP:5760`). Informe seu nome, abra ou crie a ficha e jogue. Não requer instalação nem internet. (A página antiga, só com o botão de mão, continua em `http://IP:5760/mao`.)
+
+### Fichas da mesa (pasta `fichas/`)
+
+Ao abrir a mesa, o programa cria a pasta `fichas/` ao lado dele, com um `.json` por jogador (`bruno.json`, `carol.json`, `kaua.json`, `enrico.json`, `guidi.json`), no mesmo formato que o app e o programa de PC abrem.
+
+- **Entrar:** no celular, o jogador escolhe o nome dele (ou "Outra pessoa…", que cria uma ficha nova). O celular baixa a ficha do notebook e a sessão segue como antes.
+- **Salvar sozinho:** cada mudança na ficha (Vida, rolagens, itens, dano do mestre) volta ao notebook e grava no `.json` em poucos segundos.
+- **Mestre muda o arquivo:** se você abrir o `.json` do jogador no programa de PC e salvar, o celular percebe a versão nova e baixa sozinho.
+- **Atualizar minha ficha:** menu ☰ do celular, depois de escolher a ficha. Pega a ficha do app instalado (a editada em casa), pede confirmação e troca o `.json` do jogador no notebook.
+- **Cópias de segurança:** ao abrir a mesa, `fichas/backup/sessao_DATA/` guarda todas as fichas; cada "Atualizar minha ficha" guarda a anterior em `fichas/backup/`.
+- **Quem mudou por último vale.** Não há senha por jogador, só a senha da mesa. A pasta `fichas/` está no `.gitignore`.
+
+### Painel do mestre: inimigos, anotações e combate
+
+Menu **Mestre → Inimigos, anotações e combate** (ou o botão **👹 Inimigos e anotações** na mesa do mestre) abre uma página no navegador **deste computador** (`http://127.0.0.1:5761`). Nenhum jogador consegue abrir: ela escuta só o endereço local. Funciona sem a sessão aberta, para você preparar o conteúdo antes.
+
+- **Inimigos:** ao criar, escolha a **classe** (Lacaio, Comum, Forte, Animal, Prevalecente ou Deus) e o **nível** (NMP). Vida, CA, Ataque, DT, Postura, vida de condição e dano por turno saem da tabela do capítulo "Criando inimigos" (Animal, Prevalecente e Deus ajustam pelo número de jogadores). O resto é seu: golpes (com tipo de dano, acerto, dano e condição que aplicam), habilidades, Pontos Chave, resistências, imunidades, vulnerabilidades, afinidades de condição, Set e Drops, loot e anotações. Tudo vale só como ponto de partida e pode ser trocado.
+- **Anotações:** várias anotações com título, etiqueta (NPC, Lugar, Enredo...), busca e fixar no topo; salvam sozinhas enquanto você escreve.
+- **Iniciar combate:** o botão "⚔ Iniciar combate" pergunta quais inimigos e quantos de cada, quem da mesa entra e quem deu o primeiro golpe, rola a iniciativa e monta a **tabela de iniciativa** (ordem decrescente, quem age agora em destaque, o que cada um rolou, Vida de cada um e "Agora/Próximo"). Segue o livro: todos rolam 1d20 (mais 1d20 a cada 20 de Destreza), ficam com o maior e somam o Bônus de Combate de Destreza; quem empata rola de novo; o primeiro atacante rola com vantagem e age antes de a tabela começar a rodar. Os jogadores usam a ficha; os inimigos usam os "dados" e o "bônus" de iniciativa do cadastro (padrão 1d20 +0, já que o livro não dá Destreza a eles). Inimigo derrotado é pulado, e quem entra com o combate rolando já rola a própria iniciativa. O talento Animado (+1d20) já conta na ficha.
+- **Combate:** escolha os inimigos (e quantos) e veja os jogadores e os inimigos lado a lado. Nos jogadores: dano, cura, condição e efeito, em um só ou nos marcados. Nos inimigos: dano (a resistência, a vulnerabilidade e a imunidade por tipo já entram), Postura (quebra com golpe corpo a corpo e deixa Exposto), barras de condição (ativam o efeito do livro e recarregam +50%), Pontos Chave revelados e golpes com rolagem de ataque contra a CA do jogador escolhido e botão para aplicar o dano. A iniciativa junta jogadores e inimigos, e "Passar turno" aplica o veneno, a podridão e as durações dos inimigos.
+- **Onde fica:** pasta `mestre/` ao lado do programa (`inimigos.json`, `anotacoes.json`, `combate.json`). Está no `.gitignore`.
 
 ### Levar a ficha do app para a mesa (e de volta)
 
@@ -156,6 +179,8 @@ sh celular/testes/rodar.sh        # regras do celular iguais às do PC (requer N
 python testes/test_sessao.py      # entrega e confirmação de eventos, limpeza de quem sai
 python testes/test_grupo.py       # interação entre jogadores
 python testes/test_conexao.py     # conexão
+python testes/test_fichas.py       # pasta fichas/: escolha, gravação, conflito e atualização
+python testes/test_mestre.py       # painel do mestre: inimigos, anotações e combate
 ```
 
 Os mesmos testes rodam no GitHub Actions a cada push (`.github/workflows/ci.yml`), que também confere se `docs/` e `pagina_celular.py` estão atualizados com o `celular/build.py`. Veja `celular/testes/LEIAME.md` para o que cada comparador cobre.
@@ -179,6 +204,8 @@ Os mesmos testes rodam no GitHub Actions a cada push (`.github/workflows/ci.yml`
 | `sessao.py` | Sessão em rede e painel do mestre |
 | `ponte_sessao.py` | Liga a ficha do PC aberta à sessão (resumo e eventos do mestre) |
 | `grupo.py`, `grupo_ui.py` | Interação entre jogadores (servidor e janelas) |
+| `fichas_mesa.py` | Pasta `fichas/` com um .json por jogador (lê, grava, versão e backup) |
+| `bestiario.py`, `mestre_dados.py`, `mestre_web.py`, `pagina_mestre.py` | Painel do mestre: números do bestiário, dados, servidor local e página |
 | `tunel.py` | Mesa pela internet (túnel com o cloudflared) |
 | `pagina_celular.py` | Ficha do celular servida pelo mestre (gerado por `celular/build.py`) |
 | `dados_prevalecentes.py` | Dados do livro embutidos |

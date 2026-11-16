@@ -32,7 +32,7 @@ function folhaImpressao() {
   h += sec("Condições e Portão") + t(R.CONDICOES, [R.CONDICOES.map((n) => `${int(S.condicoes[n].atual)}/${condMax(n)}`)]) + `<p class="linha">Portão: ${S.portao.Sucessos.filter(Boolean).length} sucesso(s), ${S.portao.Falhas.filter(Boolean).length} falha(s) · Cicatrizes: ${esc(S.cicatrizes || "—")}</p>`;
   h += sec("Vínculos e Meta de Vida") + `<p class="linha">Grupo: ${esc(S.vinculos.grupo || "—")} · Mundo: ${esc(S.vinculos.mundo || "—")}</p><p class="linha">Meta: ${esc(S.meta.caminho || "—")}${S.meta.caminho ? ` · etapas ${S.meta.etapas.filter(Boolean).length}/3` : ""} · concluídas ${int(S.meta.concluidas)}</p>`;
   // a tabela de fora só serve de moldura: o vitral (thead) e as vinhas (tfoot) saem em todas as páginas
-  return `<div class="impr"><table class="pg"><thead><tr><td><div class="vitral-faixa"></div></td></tr></thead><tbody><tr><td>${h}</td></tr></tbody><tfoot><tr><td><div class="vinhas-pe"><i></i><span class="rodape-impr">${esc(S.identidade.nome || "Sonhador")} · Ficha Prevalecentes 3.1 · ${new Date().toLocaleDateString("pt-BR")}</span><i></i></div></td></tr></tfoot></table></div>`;
+  return `<div class="impr"><table class="pg"><thead><tr><td><div class="vitral-faixa"></div></td></tr></thead><tbody><tr><td>${h}</td></tr></tbody><tfoot><tr><td><div class="vinhas-pe"><i></i><span class="rodape-impr">${esc(S.identidade.nome || "Sonhador")} · Ficha Prevalecentes 3.2 · ${new Date().toLocaleDateString("pt-BR")}</span><i></i></div></td></tr></tfoot></table></div>`;
 }
 A["imprimir"] = () => {
   fecharFolha();

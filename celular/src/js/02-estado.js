@@ -43,6 +43,8 @@ function normalizar(s) {
   out.turno = Object.assign({}, out.turno || {});
   out.usos = Object.assign({}, out.usos || {});
   out.contra_usados = int(out.contra_usados);
+  out.fome_usos = Math.max(0, int(out.fome_usos));          // Símbolo da Fome: Poções Espirituais gastas pelo grupo
+  out.casco_tipo = out.casco_tipo || "";                    // set Casco: tipo físico escolhido
   out.recursos = Object.assign({}, out.recursos || {});
   out.diario = Array.isArray(out.diario) ? out.diario.slice(0, 100) : [];
   out.meta = Object.assign({ caminho: "", mentor: "", etapas: [false, false, false], concluidas: 0, notas: "" }, out.meta || {});

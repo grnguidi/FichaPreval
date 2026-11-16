@@ -22,7 +22,7 @@ class PonteSessao:
             return None
         d, aa, n3 = a.d, a.a, a.nivel() // 3
         tal = a.talentos_escolhidos()
-        defesas = {n: [d["bc"][k] + n3 + (2 if tn in tal else 0), R.vantagem(aa[k])] for n, k, tn in R.PERICIAS_DEFESA}
+        defesas = {n: [d["bc"][k] + n3 + (2 if tn in tal else 0) + a.eq["def"].get(n, 0), R.vantagem(aa[k])] for n, k, tn in R.PERICIAS_DEFESA}
         return {"personagem": a.v_nome.get().strip(), "especie": a.v_especie.get().strip(), "nivel": a.nivel(),
                 "vida": a._atual(a.v_vida_atual, d["vida"]), "vida_max": d["vida"],
                 "mana": a._atual(a.v_mana_atual, d["mana"]), "mana_max": d["mana"],
@@ -52,8 +52,13 @@ class PonteSessao:
             ef = self._nomes_efeitos()
             final, notas = R.defesas_contra_dano(valor, tipo, a.d, a._rng, "Fragilizado" in ef, "Loucura" in ef)
         depois = max(0, min(maximo, antes - final))
+        incapaz_curado = valor < 0 and antes == 0          # 3.2: nenhuma cura acorda um Incapaz
+        if incapaz_curado:
+            depois = 0
         a.v_vida_atual.set(str(depois))
         txt = (f"Recebeu {final}" + (f" ({'; '.join(notas)})" if notas else "") + ". " if valor > 0 else "") + f"Vida: {antes} → {depois}"
+        if incapaz_curado:
+            txt += "  — Incapaz: nenhuma cura acorda você; só os testes do Portão da Morte."
         if depois == 0 and antes > 0:
             txt += "  — INCAPAZ: role o Portão da Morte no início do seu turno."
             if final > maximo // 2:

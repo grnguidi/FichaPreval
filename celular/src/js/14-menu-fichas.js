@@ -4,10 +4,12 @@ A["menu"] = () => {
     ${S ? `<div class="item" data-a="exportar"><div class="tx"><b>Exportar ficha (.json)</b><small>Para abrir no programa de PC ou guardar uma cópia</small></div></div>` : ""}
     <div class="item" data-a="importar"><div class="tx"><b>Abrir arquivo .json</b><small>Ficha salva pelo programa de PC</small></div></div>
     <div class="item" data-a="nova"><div class="tx"><b>Nova ficha</b><small>Criação rápida</small></div></div>
-    <div class="item" data-a="lista"><div class="tx"><b>Trocar de ficha</b><small>${Object.keys(banco.fichas).length} ficha(s) neste aparelho</small></div></div>
+    ${sessao.fichasLista && sessao.ativa ? `<div class="item" data-a="ficha-mesa-menu"><div class="tx"><b>🛡 Trocar de jogador</b><small>Você está jogando como “${esc(nomeDaFichaMesa())}”</small></div></div>`
+      : `<div class="item" data-a="lista"><div class="tx"><b>Trocar de ficha</b><small>${Object.keys(banco.fichas).length} ficha(s) neste aparelho</small></div></div>`}
+    ${naFichaDaMesa() ? `<div class="item" data-a="atualizar-ficha"><div class="tx"><b>🔄 Atualizar minha ficha</b><small>Pega a ficha do app instalado e troca a sua ficha no notebook do mestre</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="modo"><div class="tx"><b>${banco.modo === "edicao" ? "⚔ Ir para o Modo Jogo" : "✎ Ir para o Modo Edição"}</b><small>${banco.modo === "edicao" ? "Usar a ficha na mesa" : "Subir de nível, escolher talentos, armas e encantamentos"}</small></div></div>` : ""}
     ${sessao.ativa && S ? `<div class="item" data-a="levar-app"><div class="tx"><b>📲 Levar esta ficha de volta ao app</b><small>Vida, Mana, Vigor e condições de agora vão para o app instalado (substitui a ficha de mesmo nome)</small></div></div>` : ""}
-    ${sessao.ativa ? `<div class="item" data-a="sessao-nome"><div class="tx"><b>🛡 Sessão do mestre</b><small>Você está como “${esc(sessao.id || "—")}” · toque para trocar o nome</small></div></div>` : ""}
+    ${sessao.ativa && !sessao.fichasLista ? `<div class="item" data-a="sessao-nome"><div class="tx"><b>🛡 Sessão do mestre</b><small>Você está como “${esc(sessao.id || "—")}” · toque para trocar o nome</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="imprimir"><div class="tx"><b>🖨 Imprimir / salvar PDF</b><small>A ficha inteira em folhas A4</small></div></div>` : ""}
@@ -51,7 +53,7 @@ A["nova-rapida"] = () => {
   const opts = (k) => [""].concat(R.VALORES_INICIAIS).map((x) => `<option>${x}</option>`).join("");
   const nomes = [""].concat(R.ATRIBUTOS.map((k) => R.NOMES_ATR[k])).map((n) => `<option>${n}</option>`).join("");
   folha("Nova ficha", `<label class="campo"><span>Nome do personagem</span><input id="n-nome"></label>
-    <label class="campo"><span>Player</span><input id="n-player"></label>
+    <label class="campo"><span>Player</span><input id="n-player" value="${esc(sessao.criandoMesa && sessao.ficha ? nomeDaFichaMesa() : "")}"></label>
     <label class="campo"><span>Espécie</span><input id="n-esp"></label>
     <div class="secao">Atributos iniciais</div><p class="sub" style="margin-top:-4px">Use cada valor uma vez: 16, 14, 12, 11, 10, 9, 8, 7.</p>
     <div class="grade g2">${R.ATRIBUTOS.map((k) => `<label class="campo" style="margin:2px 0"><span>${R.NOMES_ATR[k]}</span><select data-ini="${k}">${opts(k)}</select></label>`).join("")}</div>
@@ -78,9 +80,9 @@ A["nova-ok"] = () => {
   s.identidade.nome = $("#n-nome").value.trim(); s.identidade.player = $("#n-player").value.trim(); s.identidade.especie = $("#n-esp").value.trim();
   s.sem_alma = $("#n-sem").checked;
   for (const k of R.ATRIBUTOS) { s.atributos[k].inicial = ini[k]; s.atributos[k].especie = String(val ? (k === kb ? val : k === kp ? -val : 0) : 0); }
-  const id = "ficha-" + Date.now().toString(36);
+  const id = novoIdFicha();
   banco.fichas[id] = s; banco.atual = id; fecharFolha(); abrirFicha(id, "edicao"); salvar();
-  toast("Ficha criada. Ela fica guardada neste aparelho.");
+  toast(sessao.ficha && id === chaveMesa() ? "Ficha criada e guardada no notebook do mestre." : "Ficha criada. Ela fica guardada neste aparelho.");
 };
 function importarArquivo(arq) {
   const rd = new FileReader();

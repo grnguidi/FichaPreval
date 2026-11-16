@@ -24,9 +24,21 @@ function recarregarUsos(evento) {
   for (const u of usosLista()) if (R.recarrega(u.periodo, evento)) delete S.usos[u.chave];
   if (evento === "longo") S.alma.restantes = "";
 }
+// Amuleto da Regeneração: cura no começo do turno (nenhuma cura acorda um Incapaz)
+function curaDoTurno() {
+  if (!C || !C.eq || !C.eq.cura.length) return "";
+  const mx = C.d.vida, antes = S.vida.atual === "" || S.vida.atual == null ? mx : int(S.vida.atual, mx);
+  if (antes <= 0) return "Regeneração: nenhuma cura acorda um Incapaz.";
+  const tot = C.eq.cura.reduce((t, e) => t + R.rolarExpr(e, rng)[0], 0), depois = Math.min(mx, antes + tot);
+  S.vida.atual = String(depois);
+  return `Regeneração: <b>+${tot}</b> de Vida (${antes} → ${depois}).`;
+}
 function novoTurno(silencioso) {
-  S.turno = {}; recarregarUsos("turno"); salvar();
-  if (!silencioso) { render(); toast("Novo turno: ações e usos por turno renovados."); }
+  S.turno = {}; recarregarUsos("turno");
+  const cura = curaDoTurno();
+  salvar();
+  if (!silencioso) { render(); toast("Novo turno: ações e usos por turno renovados." + (cura ? "<br>" + cura : "")); }
+  return cura;
 }
 function novoCombate(silencioso) {
   S.turno = {}; S.contra_usados = 0; recarregarUsos("combate"); salvar();
@@ -81,7 +93,7 @@ A["alma-usar"] = (el, ev) => {
 };
 A["alma-recup"] = (el, ev) => { if (ev) ev.stopPropagation(); mudar((s) => { s.alma.restantes = ""; }); };
 
-function bonusDefesa(n, k, tn) { return C.d.bc[k] + C.d.n3 + (C.tal.has(tn) ? 2 : 0); }
+function bonusDefesa(n, k, tn) { return C.d.bc[k] + C.d.n3 + (C.tal.has(tn) ? 2 : 0) + ((C.eq.def || {})[n] || 0); }
 A["rolar-def"] = (el) => {
   const [n, k, tn] = R.PERICIAS_DEFESA.find((x) => x[0] === el.dataset.n), b = bonusDefesa(n, k, tn);
   const r = R.rolarDefesa(b, R.vantagem(C.a[k]), rng);
@@ -119,7 +131,7 @@ A["coord"] = (el) => {
 A["acoes-livro"] = () => {
   const grupos = R.TIPOS_ACAO.map((t) => [t, R.ACOES_LIVRO.filter((a) => a[1] === t)]);
   folha("Ações do livro", grupos.map(([t, lista]) => `<div class="secao">${t}</div><div class="lista">${lista.map(([n, , teste, d]) =>
-    `<div class="item" data-a="acao-livro" data-n="${esc(n)}"><div class="tx"><b>${esc(n)}</b><small>${esc(d)}${teste === "provocar" ? ` DT ${R.dtProvocar(C.d, C.nv)}.` : ""}</small></div><span class="sub">${teste ? "🎲" : "✓"}</span></div>`).join("")}</div>`).join(""));
+    `<div class="item" data-a="acao-livro" data-n="${esc(n)}"><div class="tx"><b>${esc(n)}</b><small>${esc(d)}${teste === "provocar" ? ` DT ${R.dtProvocar(C.d, C.nv)}.` : teste === "dt_forca" ? ` DT ${R.dtForca(C.d, C.nv)}.` : ""}</small></div><span class="sub">${teste ? "🎲" : "✓"}</span></div>`).join("")}</div>`).join(""));
 };
 A["acao-livro"] = (el) => {
   const [n, tipo, teste, d] = R.ACOES_LIVRO.find((a) => a[0] === el.dataset.n);
@@ -132,7 +144,8 @@ A["acao-livro"] = (el) => {
     return;
   }
   const aviso = marcarAcao(tipo), linhas = [esc(d)];
-  if (teste === "provocar") linhas.push(`O alvo faz Vontade contra DT <b>${R.dtProvocar(C.d, C.nv)}</b> (10 + BC de Mente + nível ÷ 3).`);
+  if (teste === "provocar") linhas.push(`O alvo faz Vontade contra DT <b>${R.dtProvocar(C.d, C.nv)}</b> (10 + BC de Força + nível ÷ 3 + 3).`);
+  else if (teste === "dt_forca") linhas.push(`O alvo faz Fortitude contra DT <b>${R.dtForca(C.d, C.nv)}</b> (10 + BC de Força + nível ÷ 3).`);
   else if (teste) {
     const pr = R.PERICIAS.find((x) => x[0] === teste), at = pr[1] || [S.prevalencia_attr || "ARC"];
     const [, b0, dados] = R.periciaFora(C.a, C.nv, at, C.treinadas.has(teste)), b = b0 + (C.ef.pericia[teste] || 0);
@@ -148,7 +161,7 @@ A["acao-arma"] = (el, ev) => {
   if (ev) ev.stopPropagation();
   const i = int(el.dataset.i), j = int(el.dataset.j), w = S.armas[i], ar = ARMAS[w.grupo], x = ar.acoes[j], p = R.acaoArma(x.nome, x.texto);
   const op = (v, t, sel) => `<option value="${v}" ${sel ? "selected" : ""}>${t}</option>`;
-  const dt = p.teste ? 10 + C.d.bc[p.dt_attr || ar.ataque] + C.d.n3 : 0;
+  const dt = p.teste ? 10 + C.d.bc[p.dt_attr || R.atributoAtaque(ar, C.a)] + C.d.n3 : 0;
   folha(esc(x.nome), `<p class="meta">${p.acao ? `Gasta: ação ${p.acao}` : "Sem custo de ação definido"}${p.passiva ? " · efeito automático" : ""}</p><div class="desc">${esc(x.texto)}</div>
     ${p.passiva ? "" : `<div class="secao">Ajustes do ataque</div><div class="grade g3">
       <label class="campo"><span>Nível de dano</span><select id="aa-d">${[-3, -2, -1, 0, 1, 2, 3].map((n) => op(n, n > 0 ? `+${n}` : n, n === Math.max(-3, Math.min(3, p.delta)))).join("")}</select></label>

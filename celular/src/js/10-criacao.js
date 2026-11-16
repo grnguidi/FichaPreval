@@ -10,7 +10,7 @@ const PASSOS = [
   ["Resumo", "Confira antes de criar. Você pode voltar a qualquer passo."],
 ];
 let rasc = null, passo = 0;
-const RASC0 = () => ({ nome: "", player: "", sonho: "", nivel: 1, sem_alma: false, alma_nome: "", alma_atr: "INT", alma_hist: "", pas_nome: "", pas_ef: "", atv_nome: "", atv_ef: "",
+const RASC0 = () => ({ nome: "", player: sessao.criandoMesa && sessao.ficha ? nomeDaFichaMesa() : "", sonho: "", nivel: 1, sem_alma: false, alma_nome: "", alma_atr: "INT", alma_hist: "", pas_nome: "", pas_ef: "", atv_nome: "", atv_ef: "",
   especie: "", esp_bon: "", esp_pre: "", esp_val: 0, esp_notas: "", ini: {}, pericias: [], per_atk: "Luta", arma: "", vinc_grupo: "", vinc_mundo: "", caminho: "" });
 function attrsRasc() {
   const a = {};
@@ -45,7 +45,7 @@ function corpoPasso() {
       const a = attrsRasc();
       return `<p class="meta">Escolha até <b>${limPericias()}</b> perícias fora de combate.</p><div class="lista">${R.PERICIAS.map(([n, at, tr]) => `<label class="item" style="cursor:pointer"><input type="checkbox" class="wz-per" value="${v(n)}" ${rasc.pericias.includes(n) ? "checked" : ""} style="width:20px;height:20px;margin-right:10px"><div class="tx"><b>${v(n)}${tr ? " •" : ""}</b><small>${at ? at.join("/") : "à escolha"}</small></div></label>`).join("")}</div>
         <label class="campo"><span>Perícia de ataque treinada</span><select id="wz-atk">${R.PERICIAS_ATAQUE.map(([n]) => opt(n, rasc.per_atk === n)).join("")}</select></label>
-        <label class="campo"><span>Arma inicial</span><select id="wz-arma">${opt("", !rasc.arma, "— nenhuma —")}${D.armas.map((w) => { const f = R.reqFalta(R.reqArma(w, 1), a); return `<option value="${v(w.nome)}" ${rasc.arma === w.nome ? "selected" : ""} ${f.length ? "disabled" : ""}>${v(w.nome)}${f.length ? ` — falta ${v(f.join(", "))}` : ""}</option>`; }).join("")}</select></label>
+        <label class="campo"><span>Arma inicial</span><select id="wz-arma">${opt("", !rasc.arma, "— nenhuma —")}${D.armas.map((w) => { const f = R.reqFalta(R.reqArma(w, 1, a), a); return `<option value="${v(w.nome)}" ${rasc.arma === w.nome ? "selected" : ""} ${f.length ? "disabled" : ""}>${v(w.nome)}${f.length ? ` — falta ${v(f.join(", "))}` : ""}</option>`; }).join("")}</select></label>
         <p class="sub">Com cajado ou selo, escolha 3 encantamentos de nível 1 no Grimório depois de criar.</p>`;
     }
     case 5: { const n = Math.floor(rasc.nivel / 2); return `<p>${n ? `No nível ${rasc.nivel} você escolhe <b>${n}</b> talento(s), na aba Talentos, depois de criar a ficha.` : "No nível 1 ainda não há talento: o primeiro vem no nível 2."}</p>`; }
@@ -110,7 +110,7 @@ A["wz-prox"] = () => {
   s.pericias = a.pericias; s.pericia_ataque = a.per_atk;
   if (a.arma) s.armas[0] = { grupo: a.arma, nivel: "1", props: "" };
   s.vinculos.grupo = a.vinc_grupo; s.vinculos.mundo = a.vinc_mundo; s.meta.caminho = a.caminho;
-  const id = "ficha-" + Date.now().toString(36);
+  const id = novoIdFicha();
   banco.fichas[id] = s; banco.atual = id; fecharFolha(); abrirFicha(id, "edicao"); salvar();
   toast(a.nivel > 1 ? `Ficha criada no nível ${a.nivel}: distribua os pontos e escolha os talentos.` : "Ficha criada. Ela fica guardada neste aparelho.", 5000);
 };
