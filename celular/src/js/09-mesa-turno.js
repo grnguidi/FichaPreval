@@ -169,10 +169,11 @@ A["acao-arma"] = (el, ev) => {
       <label class="campo"><span>Crítico</span><select id="aa-c">${op(0, "normal", !p.critico)}${op(1, "garantido", p.critico)}</select></label>
       ${p.golpes > 1 ? `<label class="campo"><span>Disparos/golpes</span><select id="aa-g">${(p.ate ? [...Array(p.golpes)].map((_, n) => n + 1) : [p.golpes]).map((n) => op(n, n, n === p.golpes)).join("")}</select></label>` : ""}</div>
       <p class="sub">Os ajustes vêm do texto da ação; confira antes de rolar.${p.mult ? ` Crítico ×${p.mult}.` : ""}${p.golpes > 1 ? ` ${p.golpes} disparos/golpes${p.ate ? " (até)" : ""}, ${p.um_acerto ? "uma jogada de acerto para todos" : "um teste de acerto para cada"}.` : ""}${p.municao ? ` Gasta ${p.municao < 0 ? "todas as" : p.municao} ${p.municao_tipo}(s).` : ""}${p.teste ? ` O alvo faz ${p.teste} contra DT ${dt}.` : ""}</p>`}`,
-  `<button class="botao leve" data-a="acao-arma-usar" data-i="${i}" data-j="${j}">✓ Usar${p.acao ? ` (${p.acao})` : ""}</button>${p.passiva ? "" : `<button class="botao prim" data-a="acao-arma-rolar" data-i="${i}" data-j="${j}">🎲 Rolar ataque</button>`}`);
+  `<button class="botao leve" data-a="acao-arma-usar" data-i="${i}" data-j="${j}">✓ Usar${p.acao ? ` (${p.acao})` : ""}</button>${p.passiva ? "" : `<button class="botao prim" data-a="acao-arma-rolar" data-i="${i}" data-j="${j}">${ar.nome === "Adaga" && x.nome === "Estourar" ? "💥 Estourar" : "🎲 Rolar ataque"}</button>`}`);
 };
 A["acao-arma-rolar"] = (el) => {
   const i = int(el.dataset.i), j = int(el.dataset.j), ar = ARMAS[S.armas[i].grupo], x = ar.acoes[j], p = R.acaoArma(x.nome, x.texto);
+  if (ar.nome === "Adaga" && x.nome === "Estourar") { fecharFolha(); estourar(i); return; }
   const o = { delta: int($("#aa-d").value), vant: int($("#aa-v").value), critico: $("#aa-c").value === "1", acerto: p.acerto_garantido, mult: p.mult,
     rotulo: `${ar.nome}: ${x.nome}`, acao: p.acao || "Comum", teste: p.teste, dtAttr: p.dt_attr };
   const g = $("#aa-g") ? int($("#aa-g").value, 1) : 1;

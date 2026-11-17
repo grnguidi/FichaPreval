@@ -43,7 +43,7 @@ EFEITOS = {n: (g, d) for n, g, d in R.EFEITOS_LIVRO}       # efeitos do livro co
 CONDICOES_SUGERIDAS = [n for n, _, _ in R.EFEITOS_LIVRO]
 CAMPOS_FICHA = {"personagem": str, "especie": str, "nivel": int, "vida": int, "vida_max": int, "mana": int,
                 "mana_max": int, "vigor": int, "vigor_max": int, "ca": int, "movimento": int, "iniciativa": int,
-                "iniciativa_dados": int, "rd": int, "portao": list, "condicoes": list, "sem_alma": bool,
+                "iniciativa_dados": int, "rd": int, "cicatrizes": int, "limite_morte": int, "portao": list, "condicoes": list, "sem_alma": bool,
                 "inventario": list, "defesas": dict, "resistencias": list, "dinheiro": str, "carga": list}
 
 

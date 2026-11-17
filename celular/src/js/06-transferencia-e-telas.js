@@ -107,7 +107,7 @@ A["trazer-ficha"] = () => { location.href = PAGINA_APP + "#mesa=" + encodeURICom
 
 function telaInicial() {
   const ids = Object.keys(banco.fichas);
-  return `<div class="capa"><div class="orn">❦</div><h1>Prevalecentes</h1><p class="sub">Ficha de mesa · edição 3.2</p></div>
+  return `<div class="capa"><div class="orn">❦</div><h1>Prevalecentes</h1><p class="sub">Ficha de mesa · edição 3.3</p></div>
     ${avisoIos()}
     ${secao("Suas fichas")}
     ${ids.length ? `<div class="lista">${ids.map((id) => { const f = banco.fichas[id]; return `<div class="item" data-a="abrir" data-id="${id}"><div class="tx"><b>${esc(f.identidade.nome || "Sem nome")}</b><small>Nível ${f.identidade.nivel} · ${esc(f.identidade.especie || "—")}${f.sem_alma ? " · sem alma" : ""}</small></div>${mesaAlvo && !sessao.ativa ? `<button class="botao prim" data-a="enviar-mesa" data-id="${id}" style="min-height:36px">Enviar</button>` : `<span class="sub">›</span>`}</div>`; }).join("")}</div>`
@@ -229,8 +229,8 @@ function pCombate() {
     return `<button class="cond ${at ? "on" : ""}" data-a="editar-cond" data-n="${n}"><b>${n}</b><span>${at}/${mx}</span><i style="width:${pct}%"></i></button>`;
   }).join("")}</div><p class="sub">Enchem com pontos; ao chegar no máximo, o efeito ativa e a barra zera. Descanso curto tira 25 de cada; o longo zera. Toque para ver o efeito.</p>`;
   h += secao("Portão da Morte") + ["Sucessos", "Falhas"].map((n) => `<div class="portao"><span class="r" style="background:${n === "Sucessos" ? "var(--c-vigor)" : "var(--c-vida)"}">${n}</span>
-    ${S.portao[n].map((on, i) => `<button class="bolinha ${on ? "on" : ""} ${n === "Sucessos" ? "s" : "f"}" data-a="portao" data-n="${n}" data-i="${i}"></button>`).join("")}</div>`).join("")
-    + `<p class="sub">d20 no início do turno: 11+ é sucesso. 5 sucessos: volta com 1 de Vida e 1 cicatriz. 5 falhas: morte.</p>`;
+    ${S.portao[n].slice(0, n === "Falhas" ? d.limite_morte : 5).map((on, i) => `<button class="bolinha ${on ? "on" : ""} ${n === "Sucessos" ? "s" : "f"}" data-a="portao" data-n="${n}" data-i="${i}"></button>`).join("")}</div>`).join("")
+    + `<div class="linhabts" style="margin-top:6px"><button class="botao leve" data-a="portao-rolar">🎲 Rolar o d20 do turno</button></div><p class="sub">d20 no início do turno: 11+ é sucesso. 5 sucessos: volta com 1 de Vida e 1 cicatriz. ${d.limite_morte} falhas: morte (3 + 1 a cada 40 de Vitalidade). Cada cicatriz já começa com 1 falha (até ${d.limite_morte - 1}). Medicina de um aliado: DT 15 + 10 por cicatriz sua.</p>`;
   h += secao("Resistências") + `<div>${R.RESISTENCIAS.map(([lim, n]) => `<span class="chip ${d.resistencias.includes(n) ? "on" : ""}">${d.resistencias.includes(n) ? "☑" : "☐"} ${n} ${lim}</span>`).join("")}</div>`;
   h += secao("Descanso") + `<div class="linhabts" style="margin-top:0"><button class="botao" data-a="descanso" data-t="curto">☾ Descanso curto</button><button class="botao" data-a="descanso" data-t="longo">☀ Longo</button>
     <button class="botao" data-a="pocao">⚗ Poção Espiritual</button></div>

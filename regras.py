@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Regras de Prevalecentes (PREVA 3.2) — cálculos puros, sem interface."""
+"""Regras de Prevalecentes (PREVA 3.3) — cálculos puros, sem interface."""
 import math
 import re
 
@@ -41,12 +41,12 @@ PERICIAS_RESUMO = {
     "História": ("Saber sobre o passado, reinos, guerras, linhagens e lendas; argumento de peso num conflito social.", "Conflito Social"),
     "Intuição": ("Perceber intenções, mentiras e o clima de uma conversa; sentir quando algo está errado.", ""),
     "Investigação": ("Procurar pistas, examinar cenas e documentos e ligar os fatos; encontrar o que está escondido numa expedição.", "Expedição"),
-    "Medicina": ("Tratar ferimentos, doenças e venenos. No Portão da Morte, um aliado faz Medicina (DT 15) para dar 1 sucesso a quem está Incapaz.", "Portão da Morte"),
+    "Medicina": ("Tratar ferimentos, doenças e venenos. No Portão da Morte, um aliado faz Medicina (DT 15 + 10 por cicatriz do Incapaz) para dar 1 sucesso a quem está Incapaz.", "Portão da Morte"),
     "Navegação": ("Orientar-se e guiar o grupo em viagens por terra e mar; define o tempo da viagem e evita se perder. Não exige treino.", "Viagens"),
     "Percepção": ("Notar o que está à volta: emboscadas, criaturas escondidas, sons e detalhes. É contra ela que os outros testam Furtividade.", ""),
     "Performance": ("Cantar, tocar, atuar e discursar para uma plateia; impressionar ou distrair num conflito social.", "Conflito Social"),
     "Persuasão": ("Convencer, negociar, barganhar e acalmar pela conversa; a principal perícia do conflito social.", "Conflito Social"),
-    "Prevalência": ("A força da vontade do personagem ligada à alma, com o atributo que o jogador escolher; usada pelas almas e por talentos como Mente de Aço e Lâmina Dedicada (que agora mexem na DT da Dedicação da Katana).", "Almas"),
+    "Prevalência": ("A força da vontade do personagem ligada à alma, com o atributo que o jogador escolher; usada pelas almas.", "Almas"),
     "Religião": ("Deuses, cultos, ritos e criaturas sagradas ou profanas; alguns Feitiços pedem este teste.", "Alguns Feitiços"),
     "Sorte": ("O acaso a seu favor: achar o que precisa, escapar por pouco, encontros e espólios na expedição.", "Expedição"),
     "Tática": ("Ler o campo de batalha, prever o inimigo e planejar o grupo (Inteligência ou Mente, o maior); algumas habilidades e o clima adverso nas viagens pedem este teste.", "Algumas Habilidades"),
@@ -221,6 +221,7 @@ def derivadas(a, nivel, talentos, vida_dados_soma, armadura_ca=0, escudo_ca=0, c
     d["acoes_extras"] = acoes
     d["iniciativa_dados"] = 1 + des // 20 + (1 if "Animado" in talentos else 0)
     d["iniciativa_bonus"] = bc["DES"]
+    d["limite_morte"] = 3 + cap(a["VIT"]) // 40      # 3.3: 3 falhas no Portão da Morte, mais 1 a cada 40 de Vitalidade
     d["rd"] = min(4, cap(a["TEN"]) // 20)
     ten_res = cap(a["TEN"]) + (10 if "Pele Grossa" in talentos else 0)
     d["resistencias"] = [nome for lim, nome in RESISTENCIAS if ten_res >= lim]
@@ -623,7 +624,7 @@ def arcano_escala(arcano, talentos):
     return cap(arcano) + (10 if "Mente Arcana" in talentos else 0), (1 if "Senhor das Condições" in talentos else 0)
 
 
-_SET_COND = re.compile(r"(acertos? cr[íi]ticos?|acerto cr[íi]tico|acertos?)\b[^.]*?\baplica\w* (?:mais )?(\d+) pontos de "
+_SET_COND = re.compile(r"(acertos? cr[íi]ticos?|acerto cr[íi]tico|acertos?)\b[^.]*?\baplica\w* (?:mais )?(\d+d\d+|\d+)(?: pontos)? de "
                        r"(Veneno|Podridão|Sangramento|Congelamento|Sono|Loucura|Morte)", re.I)
 
 
@@ -640,7 +641,7 @@ def condicoes_de_set(ativos):
                 m2 = re.search(r"dobram contra ([^.]+?)\.", e4 or "", re.I)
                 if m2:
                     nota.append("dobra contra " + m2.group(1))
-                out.append({"set": nome, "pontos": int(m.group(2)), "condicao": m.group(3).capitalize(),
+                out.append({"set": nome, "pontos": int(m.group(2)) if m.group(2).isdigit() else m.group(2), "condicao": m.group(3).capitalize(),
                             "critico": "crít" in m.group(1).lower(), "nota": ", ".join(nota)})
     return out
 
@@ -1034,6 +1035,22 @@ def dt_provocar(d, nivel):
     return 10 + d["bc"]["FOR"] + nivel // 3 + 3 + d.get("provocar_extra", 0)
 
 
+def contar_cicatrizes(texto):
+    """Cicatrizes escritas no campo livre da ficha: '2', '3 cicatrizes' ou uma lista ('braço, rosto')."""
+    t = str(texto or "").strip()
+    if not t:
+        return 0
+    m = re.search(r"\d+", t)
+    if m:
+        return int(m.group(0))
+    return len([x for x in re.split(r"[,;\n]", t) if x.strip()])
+
+
+def dt_medicina(cicatrizes):
+    """Medicina para ajudar um Incapaz no Portão da Morte (3.3): DT 15 + 10 por cicatriz dele."""
+    return 15 + 10 * max(0, int(cicatrizes or 0))
+
+
 def dt_forca(d, nivel):
     """Agarrar e Derrubar (3.2): Fortitude do alvo contra 10 + BC de Força + nível ÷ 3."""
     return 10 + d["bc"]["FOR"] + nivel // 3
@@ -1194,9 +1211,10 @@ _N_EXT = {"um": 1, "uma": 1, "dois": 2, "duas": 2, "três": 3, "quatro": 4, "cin
 
 
 RECURSOS_ARMA = {  # contadores da mecânica de cada arma: (nome, máximo; 0 = sem máximo)
-    "Adaga": [("Fragmentos de Combo", 0)],
-    "Espada Grande": [("Momentum", 5)],
-    "Machado Grande": [("Impacto preparado", 3)],
+    "Adaga": [("Acúmulos de Sangria", 0)],       # no alvo: 4 + 1 a cada 20 de Destreza
+    "Katana": [("Foco", 3)],                      # 4 com Mente de Aço
+    "Espada Grande": [("Momentum", 5), ("Cargas", 2)],
+    "Machado Grande": [("Impacto preparado", 3), ("Fúria", 5)],
     "Lança-Arma": [("Cartuchos", 5)],
     "Lâmina-Dínamo": [("Cargas", 5), ("Frascos", 5)],
     "Arco": [("Flechas", 30)],

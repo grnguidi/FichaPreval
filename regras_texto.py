@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Texto da janela "Regras usadas nos cálculos" (menu Ajuda)."""
-REGRAS_TXT = """Fórmulas (PREVA 3.2)
+REGRAS_TXT = """Fórmulas (PREVA 3.3)
 
 Atributos: distribuição inicial 16/14/12/11/10/9/8/7; +10 pontos por nível e +5 extras em níveis múltiplos de 3 (nível máx. 30).
 Sem alma ("Jogando sem uma Alma"): +2 pontos de atributo a mais por nível, e a aba Alma não é usada.
@@ -50,6 +50,8 @@ Alma: nível = nível do personagem ÷ 3. Usos por descanso longo = 2 + nível d
 Descanso curto: recupera metade de Vida, Mana e Vigor e tira 25 pontos de cada condição (máx. 2 entre descansos longos).
 Descanso longo: recupera tudo e zera as condições (remove também efeitos Fracos e Médios; Forte e Extremo continuam). Poção Espiritual: (½ nível + ½ Curva da VIT) d10 de Vida, mínimo 2 dados.
 Incapaz (Vida 0): nenhuma cura, nem a Poção Espiritual, acorda um Incapaz; só os testes para escapar da morte.
+Portão da Morte (3.3): 5 sucessos salvam; a morte vem com 3 falhas + 1 a cada 40 de Vitalidade. Cada cicatriz já começa com uma falha (até uma a menos que o limite). Medicina de um aliado: DT 15 + 10 por cicatriz do Incapaz.
+Terreno difícil (3.3): cada 1,5 m nele custa 3 m do movimento (soma com outros custos, como a Zona de Controle do Bastão). Empurrões, puxões e Posicionar não são afetados.
 Poções (Alquimia): não restauram Vida (só vida temporária); Mana e Vigor sem limite por combate (o freio é a ação, a Carga e o preço); Elixires: 1 por descanso longo.
 Itens diversos: sem limite de quantidade; quem limita é a Carga.
 Desgaste: 3 turnos afiados por arma (turnos em que atacou); o crítico reinicia; ao acabar, a arma fica 1 turno sem uso.

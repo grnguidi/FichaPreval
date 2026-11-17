@@ -4,8 +4,10 @@ function linhasSet(critico) {
   // pontos de condição dos sets ao acertar; os números dos sets são fixos (o Arcano não escala)
   const cont = setsAtivos();
   const ativos = Object.entries(cont).filter(([, q]) => q >= 2).map(([n, q]) => [n, q, SETS[n].p2, q >= 4 ? SETS[n].p4 : ""]);
-  return R.condicoesDeSet(ativos).filter((c) => !c.critico || critico).map((c) =>
-    `Set ${esc(c.set)}: <b>+${c.pontos}</b> pontos de ${c.condicao} se acertar${c.critico ? " (crítico)" : ""} <span class="sub">— valor fixo, o Arcano não escala sets${c.nota ? "; " + esc(c.nota) : ""}.</span>`);
+  return R.condicoesDeSet(ativos).filter((c) => !c.critico || critico).map((c) => {
+    const dado = typeof c.pontos === "string", n = dado ? R.rolarExpr(c.pontos, rng)[0] : c.pontos;   // 3.3: os sets aplicam 1d6 de condição
+    return `Set ${esc(c.set)}: <b>+${n}</b>${dado ? ` <span class="sub">(${c.pontos})</span>` : ""} pontos de ${c.condicao} se acertar${c.critico ? " (crítico)" : ""} <span class="sub">— valor fixo, o Arcano não escala sets${c.nota ? "; " + esc(c.nota) : ""}.</span>`;
+  });
 }
 function setsAtivos() {
   const cont = {};

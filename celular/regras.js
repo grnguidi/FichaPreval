@@ -1,4 +1,4 @@
-/* Regras de Prevalecentes (PREVA 3.2) — tradução fiel de regras.py */
+/* Regras de Prevalecentes (PREVA 3.3) — tradução fiel de regras.py */
 (function (raiz) {
   "use strict";
   const ATRIBUTOS = ["VIT", "MEN", "TEN", "FOR", "DES", "INT", "FE", "ARC"];
@@ -83,6 +83,7 @@
     d.acoes_extras = acoes;
     d.iniciativa_dados = 1 + fdiv(des, 20) + (tal.has("Animado") ? 1 : 0);
     d.iniciativa_bonus = bc.DES;
+    d.limite_morte = 3 + fdiv(cap(a.VIT), 40);
     d.rd = Math.min(4, fdiv(cap(a.TEN), 20));
     const tenRes = cap(a.TEN) + (tal.has("Pele Grossa") ? 10 : 0);
     d.resistencias = RESISTENCIAS.filter(([lim]) => tenRes >= lim).map(([, n]) => n);
@@ -319,7 +320,7 @@
     return partes.join(" + ") + (fixo ? ` + ${fixo}` : "");
   }
   const arcanoEscala = (arcano, talentos) => [cap(arcano) + (talentos.has("Mente Arcana") ? 10 : 0), talentos.has("Senhor das Condições") ? 1 : 0];
-  const SET_COND = /(acertos? cr[íi]ticos?|acerto cr[íi]tico|acertos?)\b[^.]*?\baplica\S* (?:mais )?(\d+) pontos de (Veneno|Podridão|Sangramento|Congelamento|Sono|Loucura|Morte)/gi;
+  const SET_COND = /(acertos? cr[íi]ticos?|acerto cr[íi]tico|acertos?)\b[^.]*?\baplica\S* (?:mais )?(\d+d\d+|\d+)(?: pontos)? de (Veneno|Podridão|Sangramento|Congelamento|Sono|Loucura|Morte)/gi;
   function condicoesDeSet(ativos) {
     const out = [];
     for (const [nome, , e2, e4] of ativos) {
@@ -329,7 +330,7 @@
           if (/1x por turno/i.test(txt)) nota.push("1x por turno");
           const m2 = String(e4 || "").match(/dobram contra ([^.]+?)\./i);
           if (m2) nota.push("dobra contra " + m2[1]);
-          out.push({ set: nome, pontos: +m[2], condicao: m[3].charAt(0).toUpperCase() + m[3].slice(1).toLowerCase(), critico: m[1].toLowerCase().includes("crít"), nota: nota.join(", ") });
+          out.push({ set: nome, pontos: /^\d+$/.test(m[2]) ? +m[2] : m[2], condicao: m[3].charAt(0).toUpperCase() + m[3].slice(1).toLowerCase(), critico: m[1].toLowerCase().includes("crít"), nota: nota.join(", ") });
         }
       }
     }
@@ -445,6 +446,13 @@
     return out;
   }
   const dtProvocar = (d, nivel) => 10 + d.bc.FOR + Math.floor(nivel / 3) + 3 + (d.provocar_extra || 0);   // 3.2: BC de Força + 3
+  function contarCicatrizes(texto) {
+    const t = String(texto || "").trim();
+    if (!t) return 0;
+    const m = t.match(/\d+/);
+    return m ? +m[0] : t.split(/[,;\n]/).filter((x) => x.trim()).length;
+  }
+  const dtMedicina = (cicatrizes) => 15 + 10 * Math.max(0, Math.trunc(cicatrizes || 0));
   const dtForca = (d, nivel) => 10 + d.bc.FOR + Math.floor(nivel / 3);          // Agarrar e Derrubar (Fortitude do alvo)
   function acoesDoTurno(extras, tipos) {
     const q = { Comum: 1, "Bônus": 1, Movimento: 1, "Reação": 1 };
@@ -574,7 +582,7 @@
     ESCOLHA_TALENTO, ROTULO_ESCOLHA, MATRICULA_MANA2, efeitosEscolhas, descontoMatricula,
     PROPRIEDADES, NOMES_PROPRIEDADES, ELEMENTOS_PROP, lerProps, nomeProp, problemasProps, subirDado, efeitoProps, reqComProps,
     TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO, REFEICOES, efeitosAtributo,
-    CA_MAX, dtProvocar, dtForca, efeitosEquipamento, talismaFamiliaNivel, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
+    CA_MAX, dtProvocar, dtForca, contarCicatrizes, dtMedicina, efeitosEquipamento, talismaFamiliaNivel, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
     precoEmContos, separarMoedas, formatarDinheiro, lerDinheiro,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = R; else raiz.R = R;

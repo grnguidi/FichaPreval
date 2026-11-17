@@ -85,6 +85,18 @@ def _dano_base(nmp):
     return _media_dados(LINHAS[-1][5]), LINHAS[-1][5]
 
 
+def dados_da_media(media):
+    """Expressão de dados com essa média ('13d10 + 1' para 72): o dano de um golpe é rolado, não fixo.
+    O dado cresce com o valor (d4 até 7, d6 até 19, d8 até 59, d10 até 199, d12 acima); o resto vira bônus fixo."""
+    m = max(0, int(round(media)))
+    if m < 2:
+        return str(m)
+    f = 4 if m < 8 else 6 if m < 20 else 8 if m < 60 else 10 if m < 200 else 12
+    q = max(1, int(m // ((f + 1) / 2)))
+    fixo = int(round(m - q * (f + 1) / 2))
+    return f"{q}d{f}" + (f" + {fixo}" if fixo > 0 else f" - {-fixo}" if fixo < 0 else "")
+
+
 def vida_de_condicao(tier, nmp, jogadores=4):
     """Pontos da barra de cada condição. Animal, Prevalecente e Deus: valor × jogadores ÷ 4."""
     i = TIERS.index(tier)
@@ -120,7 +132,7 @@ def calcular(tier, nmp, jogadores=4):
         "tier": tier, "nmp": nmp, "jogadores": jog, "quantos": aj["quantos"],
         "vida": vida, "ca": ca, "ataque": atk, "dt": dt, "resistencia": atk,
         "dano_turno": dano_turno, "dano_expr": (f"{mult} × ({exato})" if exato else f"{mult} × (≈ {int(round(media_base))} de média)"),
-        "golpes": golpes, "dano_golpe": int(round(dano_turno / golpes)),
+        "golpes": golpes, "dano_golpe": int(round(dano_turno / golpes)), "dano_golpe_dados": dados_da_media(dano_turno / golpes),
         "postura": int(math.ceil(vida * aj["postura"])),
         "vida_condicao": vida_de_condicao(tier, nmp, jog), "cond_por_golpe": pontos_por_golpe(tier, nmp),
         "morte": EFEITO_CONDICAO["Morte"]["txt"],

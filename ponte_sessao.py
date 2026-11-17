@@ -31,6 +31,7 @@ class PonteSessao:
                 "iniciativa_dados": d["iniciativa_dados"], "rd": d["rd"], "resistencias": list(d["resistencias"]),
                 "defesas": defesas,
                 "portao": [sum(v.get() for v in a.portao["Sucessos"]), sum(v.get() for v in a.portao["Falhas"])],
+                "cicatrizes": R.contar_cicatrizes(a.v_cicatrizes.get()), "limite_morte": d.get("limite_morte", 5),
                 "condicoes": [[n, to_int(c["atual"].get()), a.cond_max(n)] for n, c in a.cond.items()],
                 "inventario": [{"item": i["item"], "carga": i["carga"], "qtd": to_int(i["qtd"], 1) or 1} for i in a._inventario()],
                 "dinheiro": a.v_dinheiro.get().strip(), "carga": [round(a._carga_atual(), 1), d["carga"]],

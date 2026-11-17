@@ -88,6 +88,7 @@ function resumoSessao() {
     vida: at("atual", d.vida), vida_max: d.vida, mana: at("mana_atual", d.mana), mana_max: d.mana, vigor: at("vigor_atual", d.vigor), vigor_max: d.vigor,
     ca: d.ca, movimento: c.mov, iniciativa: d.iniciativa_bonus,
     portao: [S.portao.Sucessos.filter(Boolean).length, S.portao.Falhas.filter(Boolean).length],
+    cicatrizes: R.contarCicatrizes(S.cicatrizes), limite_morte: d.limite_morte,
     condicoes: R.CONDICOES.map((n) => [n, int((S.condicoes[n] || {}).atual), condMax(n)]),
     iniciativa_dados: d.iniciativa_dados, rd: d.rd, resistencias: d.resistencias,
     defesas: Object.fromEntries(R.PERICIAS_DEFESA.map(([n, k, tn]) => [n, [d.bc[k] + d.n3 + (c.tal.has(tn) ? 2 : 0), R.vantagem(c.a[k])]])),

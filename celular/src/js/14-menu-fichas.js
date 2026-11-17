@@ -1,6 +1,7 @@
 // ----- menu e fichas
 A["menu"] = () => {
   folha("Menu", `<div class="lista">
+    <div class="item" data-a="dados"><div class="tx"><b>🎲 Rolar dados</b><small>Qualquer expressão (2d6+3, d20...), com vantagem e crítico</small></div></div>
     ${S ? `<div class="item" data-a="exportar"><div class="tx"><b>Exportar ficha (.json)</b><small>Para abrir no programa de PC ou guardar uma cópia</small></div></div>` : ""}
     <div class="item" data-a="importar"><div class="tx"><b>Abrir arquivo .json</b><small>Ficha salva pelo programa de PC</small></div></div>
     <div class="item" data-a="nova"><div class="tx"><b>Nova ficha</b><small>Criação rápida</small></div></div>

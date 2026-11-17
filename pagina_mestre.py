@@ -16,7 +16,10 @@ header.topo h1{font-size:19px;margin:0;font-variant:small-caps;letter-spacing:.0
 nav{display:flex;gap:6px;margin-left:18px}
 nav button{background:transparent;border:1px solid #6d5f3a;color:#e8d9a8;padding:6px 14px;border-radius:6px;cursor:pointer;font:inherit}
 nav button.on{background:#e8d9a8;color:#1b2520}
-#estado-sessao{margin-left:auto;font-size:13px;opacity:.9}
+#estado-sessao{font-size:13px;opacity:.9}
+#btn-dados{background:#e8d9a8;color:#1b2520;border-color:#e8d9a8;font-weight:700}
+.dado-res{font-size:34px;font-weight:700;color:var(--vinho);text-align:center;margin:6px 0 2px}
+.hist{max-height:170px;overflow:auto;font-size:13.5px;border-top:1px solid var(--linha);margin-top:8px;padding-top:6px}
 main{padding:14px 18px;max-width:1700px;margin:0 auto}
 button,select,input,textarea{font:inherit;color:inherit}
 button.b{background:var(--papel);border:1px solid var(--ouro);color:var(--tinta);border-radius:6px;padding:5px 11px;cursor:pointer}
@@ -91,7 +94,7 @@ dialog::backdrop{background:#0008}
 <body>
 <header class="topo"><h1>⚜ Painel do mestre</h1>
 <nav><button data-aba="combate" class="on">⚔ Combate</button><button data-aba="inimigos">👹 Inimigos</button><button data-aba="notas">📝 Anotações</button></nav>
-<span id="estado-sessao"></span></header>
+<button class="b" id="btn-dados" style="margin-left:auto" title="Rolar dados">🎲 Dados</button><span id="estado-sessao" style="margin-left:14px"></span></header>
 <main>
 <section id="aba-combate"></section>
 <section id="aba-inimigos" hidden></section>
@@ -123,6 +126,42 @@ function dialogo(titulo, corpo, ok, rotuloOk = "OK") {
   d.showModal();
 }
 const optTipos = (sel = "") => `<option value="">— tipo —</option>` + CFG.tipos_dano.map((t) => `<option ${t === sel ? "selected" : ""}>${esc(t)}</option>`).join("");
+
+// ------------------------------------------------------------------ dados
+function rolarDados(expr, dobrar = false) {
+  const t = String(expr == null ? "" : expr).toLowerCase().replace(/\s+/g, "").replace(/(^|[+\-])d(\d+)/g, "$11d$2");
+  let total = 0; const partes = [];
+  for (const m of t.matchAll(/([+-]?)(\d+)d(\d+)|([+-]?)(\d+)/g)) {
+    if (m[2]) {
+      const sinal = m[1] === "-" ? -1 : 1, q = Math.min(300, Math.max(1, +m[2])) * (dobrar ? 2 : 1), f = Math.max(2, Math.min(1000, +m[3]));
+      const vals = [...Array(q)].map(() => 1 + Math.floor(Math.random() * f)), sub = sinal * vals.reduce((a, b) => a + b, 0);
+      partes.push({ txt: `${sinal < 0 ? "-" : ""}${q}d${f}`, vals, sub }); total += sub;
+    } else if (m[5]) { const sub = (m[4] === "-" ? -1 : 1) * +m[5]; partes.push({ txt: (sub >= 0 ? "+" : "") + sub, vals: [], sub }); total += sub; }
+  }
+  return { total, partes, ok: partes.length > 0 };
+}
+const txtPartes = (r) => r.partes.map((p) => p.vals.length ? `${p.txt}[${p.vals.length > 14 ? p.vals.slice(0, 14).join(", ") + "…" : p.vals.join(", ")}]` : p.txt).join(" ");
+const HIST = [];
+function abrirDados() {
+  const rapidos = [4, 6, 8, 10, 12, 20, 100].map((f) => `<button class="b mini" data-d="1d${f}">d${f}</button>`).join(" ");
+  dialogo("Rolar dados", `<div class="linha"><input id="dd-e" placeholder="ex.: 2d6+3, 4d8, d20" style="flex:1" autofocus><button class="b p" id="dd-r">🎲 Rolar</button></div>
+    <div class="linha" style="margin-top:8px">${rapidos}</div>
+    <div class="linha" style="margin-top:8px"><button class="b mini" data-v="1">d20 com vantagem</button><button class="b mini" data-v="-1">d20 com desvantagem</button><label><input type="checkbox" id="dd-c"> crítico (dobra os dados)</label></div>
+    <div class="dado-res" id="dd-t">—</div><div class="sub" id="dd-p" style="text-align:center"></div><div class="hist" id="dd-h"></div>`, () => { }, "Fechar");
+  const c = $("#dlg-c"), mostra = (rot, r) => {
+    $("#dd-t", c).textContent = r.total; $("#dd-p", c).textContent = `${rot}: ${txtPartes(r)}`;
+    HIST.unshift(`${rot} → <b>${r.total}</b> <span class="sub">${esc(txtPartes(r))}</span>`); HIST.length = Math.min(HIST.length, 30); $("#dd-h", c).innerHTML = HIST.join("<br>");
+  }, rola = (expr) => { const r = rolarDados(expr, $("#dd-c", c).checked); if (!r.ok) { toast("Expressão inválida. Use algo como 2d6+3."); return; } mostra(expr, r); };
+  $("#dd-h", c).innerHTML = HIST.join("<br>");
+  $("#dd-r", c).onclick = () => rola($("#dd-e", c).value);
+  $("#dd-e", c).onkeydown = (e) => { if (e.key === "Enter") rola($("#dd-e", c).value); };
+  c.addEventListener("click", (ev) => {
+    const d = ev.target.closest("[data-d]"), v = ev.target.closest("[data-v]");
+    if (d) { $("#dd-e", c).value = d.dataset.d; rola(d.dataset.d); }
+    else if (v) { const a = rolarDados("1d20"), b = rolarDados("1d20"), adv = v.dataset.v === "1", ok = adv ? (a.total >= b.total ? a : b) : (a.total <= b.total ? a : b); mostra(`d20 ${adv ? "com vantagem" : "com desvantagem"} (${a.total} e ${b.total})`, ok); }
+  });
+}
+$("#btn-dados").onclick = abrirDados;
 
 // ------------------------------------------------------------------ abas
 $$("nav button").forEach((b) => b.onclick = () => { aba = b.dataset.aba; $$("nav button").forEach((x) => x.classList.toggle("on", x === b)); ["combate", "inimigos", "notas"].forEach((a) => $("#aba-" + a).hidden = a !== aba); if (aba === "inimigos") renderInimigos(); if (aba === "notas") renderNotas(); else renderCombate(true); });
@@ -348,10 +387,11 @@ function atacar(x, gi) {
   const g = x.golpes[gi], s = fm("i:" + x.iid), alvo = E.jogadores.find((j) => j.nome === (s.alvo || (E.jogadores[0] || {}).nome));
   const d20 = 1 + Math.floor(Math.random() * 20), total = d20 + num(g.bonus), ca = alvo && alvo.ficha ? num(alvo.ficha.ca) : null;
   const crit = d20 === 20, desastre = d20 === 1, acerta = crit || (!desastre && ca != null && total >= ca);
-  const dano = crit ? g.dano * 2 : g.dano;
+  const dr = rolarDados(String(g.dano), crit), dano = dr.ok ? dr.total : num(g.dano);     // o dano é rolado (o crítico dobra os dados)
   let txt = `<b>${esc(x.nome)} — ${esc(g.nome)}</b>: d20 ${d20} + ${g.bonus} = <b>${total}</b>` + (ca != null ? ` contra CA ${ca} de ${esc(alvo.nome)}` : " (sem alvo)");
   txt += crit ? `<br><b class="ok">CRÍTICO</b> (acerta sempre; dobra o dano)` : desastre ? `<br><b class="er">DESASTRE</b> (erra sempre)` : ca != null ? (acerta ? `<br><b class="ok">Acertou</b>` : `<br><b class="er">Errou</b>`) : "";
   const botoes = [];
+  if (acerta || ca == null) txt += `<br>Dano: <b>${dano}</b> <span class="sub">${esc(String(g.dano))}${crit ? " ×2 dados" : ""} → ${esc(txtPartes(dr))}</span>`;
   if (alvo && acerta) botoes.push([`Aplicar ${dano}${g.tipo ? " " + g.tipo : ""} em ${alvo.nome}`, async () => {
     await api("/api/jogador/dano", { alvos: [alvo.nome], valor: dano, tipo: g.tipo || "", desc: `${x.nome}: ${g.nome}` });
     if (g.cond) await api("/api/jogador/pontos", { alvos: [alvo.nome], cond: g.cond, pontos: g.cond_pts || x.cond_por_golpe, dt: x.dt, desc: `${x.nome}: ${g.nome}` });
@@ -405,7 +445,7 @@ function pintaEditor() {
     <label class="c" style="margin-top:8px">Descrição<textarea rows="3" data-ef="descricao">${esc(x.descricao)}</textarea></label>
     <h3>Golpes <button class="b mini" data-ia="add-golpe">＋ golpe</button></h3>
     ${x.golpes.map((g, i) => `<div class="linha-golpe"><label class="c">Nome<input data-g="${i}.nome" value="${esc(g.nome)}"></label><label class="c">Tipo de dano<select data-g="${i}.tipo">${optTipos(g.tipo)}</select></label>
-      <label class="c">Alcance<input data-g="${i}.alcance" value="${esc(g.alcance)}" placeholder="corpo, 9 m…"></label><label class="c">Acerto +<input type="number" data-g="${i}.bonus" value="${g.bonus}"></label><label class="c">Dano<input type="number" data-g="${i}.dano" value="${g.dano}"></label>
+      <label class="c">Alcance<input data-g="${i}.alcance" value="${esc(g.alcance)}" placeholder="corpo, 9 m…"></label><label class="c">Acerto +<input type="number" data-g="${i}.bonus" value="${g.bonus}"></label><label class="c" title="Dados do golpe, ex.: 13d10 + 4. Também aceita número fixo.">Dano (dados)<input data-g="${i}.dano" value="${esc(g.dano)}" placeholder="2d8 + 3"></label>
       <label class="c">Efeito<input data-g="${i}.efeito" value="${esc(g.efeito)}"></label><span class="linha"><select data-g="${i}.cond" title="Condição que o golpe aplica"><option value="">sem condição</option>${CFG.condicoes.map((c) => `<option ${g.cond === c ? "selected" : ""}>${c}</option>`).join("")}</select><button class="b mini perigo" data-ia="rem-golpe" data-i="${i}">✖</button></span></div>`).join("") || "<small>Sem golpes.</small>"}
     <h3>Habilidades <button class="b mini" data-ia="add-hab">＋ habilidade</button></h3>
     ${x.habilidades.map((h, i) => `<div class="linha-hab"><label class="c">Nome<input data-h="${i}.nome" value="${esc(h.nome)}"></label><label class="c">Ação<select data-h="${i}.acao">${["", "Comum", "Bônus", "Movimento", "Reação", "Completa", "Passiva"].map((a) => `<option ${h.acao === a ? "selected" : ""}>${a}</option>`).join("")}</select></label>
@@ -422,14 +462,14 @@ function pintaEditor() {
 }
 function mostraInfo() {
   const c = infoCalc, el = $("#calc-info"); if (!el) return;
-  el.innerHTML = `Dano por turno: ${esc(c.dano_expr)} ≈ <b>${c.dano_turno}</b> em ${c.golpes} golpe(s) (≈ ${c.dano_golpe} cada) · Resistências = Ataque (+${c.resistencia}) · Quantos aparecem: ${esc(c.quantos)}${c.extra_deus ? "<br>" + esc(c.extra_deus) : ""}`;
+  el.innerHTML = `Dano por turno: ${esc(c.dano_expr)} ≈ <b>${c.dano_turno}</b> em ${c.golpes} golpe(s) (≈ ${c.dano_golpe} cada, ${esc(c.dano_golpe_dados)}) · Resistências = Ataque (+${c.resistencia}) · Quantos aparecem: ${esc(c.quantos)}${c.extra_deus ? "<br>" + esc(c.extra_deus) : ""}`;
 }
 async function calcular(refazGolpes) {
   const x = ED, c = await api(`/api/calcular?tier=${encodeURIComponent(x.tier)}&nmp=${x.nmp}&jog=${x.jogadores}`);
   if (c.erro) { toast(esc(c.erro)); return; }
   infoCalc = c; Object.assign(x, { vida: c.vida, ca: c.ca, ataque: c.ataque, dt: c.dt, postura: c.postura, vida_condicao: c.vida_condicao, cond_por_golpe: c.cond_por_golpe });
-  if (refazGolpes || !x.golpes.length) x.golpes = [...Array(c.golpes)].map((_, i) => ({ nome: c.golpes > 1 ? `Golpe ${i + 1}` : "Golpe", tipo: "", alcance: "", bonus: c.ataque, dano: c.dano_golpe, efeito: "", cond: "", cond_pts: 0 }));
-  else x.golpes.forEach((g) => { g.bonus = c.ataque; g.dano = c.dano_golpe; });
+  if (refazGolpes || !x.golpes.length) x.golpes = [...Array(c.golpes)].map((_, i) => ({ nome: c.golpes > 1 ? `Golpe ${i + 1}` : "Golpe", tipo: "", alcance: "", bonus: c.ataque, dano: c.dano_golpe_dados, efeito: "", cond: "", cond_pts: 0 }));
+  else x.golpes.forEach((g) => { g.bonus = c.ataque; g.dano = c.dano_golpe_dados; });
   pintaEditor();
 }
 document.addEventListener("input", (ev) => {
@@ -452,7 +492,7 @@ document.addEventListener("click", async (ev) => {
   else if (a === "abrir") { ED = JSON.parse(JSON.stringify(LIB.find((x) => x.id === el.dataset.id))); infoCalc = null; $$("#li-lista .item").forEach((i) => i.classList.toggle("on", i === el)); pintaEditor(); }
   else if (!ED) return;
   else if (a === "calc") await calcular(true);
-  else if (a === "add-golpe") { ED.golpes.push({ nome: "Golpe", tipo: "", alcance: "", bonus: ED.ataque, dano: (infoCalc ? infoCalc.dano_golpe : 0), efeito: "", cond: "", cond_pts: 0 }); pintaEditor(); }
+  else if (a === "add-golpe") { ED.golpes.push({ nome: "Golpe", tipo: "", alcance: "", bonus: ED.ataque, dano: (infoCalc ? infoCalc.dano_golpe_dados : "1d8"), efeito: "", cond: "", cond_pts: 0 }); pintaEditor(); }
   else if (a === "rem-golpe") { ED.golpes.splice(num(el.dataset.i), 1); pintaEditor(); }
   else if (a === "add-hab") { ED.habilidades.push({ nome: "", acao: "", texto: "" }); pintaEditor(); }
   else if (a === "rem-hab") { ED.habilidades.splice(num(el.dataset.i), 1); pintaEditor(); }

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Ficha de Personagem — Prevalecentes (PREVA 3.2)
+"""Ficha de Personagem — Prevalecentes (PREVA 3.3)
 Calcula características derivadas, controla pontos por nível e oferece menus
 de armas, encantamentos e talentos marcando o que pode ou não ser aprendido.
 Layout segue a ficha oficial (páginas I a VII).
@@ -19,7 +19,7 @@ from ponte_sessao import PonteSessao
 from regras_texto import REGRAS_TXT
 from dados_prevalecentes import DADOS as _DADOS_EMBUTIDOS
 
-APP_NOME = "Ficha Prevalecentes 3.2"
+APP_NOME = "Ficha Prevalecentes 3.3"
 OK, NO = "✓", "✗"
 META_SLOTS = [f"meta{i}" for i in range(1, 6)]   # talento extra de cada Meta de Vida concluída
 
@@ -528,7 +528,7 @@ class App(tk.Tk):
             arco.pack(side="left", anchor="n", padx=(0, 10), before=tit)
             desenhar_arco(arco)
         tk.Label(tit, text="Prevalecentes" if TEMA == "vitral" else "⚜ Prevalecentes", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
-        tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.2", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
+        tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.3", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
         self.lbl_modo.pack(anchor="w", pady=(4, 0))
 
@@ -913,7 +913,7 @@ class App(tk.Tk):
         self.l_cond_extra.grid(row=len(R.CONDICOES) + 1, column=0, columnspan=4, sticky="w", pady=(4, 0))
 
         c = self.secao(p, "Portão da Morte", row=4, column=1)
-        ttk.Label(c, text="Vida 0 = Incapaz. d20 no início do turno: 11+ é sucesso.\n5 sucessos: volta com 1 de Vida e 1 cicatriz. 5 falhas: morte.",
+        ttk.Label(c, text="Vida 0 = Incapaz. d20 no início do turno: 11+ é sucesso.\n5 sucessos: volta com 1 de Vida e 1 cicatriz. Morte: 3 falhas + 1 a cada 40 de Vitalidade.\nMedicina de um aliado: DT 15 + 10 por cicatriz sua.",
                   style="Sub.TLabel").grid(row=0, column=0, columnspan=7, sticky="w", pady=(0, 6))
         self.portao = {}
         for r, (n, cor) in enumerate([("Sucessos", C_VIGOR), ("Falhas", C_VIDA)], start=1):
@@ -3262,7 +3262,9 @@ class App(tk.Tk):
         for c in R.condicoes_de_set(self.sets_ativos()[1]):
             if c["critico"] and not critico:
                 continue
-            out.append(f"Set {c['set']}: +{c['pontos']} pontos de {c['condicao']} se acertar{' (crítico)' if c['critico'] else ''}"
+            dado = isinstance(c["pontos"], str)          # 3.3: os sets aplicam 1d6 de condição
+            n = R.rolar_expr(c["pontos"], self._rng)[0] if dado else c["pontos"]
+            out.append(f"Set {c['set']}: +{n}{' (' + c['pontos'] + ')' if dado else ''} pontos de {c['condicao']} se acertar{' (crítico)' if c['critico'] else ''}"
                        f" — valor fixo, o Arcano não escala sets{'; ' + c['nota'] if c['nota'] else ''}.")
         return out
 

@@ -62,7 +62,14 @@ function atacar(i, o = {}) {
   const w = S.armas[i], ar = ARMAS[w.grupo]; if (!ar) return;
   const nv = int(w.nivel, 1), k = R.atributoAtaque(ar, C.a);
   const l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0];
-  const [lD, nvD] = R.linhaDanoNivel(ar.tabela, nv, C.ef.dano_nivel + int(o.delta));
+  // Machado Grande (3.3), passiva Fúria: cada acúmulo dá +1 de dano fixo e cada 25% da vida perdida, +1 nível de dano (máximo +3)
+  let furiaDano = 0, furiaNivel = 0;
+  if (w.grupo === "Machado Grande") {
+    furiaDano = int((S.recursos[`${i}:${w.grupo}`] || {})["Fúria"]);
+    const vmax = C.d.vida, vat = S.vida.atual === "" || S.vida.atual == null ? vmax : int(S.vida.atual, vmax);
+    furiaNivel = vmax > 0 ? Math.max(0, Math.min(3, Math.floor((1 - vat / vmax) * 100 / 25))) : 0;
+  }
+  const [lD, nvD] = R.linhaDanoNivel(ar.tabela, nv, C.ef.dano_nivel + int(o.delta) + furiaNivel);
   const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0, props = R.lerProps(w.props);
   const ep = R.efeitoProps(props, R.danoComDados(lD.dano, Math.floor(R.cap(C.a[k]) / 30)), int(l.critico, 20));
   const dist = ["Arco", "Besta Pesada"].includes(w.grupo), acEq = C.eq.acerto + (dist ? C.eq.acerto_dist : 0);
@@ -115,9 +122,12 @@ function atacar(i, o = {}) {
         soma += t2;
         linhas.push(pre + txtDano(t2, p2, `+ ${esc(tipo)}`) + ` <span class="sub">(set ou talismã)</span>`);
       }
+      if (furiaDano) { soma += furiaDano; linhas.push(pre + `+<b>${furiaDano}</b> de dano fixo <span class="sub">(Fúria)</span>`); }
       if (C.eq.dano) { soma += C.eq.dano; linhas.push(pre + `+<b>${C.eq.dano}</b> de dano fixo <span class="sub">(sets e talismãs)</span>`); }
     });
     if (!at.desastre) linhas.push(...linhasSet(at.critico));
+    if (furiaNivel) linhas.push(`<span class="sub">Fúria: +${furiaNivel} nível de dano por ter perdido ${furiaNivel * 25}% da vida${furiaNivel >= 2 ? "; a partir de 50% você tem o dobro de movimento e −2 de CA" : ""}.</span>`);
+    if (w.grupo === "Adaga" && !at.desastre) linhas.push(`<span class="sub">Cada acerto deixa 1 acúmulo de Sangria no alvo (Ataque de Saque como primeiro ataque, 2; limite 4 + 1 a cada 20 de Destreza).</span> <button class="botao leve mini" data-a="recurso" data-i="${i}" data-n="Acúmulos de Sangria" data-d="1">＋1 Sangria</button>`);
     if (golpes > 1 && !at.desastre) linhas.push(`Dano somado se todos acertarem: <b>${soma}</b> <span class="sub">— desconte os que errarem a CA do alvo.</span>`);
     if (o.municao) linhas.push(gastarMunicao(i, o.municaoTipo || "", int(o.municao)));
     else {

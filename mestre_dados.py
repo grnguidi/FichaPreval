@@ -24,6 +24,18 @@ def _id():
     return "%08x" % random.getrandbits(32)
 
 
+_DADOS = re.compile(r"^[\dd+\-×x\s]{1,40}$")
+
+
+def _dano(v, padrao="0"):
+    """Dano de um golpe como expressão de dados ('2d8 + 3'). Número solto de uma ficha antiga vira dados com essa média."""
+    if isinstance(v, (int, float)) or (isinstance(v, str) and v.strip().lstrip("-").isdigit()):
+        n = _num(v)
+        return B.dados_da_media(n) if n >= 2 else str(max(0, n))
+    t = str(v or "").strip().lower()
+    return t if t and _DADOS.match(t) and ("d" in t or t.lstrip("-").isdigit()) else padrao
+
+
 def _num(v, padrao=0):
     try:
         return int(round(float(v)))
@@ -66,6 +78,9 @@ class Mestre:
         with self.lock:
             if self._inimigos is None:
                 self._inimigos = self._ler("inimigos.json", {"itens": []}).get("itens", [])
+                for x in self._inimigos:            # inimigos de antes guardavam o dano como número fixo: agora é dado
+                    for g in x.get("golpes", []):
+                        g["dano"] = _dano(g.get("dano"))
             return self._inimigos
 
     def inimigo(self, iid):
@@ -94,7 +109,7 @@ class Mestre:
         for k in listas:
             item[k] = [x for x in (d.get(k) or []) if isinstance(x, dict)][:30]
         item["golpes"] = [{"nome": str(g.get("nome") or "Golpe")[:60], "tipo": str(g.get("tipo") or "")[:20],
-                           "bonus": _num(g.get("bonus"), item["ataque"]), "dano": _num(g.get("dano")),
+                           "bonus": _num(g.get("bonus"), item["ataque"]), "dano": _dano(g.get("dano")),
                            "alcance": str(g.get("alcance") or "")[:30], "efeito": str(g.get("efeito") or "")[:500],
                            "cond": g.get("cond") if g.get("cond") in B.CONDICOES else "", "cond_pts": _num(g.get("cond_pts"))} for g in item["golpes"]]
         item["habilidades"] = [{"nome": str(h.get("nome") or "")[:60], "acao": str(h.get("acao") or "")[:20], "texto": str(h.get("texto") or "")[:1500]}

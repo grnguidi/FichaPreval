@@ -109,51 +109,31 @@
    ],
    "uso_duplo": true,
    "vigor": false,
-   "descricao": "Leves e afiadas, projetadas para ataques rápidos e furtivos. Favorecem a mobilidade e golpes precisos em pontos vulneráveis, sacrificando alcance e proteção. O sistema de combate das adagas gira em torno do Modo Frenesi, que permite o usuário a causar uma quantidade massiva de dano caso cumpra alguns pré-requisitos.",
+   "descricao": "Leves e afiadas, projetadas para ataques rápidos e furtivos. Favorecem a mobilidade e golpes precisos em pontos vulneráveis, sacrificando alcance e proteção. O sistema de combate das adagas gira em torno da Sangria: cada golpe deixa um acúmulo no alvo, e os acúmulos são estourados de uma só vez em um dano alto. Quanto mais ataques você faz, maior o estouro.",
    "acoes": [
     {
      "nome": "Atacar",
-     "texto": "Como uma ação comum, você pode atacar o alvo causando o dano do nível da sua adaga. Cada acerto gera 1 Fragmento de Combo. Se errar, todos os fragmentos acumulados no turno são perdidos.",
+     "texto": "Como uma ação comum, você ataca o alvo causando o dano da sua adaga com 1 nível a menos. Cada acerto deixa 1 acúmulo de Sangria no alvo. Um alvo suporta até 4 acúmulos, mais 1 a cada 20 pontos de Destreza seus. Os acúmulos ficam até o fim do combate e só você pode estourá-los.",
      "sub": false
     },
     {
      "nome": "Ataque de Saque",
-     "texto": "Caso você seja o primeiro na iniciativa de uma rodada, você pode gastar uma ação bônus para dobrar seu movimento e causar um golpe com um acerto garantido, podendo gastar o restante do movimento após o ataque. Se usado como primeiro ataque do turno, gera 2 Fragmentos de Combo.",
+     "texto": "Caso você seja o primeiro na iniciativa de uma rodada, você pode gastar uma ação bônus para dobrar seu movimento e causar um golpe com um acerto garantido, podendo gastar o restante do movimento após o ataque. Se usado como primeiro ataque do turno, deixa 2 acúmulos de Sangria.",
      "sub": false
     },
     {
      "nome": "Faca de Dois Gumes",
-     "texto": "Você pode utilizar duas ações “Atacar” utilizando o mesmo acerto, gastando 1 Fragmento de Combo. Se o teste de ataque for um sucesso, recupera o fragmento gasto e o próximo ataque recebe bônus de crítico (x2 -> x3). Se errar, o fragmento é perdido e o próximo ataque sofre desvantagem.",
-     "sub": false
-    },
-    {
-     "nome": "Corrente de Lâminas",
-     "texto": "Caso utilize a sequência Atacar -> Faca de Dois Gumes -> Ataque de Saque em um mesmo turno, todos os golpes da corrente causam +1 nível de dano. Se errar qualquer ataque, a corrente é quebrada e todos os fragmentos são perdidos.",
-     "sub": false
-    },
-    {
-     "nome": "Modo Frenesi",
-     "texto": "Caso acerte 3 ataques consecutivos em um turno, você pode gastar uma ação bônus e 3 Fragmentos de Combo para entrar em Modo Frenesi. Enquanto estiver no modo, cada acerto consome 1 fragmento para aumentar o dano em um nível. Se terminar o turno sem fragmentos, o modo se encerra.",
-     "sub": false
-    },
-    {
-     "nome": "Dança Frenética",
-     "texto": "Caso esteja em Modo Frenesi e possua ao menos 5 Fragmentos de Combo, você pode gastar todos para ativar a Dança Frenética. Todas as suas ações comuns e bônus se tornam ataques, todos resolvidos em um único teste de acerto. Após isso, seu turno acaba e você fica imóvel até o próximo turno, além de não poder usar ações bônus no turno seguinte.",
-     "sub": false
-    },
-    {
-     "nome": "Passo das Sombras",
-     "texto": "Caso utilize a sequência Ataque de Saque → Faca De Dois Gumes, você pode atravessar o espaço de um inimigo sem provocar ataque de oportunidade.",
-     "sub": false
-    },
-    {
-     "nome": "Lâmina Fantasma",
-     "texto": "Caso utilize a sequência Faca De Dois Gumes → Atacar, você pode gastar 2 Fragmentos de Combo para criar um ataque ilusório. O inimigo deve rolar resistência com Reflexos; se falhar, sofre dano adicional de um ataque nível inferior a sua arma e fica Confuso.",
+     "texto": "1x por turno, você pode realizar duas ações “Atacar” usando o mesmo acerto, e cada golpe deixa 1 acúmulo. Se o teste de ataque for um sucesso, o próximo ataque recebe bônus de crítico (x2 → x3). Se errar, o próximo ataque sofre desvantagem.",
      "sub": false
     },
     {
      "nome": "Execução Silenciosa",
-     "texto": "Caso utilize a sequência Atacar → Ataque de Saque → Faca De Dois Gumes contra um inimigo com menos de 25% da vida e tiver mais de 4 fragmentos de combo, você pode gastar todos os Fragmentos de Combo acumulados para causar um golpe crítico automático. Se o inimigo sobreviver, você sofre −2 de CA até o próximo turno.",
+     "texto": "Se o alvo estiver com menos de 25% da vida e tiver 5 ou mais acúmulos de Sangria, o Estourar é um crítico automático. Se o inimigo sobreviver, você sofre −2 de CA até o próximo turno.",
+     "sub": false
+    },
+    {
+     "nome": "Estourar",
+     "texto": "Como uma ação bônus, você remove todos os acúmulos de Sangria do alvo e causa 2 dados do dado-base da sua adaga por acúmulo (por exemplo, d6 no nível 5); se o dano da adaga mistura dados, use o maior. O dano ignora RD.",
      "sub": false
     }
    ]
@@ -275,18 +255,18 @@
      "sub": false
     },
     {
-     "nome": "Preparar Postura — Defesa",
-     "texto": "Como uma reação ou ação bônus, você entra em uma postura defensiva, permitindo receber resistência a um tipo de dano físico que preferir, apenas no próximo ataque que receber. Receber o golpe tira sua postura.",
+     "nome": "Preparar Guarda — Defesa",
+     "texto": "Como uma reação ou ação bônus, você entra em uma Guarda defensiva, permitindo receber resistência a um tipo de dano físico que preferir, apenas no próximo ataque que receber. Receber o golpe tira sua Guarda.",
      "sub": false
     },
     {
-     "nome": "Preparar Postura — Ataque",
-     "texto": "Como uma ação bônus, você entra em uma postura ofensiva, lhe concedendo vantagem no próximo teste de Ataque que realizar. Acertar este ataque tira sua postura.",
+     "nome": "Preparar Guarda — Ataque",
+     "texto": "Como uma ação bônus, você entra em uma Guarda ofensiva, lhe concedendo vantagem no próximo teste de Ataque que realizar. Acertar este ataque tira sua Guarda.",
      "sub": false
     },
     {
-     "nome": "Preparar Postura — Precisão",
-     "texto": "Como uma ação bônus, você entra em uma postura de precisão. Enquanto estiver nela, você só pode realizar um ataque por turno, mas este ataque causa +2 nível de dano se acertar. Errar o ataque tira sua postura.",
+     "nome": "Preparar Guarda — Precisão",
+     "texto": "Como uma ação bônus, você entra em uma Guarda de precisão. Enquanto estiver nela, você só pode realizar um ataque por turno, mas este ataque causa +2 nível de dano se acertar. Errar o ataque tira sua Guarda.",
      "sub": false
     },
     {
@@ -296,7 +276,7 @@
     },
     {
      "nome": "Estocada Rápida",
-     "texto": "Caso esteja na Postura de Ataque e acerte um golpe, pode gastar sua ação bônus para realizar uma segunda estocada com desvantagem, mas que causa +1 nível de dano se acertar.",
+     "texto": "Caso esteja na Guarda de Ataque e acerte um golpe, pode gastar sua ação bônus para realizar uma segunda estocada com desvantagem, mas que causa +1 nível de dano se acertar.",
      "sub": false
     },
     {
@@ -306,12 +286,32 @@
     },
     {
      "nome": "Riposte",
-     "texto": "Caso esteja na Postura de Defesa e um inimigo erre um ataque contra você, pode gastar sua reação para realizar um contra-ataque imediato com vantagem.",
+     "texto": "Como uma reação, quando você for alvo de um ataque corpo a corpo, o ataque sofre desvantagem. Se errar, você faz um contra-ataque imediato com vantagem e um Avanço, sem provocar.",
      "sub": false
     },
     {
      "nome": "Duelo Honrado",
-     "texto": "Caso alterne entre duas posturas diferentes em um mesmo turno e acerte ambos os ataques, você pode declarar um Duelo Honrado contra o inimigo. Enquanto estiver em duelo, você e o inimigo só podem atacar um ao outro até o fim do próximo turno. Seus ataques contra esse inimigo recebem vantagem, mas você não pode receber ajuda de aliados.",
+     "texto": "Caso alterne entre duas Guardas diferentes em um mesmo turno e acerte ambos os ataques, você pode declarar um Duelo Honrado contra o inimigo. Enquanto estiver em duelo, você e o inimigo só podem atacar um ao outro até o fim do próximo turno. Seus ataques contra esse inimigo recebem vantagem, mas quando ele receber dano de outra fonte que não seja você, o duelo é encerrado.",
+     "sub": false
+    },
+    {
+     "nome": "Avanço",
+     "texto": "2x por turno, como uma ação livre, você move 1,5 m antes ou depois de atacar.",
+     "sub": false
+    },
+    {
+     "nome": "Abertura",
+     "texto": "Ao acertar um ataque, como ação bônus, escolha um aliado: o próximo ataque dele contra aquele alvo tem vantagem.",
+     "sub": false
+    },
+    {
+     "nome": "Apoio",
+     "texto": "Como uma ação bônus, um aliado a até 9 m recebe vantagem em um teste à escolha.",
+     "sub": false
+    },
+    {
+     "nome": "Linha de Frente",
+     "texto": "1x por rodada, quando você acerta um ataque depois de ter trocado de Guarda no mesmo turno, todos os aliados a até 6 m podem mover 1,5 m como ação livre, sem provocar.",
      "sub": false
     }
    ]
@@ -464,7 +464,17 @@
     },
     {
      "nome": "Clivagem Final",
-     "texto": "Caso esteja com 5 acúmulos de Momentum e pelo menos metade do seu Vigor restante, você pode gastar todos os acúmulos de Momentum para realizar um corte devastador em linha reta em 4,5 metros. Este ataque atravessa todos os inimigos no caminho, ignorando CA e RD.",
+     "texto": "Caso esteja com 5 acúmulos de Momentum e pelo menos metade do seu Vigor restante, você pode gastar todos os acúmulos de Momentum para realizar um corte devastador em linha reta em 4,5 metros. Este ataque atravessa todos os inimigos no caminho, ignorando CA e RD. Você pode usar uma vez por combate.",
+     "sub": false
+    },
+    {
+     "nome": "Carregar",
+     "texto": "Como uma ação comum ou duas ações comuns, você fica Carregando e não pode se mover. Cada ação gasta dá 1 Carga, até 2.",
+     "sub": false
+    },
+    {
+     "nome": "Golpe Carregado",
+     "texto": "Seu próximo ataque consome as Cargas. Cada Carga dá +1 nível de dano, +50% de dano na Postura do inimigo e −1 na margem de crítico (mínimo 17). Com 2 Cargas, o alvo faz um teste de Fortitude contra a sua DT (10 + Bônus de Combate de Força + nível / 3) ou fica Caído. Receber dano maior que 10% da sua vida máxima cancela as Cargas. Depois do golpe, você não usa o Movimento Tático até o próximo turno.",
      "sub": false
     }
    ]
@@ -586,18 +596,13 @@
      "sub": false
     },
     {
-     "nome": "Movimento tático",
-     "texto": "Sempre que utilizar a ação atacar, você pode se mover 1,5m.",
-     "sub": false
-    },
-    {
      "nome": "Dedicação",
-     "texto": "Você gasta uma ação bônus e o alvo faz um teste de Vontade contra a sua DT (10 + Bônus de Combate de Destreza + nível / 3). Em uma falha, você causa um nível de dano acima da arma. Este efeito reinicia por rodada. Enquanto estiver em Dedicação, várias técnicas exclusivas podem ser ativadas.",
+     "texto": "Você gasta uma ação bônus para entrar em Dedicação até o fim da rodada. Enquanto estiver nela, você pode Aparar 1 vez a mais por rodada, e várias técnicas exclusivas podem ser ativadas. Na rodada seguinte, você precisa gastar 2 ações bônus, e ir somando uma ação bônus como requisito por rodada, após a primeira ativação.",
      "sub": false
     },
     {
-     "nome": "Contragolpe",
-     "texto": "Como uma reação, você pode fazer um teste de acerto contra o acerto do golpe do inimigo. Se for maior, você apara o golpe, realiza uma ação “Atacar”, e o dano da ação será triplicado para a Postura do inimigo.",
+     "nome": "Aparar",
+     "texto": "Como uma reação, você faz um teste de acerto contra o acerto do golpe do inimigo. Se for maior, você anula o golpe, realiza uma ação “Atacar” e o dano da ação é triplicado contra a Postura do inimigo. Com um 20 natural no teste, você ganha 1 Foco extra. Se for menor ou igual, você recebe o golpe normalmente. O Aparar é exceção ao limite de uma Reação por rodada: você tem 1 Aparar por rodada, mais os extras da Dedicação e dos talentos.",
      "sub": false
     },
     {
@@ -608,6 +613,11 @@
     {
      "nome": "Corte Crescente",
      "texto": "Se acertar dois ataques consecutivos durante o efeito de Dedicação, pode gastar uma ação bônus para realizar um terceiro ataque imediato. Este golpe causa +1 nível de dano e ignora resistência física.",
+     "sub": false
+    },
+    {
+     "nome": "Foco",
+     "texto": "Cada Aparar bem-sucedido dá 1 Foco (máximo 3, zera ao fim do combate). Ao Aparar, você pode gastar Foco no contra-ataque: 1 Foco dá +1 nível de dano, 2 Focos ignoram resistência física e 3 Focos tornam o contra-ataque um crítico.",
      "sub": false
     }
    ]
@@ -735,33 +745,38 @@
     },
     {
      "nome": "Gritar",
-     "texto": "Você grita por guerra. Todos os inimigos a 9 metros fazem um teste de Vontade contra a sua DT (10 + Bônus de Combate de Força + nível / 3). Quem falha deve, até o fim do seu próximo turno, atacar você se puder, e quem falhou recebe vantagem contra você nos ataques que fizer a você, mas você também recebe vantagem contra ele. Não custa Vigor. Contra Prevalecentes e Deuses, o teste usa o valor de Ataque do inimigo no lugar da Vontade, e o efeito dura só até o fim do turno dele.",
+     "texto": "Você grita por guerra. Todos os inimigos a 9 metros fazem um teste de Vontade contra a sua DT (10 + Bônus de Combate de Força + nível / 3). Quem falha deve, até o fim do seu próximo turno, atacar você se puder, e quem falhou recebe vantagem contra você nos ataques que fizer a você, mas você também recebe vantagem contra ele. Contra Prevalecentes e Deuses, o teste usa o valor de Ataque do inimigo no lugar da Vontade, e o efeito dura só até o fim do próximo turno dele.",
      "sub": false
     },
     {
      "nome": "Rugido de Titã",
-     "texto": "Ao usar Gritar com sucesso, você pode gastar uma ação bônus para ganhar resistência a todos os tipos de dano físico até o fim do próximo turno.",
+     "texto": "Ao usar Gritar com sucesso, você pode gastar uma ação bônus para ganhar resistência a todos os tipos de dano (Exceto Magia Pura e Relâmpago) até o fim do próximo turno.",
      "sub": true
     },
     {
-     "nome": "Passiva: Berserk",
-     "texto": "Ao ficar com metade de sua vida máxima, você recebe o dobro de seu movimento e seus ataques passam a causar +1 nível de dano, mas você perde -2 de CA até sair do estado.",
+     "nome": "Passiva: Fúria",
+     "texto": "Cada golpe que você sofre dá 1 acúmulo de Fúria (máximo 5, zera ao fim do combate), e cada acúmulo dá +1 de dano fixo. Além disso, cada 25% da vida máxima perdida dá +1 nível de dano (máximo +3). A partir da segunda faixa (50% ou menos de vida), você recebe o dobro do seu movimento e perde 2 de CA até sair do estado.",
      "sub": false
     },
     {
      "nome": "Golpe Ascendente",
-     "texto": "Se estiver em Berserk, pode gastar uma ação bônus para realizar um ataque vertical que lança o inimigo para cima até o turno inimigo. Aliados recebem vantagem ao atacar esse inimigo até ele cair.",
+     "texto": "Se estiver com 50% ou menos de vida, pode gastar uma ação bônus para realizar um ataque vertical que lança o inimigo para cima até o turno inimigo. Aliados recebem vantagem ao atacar esse inimigo até ele cair.",
      "sub": true
     },
     {
      "nome": "Golpe Final",
-     "texto": "Você automaticamente entra no portão da morte com 2 falhas, mas faz uma ação Atacar com crítico garantido e o multiplicador do crítico é aumentado para 5x.",
+     "texto": "Você automaticamente entra no portão da morte com uma falha a menos que o limite de morte, mas faz uma ação Atacar com crítico garantido e o multiplicador do crítico é aumentado para 5x.",
      "sub": false
     },
     {
      "nome": "Ira Indomável",
      "texto": "Se entrar no Golpe Final, você pode escolher gastar todo o seu Vigor restante. Para cada 20 pontos gastos, o multiplicador do crítico aumenta em +1x, até no máximo 10x.",
      "sub": true
+    },
+    {
+     "nome": "Sustento",
+     "texto": "Quando um inimigo afetado por Gritar acerta você, você recupera 1d6 de Vigor por acúmulo de Fúria.",
+     "sub": false
     }
    ]
   },
@@ -867,7 +882,7 @@
      "dano": "5d6 + 1",
      "tipo": "Impacto",
      "propriedades": 5,
-     "critico": "17",
+     "critico": "18",
      "espaco": 9,
      "vigor": null
     }
@@ -887,13 +902,23 @@
      "sub": false
     },
     {
-     "nome": "Empurrão",
-     "texto": "Como uma ação bônus, sua próxima ação Atacar causará 1 nível a menos de dano e forçará o alvo do ataque a fazer um teste de Fortitude (DT 10 + Bônus de Combate de Destreza + nível / 3), em uma falha o alvo é empurrado 3m/2q para trás.",
+     "nome": "Posicionar",
+     "texto": "Como uma ação bônus, você move um aliado voluntário ou um inimigo até 3 m em qualquer direção (empurrar, puxar ou trocar de lugar com ele). O inimigo faz um teste de Fortitude contra a sua DT (10 + Bônus de Combate de Destreza + nível / 3) e, em uma falha, é movido.",
      "sub": false
     },
     {
      "nome": "Derrubada",
      "texto": "Como uma ação bônus, sua próxima ação Atacar causará 1 nível a menos de dano e forçará o alvo do ataque a fazer um teste de Reflexos (DT 10 + Bônus de Combate de Destreza + nível / 3), em uma falha o alvo recebe o efeito Caído. Esta habilidade não pode ser usada caso o inimigo seja 2 vezes maior que você.",
+     "sub": false
+    },
+    {
+     "nome": "Colisão",
+     "texto": "Um inimigo movido contra um obstáculo ou outro inimigo sofre dano de queda, e o segundo faz um teste de Fortitude contra a mesma DT ou fica Caído.",
+     "sub": false
+    },
+    {
+     "nome": "Zona de Controle",
+     "texto": "Inimigos a 1,5 m de você gastam 1,5 m de movimento a mais para se afastar.",
      "sub": false
     },
     {
@@ -994,7 +1019,7 @@
      "dano": "2d10 + 1",
      "tipo": "Impacto",
      "propriedades": 3,
-     "critico": "17",
+     "critico": "18",
      "espaco": 10,
      "vigor": null
     },
@@ -1003,7 +1028,7 @@
      "dano": "3d8",
      "tipo": "Impacto",
      "propriedades": 3,
-     "critico": "17",
+     "critico": "18",
      "espaco": 11,
      "vigor": null
     },
@@ -1012,7 +1037,7 @@
      "dano": "3d10",
      "tipo": "Impacto",
      "propriedades": 4,
-     "critico": "17",
+     "critico": "18",
      "espaco": 12,
      "vigor": null
     },
@@ -1021,7 +1046,7 @@
      "dano": "3d10 + 1",
      "tipo": "Impacto",
      "propriedades": 4,
-     "critico": "16",
+     "critico": "18",
      "espaco": 13,
      "vigor": null
     },
@@ -1030,7 +1055,7 @@
      "dano": "3d12 + 2",
      "tipo": "Impacto",
      "propriedades": 5,
-     "critico": "16",
+     "critico": "18",
      "espaco": 14,
      "vigor": null
     }
@@ -1066,7 +1091,7 @@
     },
     {
      "nome": "Escudo",
-     "texto": "Sua arma já possui um escudo pequeno junto. Assim que você desbloquear escudos de níveis maiores, sua arma melhora automaticamente, até o Escudo Médio. O escudo embutido soma à CA como um escudo do mesmo tamanho (ver Escudos) e não conta como equipamento separado.",
+     "texto": "Sua arma já possui um escudo pequeno junto. Assim que você desbloquear escudos de níveis maiores, sua arma melhora automaticamente, até o Escudo Grande. O escudo embutido soma à CA como um escudo do mesmo tamanho (ver Escudos) e não conta como equipamento separado.",
      "sub": false
     },
     {
@@ -1117,7 +1142,7 @@
      "dano": "1d10",
      "tipo": "Cort. ou Perf.",
      "propriedades": 0,
-     "critico": "18",
+     "critico": "19",
      "espaco": 8,
      "vigor": null
     },
@@ -1126,7 +1151,7 @@
      "dano": "1d12",
      "tipo": "Cort. ou Perf.",
      "propriedades": 1,
-     "critico": "18",
+     "critico": "19",
      "espaco": 8,
      "vigor": null
     },
@@ -1135,7 +1160,7 @@
      "dano": "2d6 + 1",
      "tipo": "Cort. ou Perf.",
      "propriedades": 1,
-     "critico": "17",
+     "critico": "18",
      "espaco": 8,
      "vigor": null
     },
@@ -1144,7 +1169,7 @@
      "dano": "2d8",
      "tipo": "Cort. ou Perf.",
      "propriedades": 2,
-     "critico": "17",
+     "critico": "18",
      "espaco": 8,
      "vigor": 8
     },
@@ -1153,7 +1178,7 @@
      "dano": "3d6",
      "tipo": "Cort. ou Perf.",
      "propriedades": 2,
-     "critico": "17",
+     "critico": "18",
      "espaco": 9,
      "vigor": null
     },
@@ -1162,7 +1187,7 @@
      "dano": "2d10 + 1",
      "tipo": "Cort. ou Perf.",
      "propriedades": 3,
-     "critico": "17",
+     "critico": "18",
      "espaco": 10,
      "vigor": null
     },
@@ -1171,7 +1196,7 @@
      "dano": "3d8",
      "tipo": "Cort. ou Perf.",
      "propriedades": 3,
-     "critico": "17",
+     "critico": "18",
      "espaco": 10,
      "vigor": null
     },
@@ -1180,7 +1205,7 @@
      "dano": "3d10",
      "tipo": "Cort. ou Perf.",
      "propriedades": 4,
-     "critico": "16",
+     "critico": "18",
      "espaco": 12,
      "vigor": 10
     },
@@ -1189,7 +1214,7 @@
      "dano": "3d10 + 1",
      "tipo": "Cort. ou Perf.",
      "propriedades": 4,
-     "critico": "16",
+     "critico": "18",
      "espaco": 13,
      "vigor": null
     },
@@ -1198,7 +1223,7 @@
      "dano": "3d12 + 2",
      "tipo": "Cort. ou Perf.",
      "propriedades": 5,
-     "critico": "16",
+     "critico": "18",
      "espaco": 15,
      "vigor": null
     }
@@ -1214,7 +1239,7 @@
     },
     {
      "nome": "•",
-     "texto": "Cada acerto na forma Espada & Escudo gera 1 Carga (máximo 5).",
+     "texto": "Cada acerto na forma Espada & Escudo gera 1 Carga (máximo 5). Bloquear um ataque gera 1 Carga extra, e um Parry bem-sucedido gera 2.",
      "sub": true
     },
     {
@@ -1234,22 +1259,17 @@
     },
     {
      "nome": "Escudo",
-     "texto": "Sua arma já possui um escudo pequeno junto. Assim que você desbloquear escudos de níveis maiores, sua arma melhora automaticamente, até o Escudo Médio. O escudo embutido soma à CA como um escudo do mesmo tamanho (ver Escudos) e não conta como equipamento separado. Você perde os efeitos do escudo na forma Dínamo.",
+     "texto": "Sua arma já possui um escudo pequeno junto. Assim que você desbloquear escudos de níveis maiores, sua arma melhora automaticamente, até o Escudo Grande. O escudo embutido soma à CA como um escudo do mesmo tamanho (ver Escudos) e não conta como equipamento separado. Você perde os efeitos do escudo na forma Dínamo.",
      "sub": false
     },
     {
      "nome": "Troca Dínamo",
-     "texto": "Com 5 Cargas, você pode gastar uma ação comum para entrar na forma Machado-Dínamo, convertendo as Cargas em Frascos. Na forma Machado-Dínamo, a arma causa dano 1 nível acima. Voltar para Espada & Escudo custa uma ação bônus.",
+     "texto": "Quando você acerta um crítico em Espada & Escudo, pode entrar na forma Machado-Dínamo (Modo Serra) como ação livre, convertendo todas as Cargas em Frascos (máximo 5). Com 4 ou mais Cargas, sua margem de crítico cai 1 (mínimo 17). No Modo Serra a arma causa dano 2 níveis acima, e cada Atacar gasta 1 Frasco automaticamente, se você tiver, para a Descarga Elemental. O Modo Serra dura o turno atual e o seguinte. Ao fim dele, ou quando os Frascos acabarem, você volta a Espada & Escudo com 0 Cargas, perde 2 de CA e a Reação até o próximo turno. Os Frascos que sobrarem continuam guardados (máximo 5) e podem ser usados nas habilidades de Espada & Escudo. Voltar antes custa uma ação bônus e tem as mesmas penalidades.",
      "sub": false
     },
     {
      "nome": "Sobrecarga de Energia",
      "texto": "Se ganhar Cargas enquanto já tem 5 Frascos, você entra em estado de Sobrecarga. Nesse estado, cada ataque básico causa +1 nível de dano, mas você perde 2 de CA até gastar todos os Frascos.",
-     "sub": false
-    },
-    {
-     "nome": "Explosão Dínamo",
-     "texto": "Se você trocar para a forma Machado-Dínamo já tendo 5 Frascos, as Cargas excedentes explodem em volta de 3 metros de você, causando dano 2 níveis acima da sua arma, incluindo você. A explosão não remove a forma Machado-Dínamo.",
      "sub": false
     },
     {
@@ -1284,12 +1304,7 @@
     },
     {
      "nome": "Sinergia Total",
-     "texto": "Se gastar pelo menos 1 Frasco em cada forma (Espada, Escudo e Machado) dentro de dois turnos consecutivos, você ativa Sinergia Total. Durante esse estado, todos os seus ataques consomem 1 Frasco automaticamente e causam +1 nível de dano. O estado termina quando os Frascos acabam.",
-     "sub": false
-    },
-    {
-     "nome": "Explosão Suprema",
-     "texto": "Se estiver com Escudo Energizado, 5 Frascos carregados e em Sobrecarga ao mesmo tempo, pode gastar tudo em uma ação completa. Este ataque causa uma explosão suprema que atravessa todos os inimigos em linha reta de 3m, ignora CA e RD e causa dano crítico multiplicado por 4x. Após isso, você retorna automaticamente à forma Espada & Escudo com 0 Frascos e sem Vigor.",
+     "texto": "Se gastar pelo menos 1 Frasco em cada forma (Espada, Escudo e Machado) dentro de dois turnos consecutivos, você ativa Sinergia Total. Durante esse estado, todos os seus ataques consomem 1 Frasco automaticamente e causam +1 nível de dano. O estado termina quando os Frascos acabam ou ao fim do segundo turno seguinte.",
      "sub": false
     }
    ]
@@ -1396,7 +1411,7 @@
      "dano": "4d8 + 1",
      "tipo": "Perfurante",
      "propriedades": 5,
-     "critico": "17",
+     "critico": "18",
      "espaco": 10,
      "vigor": null
     }
@@ -1428,6 +1443,11 @@
     {
      "nome": "Aumentar Distância",
      "texto": "Você pode cortar pela metade seu movimento no próximo turno, para duplicar o alcance do seu disparo e aumentar o dano em 1 nível de arma.",
+     "sub": false
+    },
+    {
+     "nome": "Preparar Flecha",
+     "texto": "Como uma ação bônus, você escolhe um efeito para a próxima flecha: Veneno, Sangramento, Congelamento, Sono, Loucura. Essa flecha causa metade do dano, e o dano rolado vira pontos na barra da condição escolhida (por exemplo, 14 de dano causam 7 de dano e 14 pontos).",
      "sub": false
     },
     {
@@ -1564,14 +1584,14 @@
      "dano": "4d10",
      "tipo": "Perfurante",
      "propriedades": 5,
-     "critico": "17",
+     "critico": "18",
      "espaco": 11,
      "vigor": null
     }
    ],
    "uso_duplo": false,
    "vigor": true,
-   "descricao": "Lenta, mas devastadora. Cada disparo é um evento. Favorece emboscadas e eliminações certeiras com alto impacto. Você precisa comprar flechas, e pode carregar até 20 virotes. Esta arma possui a derivação Vigor.",
+   "descricao": "Lenta, mas devastadora. Cada disparo é um evento. Favorece emboscadas e eliminações certeiras com alto impacto. Você precisa comprar virotes, e pode carregar até 20. Esta arma possui a derivação Vigor.",
    "acoes": [
     {
      "nome": "Atacar",
@@ -1611,6 +1631,11 @@
     {
      "nome": "Última Flecha",
      "texto": "Se estiver com apenas 1 flecha restante, pode gastar uma ação completa para dispará-la com força máxima. O ataque causa crítico automático.",
+     "sub": false
+    },
+    {
+     "nome": "Ponto Chave",
+     "texto": "Seus ataques ignoram o −2 de acerto ao atacar um Ponto Chave revelado.",
      "sub": false
     }
    ]
@@ -1926,11 +1951,6 @@
      "nome": "Catucada Extraordinária",
      "texto": "Ao acertar um crítico em um golpe corpo-a-corpo, automaticamente quebra a Postura do inimigo.",
      "sub": false
-    },
-    {
-     "nome": "Inspirar",
-     "texto": "Você pode gastar uma Ação Completa para inspirar seus aliados, fazendo com que todos recebam vantagem em um teste que escolherem em seu próximo turno.",
-     "sub": false
     }
    ]
   },
@@ -2053,11 +2073,6 @@
     {
      "nome": "Catucada Extraordinária",
      "texto": "Ao acertar um crítico em um golpe corpo-a-corpo, automaticamente quebra a Postura do inimigo.",
-     "sub": false
-    },
-    {
-     "nome": "Inspirar",
-     "texto": "Você pode gastar uma Ação Completa para inspirar seus aliados, fazendo com que todos recebam vantagem em um teste que escolherem em seu próximo turno.",
      "sub": false
     }
    ]
@@ -16497,7 +16512,7 @@
    "categoria": "Talentos de Uso Duplo",
    "nivel": 10,
    "requisito": "Mãos Gêmeas",
-   "descricao": "Ao empunhar duas armas do mesmo grupo, o ataque bônus recebe +2 de acerto e o limite dos recursos do grupo (Fragmentos de Combo, Melodias por tipo) aumenta em 2."
+   "descricao": "Ao empunhar duas armas do mesmo grupo, o ataque bônus recebe +2 de acerto e o limite dos recursos do grupo (acúmulos de Sangria, Melodias por tipo) aumenta em 2."
   },
   {
    "nome": "Redemoinho",
@@ -16826,7 +16841,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 4,
    "requisito": "Espadas",
-   "descricao": "Uma vez por turno, você troca de Postura como ação livre."
+   "descricao": "Uma vez por turno, você troca de Guarda como ação livre."
   },
   {
    "nome": "Ouvido Absoluto",
@@ -16868,14 +16883,14 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 6,
    "requisito": "Machado Grande",
-   "descricao": "Berserk começa com 60% da sua vida máxima e não impõe a penalidade de -2 de CA."
+   "descricao": "A segunda faixa da Fúria começa com 60% da vida e não impõe a penalidade de −2 de CA."
   },
   {
    "nome": "Mente de Aço",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 6,
    "requisito": "Katana",
-   "descricao": "Você recebe +2 na DT da Dedicação."
+   "descricao": "Você pode acumular até 4 de Foco."
   },
   {
    "nome": "Passo de Peso",
@@ -16889,7 +16904,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 8,
    "requisito": "Lâmina-Dínamo",
-   "descricao": "Sobrecarga de Energia não reduz sua CA."
+   "descricao": "Sobrecarga de Energia não reduz sua CA, e o Modo Serra não tira sua Reação."
   },
   {
    "nome": "Foco Duplo",
@@ -16924,14 +16939,14 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 8,
    "requisito": "Adagas",
-   "descricao": "Depois de usar Passo das Sombras, você pode se esconder como ação livre e o Alerta não sobe por esse movimento."
+   "descricao": "Depois de usar Ataque de Saque, você pode atravessar o espaço de inimigos sem provocar Golpe de Oportunidade e se esconder como ação livre, e o Alerta não sobe por esse movimento."
   },
   {
-   "nome": "Postura Dupla",
+   "nome": "Guarda Dupla",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 8,
    "requisito": "Duelista",
-   "descricao": "1x por combate, você mantém duas Posturas ao mesmo tempo até errar um ataque."
+   "descricao": "1x por combate, você mantém duas Guardas ao mesmo tempo até errar um ataque."
   },
   {
    "nome": "Remada Dupla",
@@ -16966,7 +16981,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 10,
    "requisito": "Katana",
-   "descricao": "1x por combate, você entra em Dedicação sem o teste do alvo."
+   "descricao": "1x por combate, você entra em Dedicação como ação livre e ganha 1 Foco."
   },
   {
    "nome": "Momentum Eterno",
@@ -16994,7 +17009,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 10,
    "requisito": "Circuito Estável",
-   "descricao": "Troca Dínamo exige apenas 4 cargas em vez de 5."
+   "descricao": "1x por combate, você entra no Modo Serra sem precisar de crítico, se tiver 4 Cargas."
   },
   {
    "nome": "Voz de Comando",
@@ -17029,7 +17044,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 12,
    "requisito": "Espadas",
-   "descricao": "Depois de um Riposte, você entra imediatamente na Postura de Ataque."
+   "descricao": "Depois de um Riposte, você entra imediatamente na Guarda de Ataque."
   },
   {
    "nome": "Flecha Ricocheteante",
@@ -17039,11 +17054,11 @@
    "descricao": "Disparo Curvo atinge também um segundo alvo a até 3m do primeiro, com -1 nível de dano."
   },
   {
-   "nome": "Frenesi Sustentado",
+   "nome": "Sangria Sustentada",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 12,
    "requisito": "Adagas",
-   "descricao": "Entrar em Modo Frenesi custa 2 Fragmentos de Combo em vez de 3."
+   "descricao": "O limite de acúmulos de Sangria no alvo sobe em 2."
   },
   {
    "nome": "Maestro",
@@ -17063,7 +17078,7 @@
    "nome": "Voz Firme",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 12,
-   "requisito": "Cajados e Selos",
+   "requisito": "Espadas",
    "descricao": "Inspirar custa uma ação comum em vez de completa."
   },
   {
@@ -17137,25 +17152,25 @@
    "descricao": "Coice causa apenas 1 nível a menos de dano e atinge todos os inimigos a 1,5m."
   },
   {
-   "nome": "Dança Longa",
+   "nome": "Estouro Encadeado",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 16,
-   "requisito": "Frenesi Sustentado",
-   "descricao": "Dança Frenética exige apenas 4 Fragmentos de Combo e você não fica imóvel no fim dela."
+   "requisito": "Sangria Sustentada",
+   "descricao": "Ao Estourar com 5 ou mais acúmulos, você faz um Atacar imediato no mesmo alvo."
   },
   {
    "nome": "Duelo Compartilhado",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 16,
    "requisito": "Fio Contínuo",
-   "descricao": "Em um Duelo Honrado, você pode receber ajuda de 1 aliado à sua escolha."
+   "descricao": "Em um Duelo Honrado, 1 aliado à sua escolha pode ajudar você, atacando o inimigo, e o dano causado por ele não encerra o duelo."
   },
   {
    "nome": "Fluxo Dínamo",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 16,
    "requisito": "Lâmina-Dínamo",
-   "descricao": "Você armazena até 6 Frascos de Energia e a Explosão Dínamo não atinge você."
+   "descricao": "Você armazena até 6 Frascos de Energia."
   },
   {
    "nome": "Ira Duradoura",
@@ -17176,7 +17191,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 18,
    "requisito": "Fio Sereno",
-   "descricao": "Você pode usar Contragolpe 2 vezes por rodada."
+   "descricao": "Você pode Aparar 1 vez a mais por rodada, dentro e fora da Dedicação."
   },
   {
    "nome": "Grande Final",
@@ -17211,21 +17226,21 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 20,
    "requisito": "Adagas",
-   "descricao": "Execução Silenciosa funciona contra inimigos com menos de 40% da vida e exige apenas 3 Fragmentos de Combo."
+   "descricao": "Execução Silenciosa funciona contra inimigos com menos de 40% da vida e exige apenas 4 acúmulos de Sangria."
   },
   {
    "nome": "Sinergia Perfeita",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 20,
    "requisito": "Fluxo Dínamo",
-   "descricao": "Sinergia Total dura 3 turnos em vez de 2 e seus ataques nela não consomem Frascos."
+   "descricao": "Sinergia Total dura 1 turno a mais e seus ataques nela não consomem Frascos."
   },
   {
    "nome": "Última Ira",
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 20,
    "requisito": "Ira Duradoura",
-   "descricao": "Golpe Final entra no portão da morte com 1 falha em vez de 2."
+   "descricao": "Golpe Final entra no portão da morte com 2 falhas a menos que o limite de morte, em vez de 1."
   },
   {
    "nome": "Passos Leves",
@@ -17323,7 +17338,7 @@
    "categoria": "Talentos de Defesa",
    "nivel": 16,
    "requisito": "Sobrevivente",
-   "descricao": "Cada cicatriz que você possui conta como meia falha ao entrar em estado Incapaz (arredonde para baixo)."
+   "descricao": "Cada cicatriz que você possui conta como meia falha inicial ao entrar em estado Incapaz (arredonde o total para baixo). A DT do teste de Medicina continua subindo 10 por cicatriz."
   },
   {
    "nome": "Corpo Colossal",
@@ -18321,8 +18336,8 @@
   },
   {
    "nome": "Gume",
-   "p2": "seus acertos críticos causam +6 de dano e aplicam 6 pontos de Sangramento.",
-   "p4": "Diminui em 1 o crítico dos seus golpes com armas de longo alcance. O crítico nunca fica abaixo de 18."
+   "p2": "seus acertos críticos causam +6 de dano e aplicam 1d6 de Sangramento.",
+   "p4": "Diminui em 1 o crítico dos seus golpes com armas de longo alcance. O crítico nunca fica abaixo de 17."
   },
   {
    "nome": "Aríete",
@@ -18376,32 +18391,32 @@
   },
   {
    "nome": "Peçonha",
-   "p2": "seus acertos aplicam 6 pontos de Veneno (1x por turno).",
+   "p2": "seus acertos aplicam 1d6 de Veneno (1x por turno).",
    "p4": "os pontos dobram contra alvo Enredado ou Paralisado. A primeira ativação de Veneno em um inimigo o deixa Lento até o fim do próximo turno dele."
   },
   {
    "nome": "Miasma",
-   "p2": "seus acertos aplicam 6 pontos de Podridão (1x por turno).",
+   "p2": "seus acertos aplicam 1d6 de Podridão (1x por turno).",
    "p4": "no fim do turno de cada inimigo adjacente a você, ele sofre 3 pontos de Podridão. Aliados a até 3 m de você ignoram a nuvem."
   },
   {
    "nome": "Sangria",
-   "p2": "seus acertos aplicam 6 pontos de Sangramento (1x por turno).",
+   "p2": "seus acertos aplicam 1d6 de Sangramento (1x por turno).",
    "p4": "em acerto crítico, aplica mais 15 pontos de Sangramento, e alvos com Sangramento ativo não podem usar a Reação contra você."
   },
   {
    "nome": "Geada",
-   "p2": "seus acertos aplicam 6 pontos de Congelamento (1x por turno).",
+   "p2": "seus acertos aplicam 1d6 de Congelamento (1x por turno).",
    "p4": "inimigo com metade ou menos da vida de Congelamento restante fica Lento até o fim do próximo turno dele."
   },
   {
    "nome": "Delírio",
-   "p2": "seus acertos aplicam 6 pontos de Loucura (1x por turno).",
+   "p2": "seus acertos aplicam 1d6 de Loucura (1x por turno).",
    "p4": "inimigo com metade ou menos da vida de Loucura restante tem desvantagem no próximo ataque dele."
   },
   {
    "nome": "Torpor",
-   "p2": "seus acertos aplicam 6 pontos de Sono (1x por turno).",
+   "p2": "seus acertos aplicam 1d6 de Sono (1x por turno).",
    "p4": "inimigo com metade ou menos da vida de Sono restante perde a próxima Reação."
   },
   {

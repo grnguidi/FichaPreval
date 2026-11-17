@@ -166,6 +166,7 @@ class Grupo:
                     m["incapaz"] = vida <= 0
                     if m["incapaz"]:
                         m["portao"] = list(f.get("portao", [0, 0]))[:2]
+                        m["dt_medicina"] = R.dt_medicina(f.get("cicatrizes", 0))      # 3.3: 15 + 10 por cicatriz
                     if vis == "tudo" or n == nome:
                         m["vida"] = [vida, vmax]
                         m["cond"] = [[c[0], c[1], c[2]] for c in f.get("condicoes", []) if c[1] > 0]
@@ -260,13 +261,14 @@ class Grupo:
             if not fa.get("vida_max") or fa.get("vida", 1) > 0:
                 return f"{alvo} não está Incapaz."
             total = _int(m.get("total"), 0, 0, 999)
-            ok = total >= DT_MEDICINA
+            dt_med = R.dt_medicina(fa.get("cicatrizes", 0))
+            ok = total >= dt_med
             self._publicar(nome, "Medicina em " + alvo, [texto_limpo(m.get("txt"), 120) or f"Medicina: {total}",
-                                                          f"DT {DT_MEDICINA}: " + ("sucesso" if ok else "falhou")], ok)
+                                                          f"DT {dt_med}: " + ("sucesso" if ok else "falhou")], ok)
             self._anotar(f"{nome} fez Medicina ({total}) em {alvo}: " + ("sucesso" if ok else "falhou"))
             if not ok:
-                return None, f"Medicina {total} contra DT {DT_MEDICINA}: falhou."
-            texto, alvos = f"Medicina {total} (DT {DT_MEDICINA}): 1 sucesso no Portão da Morte", [alvo]
+                return None, f"Medicina {total} contra DT {dt_med}: falhou."
+            texto, alvos = f"Medicina {total} (DT {dt_med}): 1 sucesso no Portão da Morte", [alvo]
         elif tipo == "incentivo":
             texto = "Incentivar (Reação): você age logo antes dele neste turno"
         elif tipo == "cura":

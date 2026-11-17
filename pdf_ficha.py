@@ -273,7 +273,7 @@ def gerar_pdf(caminho, app):
 
     e = []
     e.append(Paragraph(L("Prevalecentes"), s_tit))
-    e.append(Paragraph(L("Ficha do Sonhador · edição 3.2"), s_sub))
+    e.append(Paragraph(L("Ficha do Sonhador · edição 3.3"), s_sub))
     e.append(Spacer(1, 22))
     import foto as _F
     tem_foto = _F.valida(st.get("foto"))      # com foto, a identificação encolhe para dar lugar a ela

@@ -237,7 +237,8 @@ class JanelaGrupo(_Base):
         p = self._ponte()
         if p:
             total, txt = p.rolar_pericia("Medicina")
-            p.registrar(f"✚ Medicina em {n}", [txt, f"DT {DT_MEDICINA}: " + ("sucesso" if total >= DT_MEDICINA else "falhou")])
+            dt = next((m.get("dt_medicina", DT_MEDICINA) for m in self.g["membros"] if m["nome"] == n), DT_MEDICINA)
+            p.registrar(f"✚ Medicina em {n}", [txt, f"DT {dt}: " + ("sucesso" if total >= dt else "falhou")])
             self._pedir("medicina", n, total=total, txt=txt)
 
     def _incentivo(self, n):

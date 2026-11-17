@@ -118,7 +118,7 @@ A["g-aliado"] = (el) => {
   const n = el.dataset.n, m = sessao.grupo.membros.find((x) => x.nome === n), cfg = sessao.grupo.cfg; if (!m) return;
   const b = (a, t, s) => `<div class="item" data-a="${a}" data-n="${esc(n)}"><div class="tx"><b>${t}</b><small>${s}</small></div><span class="sub">›</span></div>`;
   folha(n, `<div class="lista">`
-    + (cfg.ajuda && m.incapaz ? b("g-medicina", "✚ Medicina", "Teste contra DT 15: um sucesso no Portão da Morte dele") : "")
+    + (cfg.ajuda && m.incapaz ? b("g-medicina", "✚ Medicina", `Teste contra DT ${m.dt_medicina || 15}: um sucesso no Portão da Morte dele`) : "")
     + (cfg.ajuda ? b("g-incentivo", "↯ Incentivar", "Gasta sua Reação: ele age logo antes de você neste turno") + b("g-cura", "✦ Curar", "Manda a cura que você rolou para a Vida dele") + b("g-buff", "⏳ Dar um efeito", "Um bônus ou proteção com duração em turnos") : "")
     + (cfg.trocas ? b("g-item", "🎒 Dar um item", "Sai da sua bolsa e entra na dele") + b("g-dinheiro", "🪙 Dar dinheiro", `Você tem ${esc(R.formatarDinheiro(dinheiroMeu()))}`) : "")
     + (cfg.sussurro !== "off" ? b("g-sussurro", "🤫 Sussurrar", cfg.sussurro === "tudo" ? "O mestre também lê" : "O mestre só vê que houve um sussurro") : "")
@@ -129,7 +129,8 @@ const precisaFicha = () => { if (!S) { toast("Abra uma ficha primeiro."); return
 A["g-medicina"] = (el) => {
   if (precisaFicha()) return;
   const r = rolarPericiaNome("Medicina"); fecharFolha();
-  registrarDiario({ titulo: `✚ Medicina em ${esc(el.dataset.n)}`, linhas: [esc(r.txt), r.total >= 15 ? "Sucesso (DT 15)." : "Falhou (DT 15)."] });
+  const mem = ((sessao.grupo || {}).membros || []).find((x) => x.nome === el.dataset.n), dt = (mem && mem.dt_medicina) || 15;
+  registrarDiario({ titulo: `✚ Medicina em ${esc(el.dataset.n)}`, linhas: [esc(r.txt), r.total >= dt ? `Sucesso (DT ${dt}).` : `Falhou (DT ${dt}).`] });
   ga({ acao: "propor", tipo: "medicina", para: el.dataset.n, total: r.total, txt: r.txt });
 };
 A["g-incentivo"] = (el) => { fecharFolha(); if (S) { marcarAcao("Reação"); salvar(); } ga({ acao: "propor", tipo: "incentivo", para: el.dataset.n }); };
