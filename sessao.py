@@ -92,7 +92,7 @@ SAI_DA_MESA = 600
 PAGINA_WEB = """<!doctype html>
 <html lang="pt-br"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Prevalecentes — Sessão</title>
+<title>Conestoga connection — Sessão</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:#1b2520;color:#e8dec5;font-family:Georgia,serif;

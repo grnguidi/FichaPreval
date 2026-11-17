@@ -1,4 +1,6 @@
-# Ficha Prevalecentes 3.3
+# Conestoga connection
+
+<img src="celular/src/icone-192.png" alt="Ícone: carroça Conestoga" width="96" align="right">
 
 Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.3)**, para PC (Windows) e celular (app instalável, funciona offline), com **sessão de mesa**: o mestre vê Vida, Mana e Vigor dos jogadores em tempo real e envia dano, condições, efeitos e itens.
 
@@ -16,7 +18,7 @@ Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.3)**, para 
 
 | Quero usar… | Como |
 |---|---|
-| **No PC (Windows)** | Baixe `FichaPrevalecentes.exe` na página de [Releases](../../releases/latest) e abra. Não requer Python. |
+| **No PC (Windows)** | Baixe `ConestogaConnection.exe` na página de [Releases](../../releases/latest) e abra. Não requer Python. |
 | **No celular** | Abra <https://grnguidi.github.io/FichaPreval/> no Chrome e toque em ⋮ → "Instalar app". |
 | **Pelo código-fonte** | Instale o Python 3 e rode os comandos abaixo. |
 
@@ -25,7 +27,7 @@ py -m pip install -r requirements.txt
 py prevalecentes.py
 ```
 
-Para **gerar o executável**, execute `GERAR_EXE.bat` (requer Python no PATH). Ele instala as dependências (`requirements.txt` e `requirements-build.txt`), compila o programa e substitui `FichaPrevalecentes.exe` na pasta.
+Para **gerar o executável**, execute `GERAR_EXE.bat` (requer Python no PATH). Ele instala as dependências (`requirements.txt` e `requirements-build.txt`), compila o programa e substitui `ConestogaConnection.exe` na pasta.
 
 ## Funcionalidades
 

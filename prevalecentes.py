@@ -19,7 +19,7 @@ from ponte_sessao import PonteSessao
 from regras_texto import REGRAS_TXT
 from dados_prevalecentes import DADOS as _DADOS_EMBUTIDOS
 
-APP_NOME = "Ficha Prevalecentes 3.3"
+APP_NOME = "Conestoga connection"
 OK, NO = "✓", "✗"
 META_SLOTS = [f"meta{i}" for i in range(1, 6)]   # talento extra de cada Meta de Vida concluída
 
@@ -262,6 +262,12 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(APP_NOME)
+        try:   # ícone da janela: a carroça Conestoga (no .exe o arquivo vem junto, em sys._MEIPASS)
+            base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+            self._icone = tk.PhotoImage(file=os.path.join(base, "icone.png"))
+            self.iconphoto(True, self._icone)
+        except Exception:
+            pass
         self.geometry("1240x860")
         self.minsize(1040, 680)
         self.dados = carregar_dados()
@@ -527,7 +533,7 @@ class App(tk.Tk):
             arco = tk.Canvas(ban, width=40, height=52, bg=FUNDO, highlightthickness=0)
             arco.pack(side="left", anchor="n", padx=(0, 10), before=tit)
             desenhar_arco(arco)
-        tk.Label(tit, text="Prevalecentes" if TEMA == "vitral" else "⚜ Prevalecentes", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
+        tk.Label(tit, text="Conestoga connection", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
         tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.3", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
         self.lbl_modo.pack(anchor="w", pady=(4, 0))

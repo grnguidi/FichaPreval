@@ -107,7 +107,7 @@ A["trazer-ficha"] = () => { location.href = PAGINA_APP + "#mesa=" + encodeURICom
 
 function telaInicial() {
   const ids = Object.keys(banco.fichas);
-  return `<div class="capa"><div class="orn">❦</div><h1>Prevalecentes</h1><p class="sub">Ficha de mesa · edição 3.3</p></div>
+  return `<div class="capa"><div class="orn">❦</div><h1>Conestoga connection</h1><p class="sub">Ficha de Prevalecentes · edição 3.3</p></div>
     ${avisoIos()}
     ${secao("Suas fichas")}
     ${ids.length ? `<div class="lista">${ids.map((id) => { const f = banco.fichas[id]; return `<div class="item" data-a="abrir" data-id="${id}"><div class="tx"><b>${esc(f.identidade.nome || "Sem nome")}</b><small>Nível ${f.identidade.nivel} · ${esc(f.identidade.especie || "—")}${f.sem_alma ? " · sem alma" : ""}</small></div>${mesaAlvo && !sessao.ativa ? `<button class="botao prim" data-a="enviar-mesa" data-id="${id}" style="min-height:36px">Enviar</button>` : `<span class="sub">›</span>`}</div>`; }).join("")}</div>`

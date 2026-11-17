@@ -62,14 +62,14 @@ def main():
     dj = json.dumps(dados, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     js_regras = regras_js()
     pwa = ('<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" href="icone-192.png">\n'
-           '<link rel="apple-touch-icon" href="icone-192.png">')
+           '<link rel="apple-touch-icon" href="icone-apple-180.png">')
     base = (ler("src", "index.tpl.html").replace("/*CSS*/", ler("src", "estilo.css"))
             .replace("/*DADOS*/", dj).replace("/*REGRAS*/", js_regras).replace("/*APP*/", app_js()))
     html = base.replace("<!--PWA-->", pwa)
     os.makedirs(SAIDA, exist_ok=True)
     with open(os.path.join(SAIDA, "index.html"), "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
-    for nome in ("manifest.webmanifest", "sw.js", "icone-192.png", "icone-512.png"):
+    for nome in ("manifest.webmanifest", "sw.js", "icone-192.png", "icone-512.png", "icone-mascara-512.png", "icone-apple-180.png"):
         shutil.copy(os.path.join(AQUI, "src", nome), os.path.join(SAIDA, nome))
     open(os.path.join(SAIDA, ".nojekyll"), "w").close()
     # versão servida pelo mestre na rede local (sem manifest/service worker: é http e só vale durante a sessão)

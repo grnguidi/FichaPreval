@@ -7,10 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Prevalecentes — Ficha de Mesa</title>
+<title>Conestoga connection</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icone-192.png">
-<link rel="apple-touch-icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-apple-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <style>:root{
@@ -344,7 +344,7 @@ span.avatar.vazio{display:inline-flex;align-items:center;justify-content:center;
 <body>
 <header class="topo">
   <img id="t-foto" class="avatar" alt="" hidden>
-  <div class="nome"><b id="t-nome">Prevalecentes</b><small id="t-sub"></small></div>
+  <div class="nome"><b id="t-nome">Conestoga connection</b><small id="t-sub"></small></div>
   <div class="nivel" id="nivel"><button class="so-ed" data-a="nivel" data-d="-1" aria-label="Diminuir nível">−</button><span id="nv">Nv 1</span><button class="so-ed" data-a="nivel" data-d="1" aria-label="Subir nível">+</button></div>
   <button class="icone" data-a="dados" aria-label="Rolar dados">🎲</button>
   <button class="icone" data-a="menu" aria-label="Menu">☰</button>
@@ -1287,7 +1287,7 @@ function render() {
   const vazio = !S;
   $("#nav").classList.toggle("oculto", vazio);
   $("#nivel").classList.toggle("oculto", vazio);
-  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Prevalecentes"; $("#t-sub").textContent = "Ficha de mesa"; if ($("#t-foto")) $("#t-foto").hidden = true; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
+  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Conestoga connection"; $("#t-sub").textContent = "Ficha de mesa"; if ($("#t-foto")) $("#t-foto").hidden = true; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
   C = calcular();
   $("#t-nome").textContent = S.identidade.nome || "Sonhador sem nome";
   const tf = $("#t-foto"); if (tf) { tf.hidden = !S.foto; if (S.foto && tf.getAttribute("src") !== S.foto) tf.src = S.foto; }
@@ -1420,7 +1420,7 @@ A["trazer-ficha"] = () => { location.href = PAGINA_APP + "#mesa=" + encodeURICom
 
 function telaInicial() {
   const ids = Object.keys(banco.fichas);
-  return `<div class="capa"><div class="orn">❦</div><h1>Prevalecentes</h1><p class="sub">Ficha de mesa · edição 3.3</p></div>
+  return `<div class="capa"><div class="orn">❦</div><h1>Conestoga connection</h1><p class="sub">Ficha de Prevalecentes · edição 3.3</p></div>
     ${avisoIos()}
     ${secao("Suas fichas")}
     ${ids.length ? `<div class="lista">${ids.map((id) => { const f = banco.fichas[id]; return `<div class="item" data-a="abrir" data-id="${id}"><div class="tx"><b>${esc(f.identidade.nome || "Sem nome")}</b><small>Nível ${f.identidade.nivel} · ${esc(f.identidade.especie || "—")}${f.sem_alma ? " · sem alma" : ""}</small></div>${mesaAlvo && !sessao.ativa ? `<button class="botao prim" data-a="enviar-mesa" data-id="${id}" style="min-height:36px">Enviar</button>` : `<span class="sub">›</span>`}</div>`; }).join("")}</div>`

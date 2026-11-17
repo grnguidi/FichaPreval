@@ -1,6 +1,6 @@
 {
-  "name": "Prevalecentes — Ficha de Mesa",
-  "short_name": "Prevalecentes",
+  "name": "Conestoga connection",
+  "short_name": "Conestoga connection",
   "description": "Ficha de personagem de Prevalecentes (PREVA 3.3) para usar na mesa.",
   "lang": "pt-BR",
   "start_url": "./",
@@ -10,7 +10,23 @@
   "background_color": "#1b2520",
   "theme_color": "#1b2520",
   "icons": [
-    {"src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {
+      "src": "icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icone-mascara-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
