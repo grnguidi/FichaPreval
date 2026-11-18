@@ -20,9 +20,11 @@
   <div class="nivel" id="nivel"><button class="so-ed" data-a="nivel" data-d="-1" aria-label="Diminuir nível">−</button><span id="nv">Nv 1</span><button class="so-ed" data-a="nivel" data-d="1" aria-label="Subir nível">+</button></div>
   <button class="icone" data-a="dados" aria-label="Rolar dados">🎲</button>
   <button class="icone" data-a="menu" aria-label="Menu">☰</button>
+  <div id="faixa-vitais" hidden></div>
 </header>
 <main class="pagina" id="pagina"></main>
 <div class="mesa oculto" id="mesa"></div>
+<button class="dado-flutuante" id="dado-flutuante" data-a="leque" aria-label="Rolar: iniciativa, perícias e dado livre (segure para o diário)" hidden>🎲</button>
 <nav class="nav" id="nav">
   <button data-a="aba" data-aba="ficha"><i>⚜</i>Ficha</button>
   <button data-a="aba" data-aba="combate"><i>⚔</i>Combate</button>
@@ -30,6 +32,7 @@
   <button data-a="aba" data-aba="grimorio"><i>✧</i>Grimório</button>
   <button data-a="aba" data-aba="alma" id="nav-alma"><i>☽</i>Alma</button>
   <button data-a="aba" data-aba="talentos"><i>❖</i>Talentos</button>
+  <button data-a="aba" data-aba="turno" id="nav-turno" class="oculto"><i>⚑</i>Turno</button>
   <button data-a="aba" data-aba="bolsa"><i>⚖</i>Bolsa</button>
   <button data-a="aba" data-aba="notas"><i>✍</i>Notas</button>
   <button data-a="aba" data-aba="grupo" id="nav-grupo" class="oculto"><i>♟</i>Grupo</button>

@@ -351,6 +351,47 @@ span.avatar.vazio{display:inline-flex;align-items:center;justify-content:center;
 .nota-cab small{color:var(--tinta2);font-size:12px;white-space:nowrap}
 .cartao.nota p{margin:6px 0 0;white-space:normal;line-height:1.45;max-height:8.7em;overflow:hidden}
 p.vazio{text-align:center;color:var(--tinta2);font-style:italic;margin:24px 0}
+
+/* Layout de mesa (opcional) */
+.switch{flex:none;width:46px;height:26px;border-radius:13px;background:var(--linha);position:relative;transition:background .15s}
+.switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .15s}
+.switch.on{background:var(--verde)}
+.switch.on i{left:23px}
+html.layout-mesa .topo{flex-wrap:wrap;row-gap:6px}
+#faixa-vitais{flex-basis:100%;display:flex;flex-direction:column;gap:5px}
+#faixa-vitais[hidden]{display:none}
+.fv-linha{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fv{border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit;font-size:11.5px;cursor:pointer;min-height:30px}
+.fv span{display:block;opacity:.85}
+.fv b{font-size:13px;opacity:1}
+.fv i{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.18);margin-top:3px;overflow:hidden}
+.fv i em{display:block;height:6px;border-radius:3px}
+.fv-conds{display:flex;gap:5px;flex-wrap:wrap}
+.fv-cond{border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.18);color:inherit;border-radius:999px;padding:2px 9px;font:inherit;font-size:11.5px}
+.dado-flutuante{position:fixed;right:14px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:31;width:56px;height:56px;border-radius:50%;border:2px solid var(--ouro);
+  background:var(--fundo);color:var(--ouro2);font-size:26px;box-shadow:0 6px 16px -6px rgba(0,0,0,.5);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.dado-flutuante[hidden]{display:none}
+body.com-mesa .dado-flutuante{bottom:calc(122px + env(safe-area-inset-bottom))}
+html.layout-mesa .pagina{padding-bottom:150px}
+.turno-aviso{margin:4px 0 10px;padding:9px 12px;border-radius:10px;background:var(--perg2);color:var(--tinta);text-align:center}
+.turno-aviso.sua{background:var(--vinho);color:#fff;font-weight:700;letter-spacing:.04em}
+.fichas-acao{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 6px}
+.ficha-acao{width:44px;height:44px;border-radius:50%;border:2px solid var(--fundo);background:var(--fundo);color:var(--ouro2);font-weight:700;font-size:15px;cursor:pointer}
+.ficha-acao.t-bonus{border-radius:10px;background:var(--vinho);border-color:var(--vinho);color:#fff}
+.ficha-acao.t-reacao{border-radius:10px;background:transparent;color:var(--vinho);border-color:var(--vinho)}
+.ficha-acao.t-mov{background:var(--c-mov);border-color:var(--c-mov);color:#fff}
+.ficha-acao.gasta{background:transparent!important;color:var(--tinta2)!important;border-style:dashed;border-color:var(--tinta2)!important;opacity:.7}
+.favs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:4px 0}
+.fav{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:58px;padding:9px 11px;border-radius:12px;border:1px solid var(--linha);
+  background:var(--campo);color:var(--tinta);font:inherit;cursor:pointer;box-shadow:var(--sombra)}
+.fav b{font-size:14.5px;line-height:1.2}
+.fav small{color:var(--tinta2);font-size:12px}
+.fav.t-arma{border-left:4px solid var(--c-atk)}
+.fav.t-enc{border-left:4px solid var(--c-mana)}
+.fav.t-per{border-left:4px solid var(--c-per)}
+.fav.t-uso{border-left:4px solid var(--c-tal)}
+.fav.esgotado{opacity:.5}
+.botao.grande{width:100%;padding:14px;font-size:16px}
 </style>
 </head>
 <body>
@@ -360,9 +401,11 @@ p.vazio{text-align:center;color:var(--tinta2);font-style:italic;margin:24px 0}
   <div class="nivel" id="nivel"><button class="so-ed" data-a="nivel" data-d="-1" aria-label="Diminuir nível">−</button><span id="nv">Nv 1</span><button class="so-ed" data-a="nivel" data-d="1" aria-label="Subir nível">+</button></div>
   <button class="icone" data-a="dados" aria-label="Rolar dados">🎲</button>
   <button class="icone" data-a="menu" aria-label="Menu">☰</button>
+  <div id="faixa-vitais" hidden></div>
 </header>
 <main class="pagina" id="pagina"></main>
 <div class="mesa oculto" id="mesa"></div>
+<button class="dado-flutuante" id="dado-flutuante" data-a="leque" aria-label="Rolar: iniciativa, perícias e dado livre (segure para o diário)" hidden>🎲</button>
 <nav class="nav" id="nav">
   <button data-a="aba" data-aba="ficha"><i>⚜</i>Ficha</button>
   <button data-a="aba" data-aba="combate"><i>⚔</i>Combate</button>
@@ -370,6 +413,7 @@ p.vazio{text-align:center;color:var(--tinta2);font-style:italic;margin:24px 0}
   <button data-a="aba" data-aba="grimorio"><i>✧</i>Grimório</button>
   <button data-a="aba" data-aba="alma" id="nav-alma"><i>☽</i>Alma</button>
   <button data-a="aba" data-aba="talentos"><i>❖</i>Talentos</button>
+  <button data-a="aba" data-aba="turno" id="nav-turno" class="oculto"><i>⚑</i>Turno</button>
   <button data-a="aba" data-aba="bolsa"><i>⚖</i>Bolsa</button>
   <button data-a="aba" data-aba="notas"><i>✍</i>Notas</button>
   <button data-a="aba" data-aba="grupo" id="nav-grupo" class="oculto"><i>♟</i>Grupo</button>
@@ -1083,6 +1127,7 @@ function normalizar(s) {
   out.contra_usados = int(out.contra_usados);
   out.fome_usos = Math.max(0, int(out.fome_usos));          // Símbolo da Fome: Poções Espirituais gastas pelo grupo
   out.casco_tipo = out.casco_tipo || "";
+  out.favoritos = (Array.isArray(out.favoritos) ? out.favoritos : []).filter((f) => f && ["arma", "enc", "per"].includes(f.t)).map((f) => ({ t: f.t, k: String(f.k) }));   // Layout de mesa
   out.anotacoes = (Array.isArray(out.anotacoes) ? out.anotacoes : []).filter((x) => x && typeof x === "object")   // aba Anotações
     .map((x) => ({ id: String(x.id || Math.random().toString(36).slice(2, 10)), titulo: String(x.titulo || ""), texto: String(x.texto || ""), quando: String(x.quando || "") }));
   out.foto = typeof out.foto === "string" && out.foto.startsWith("data:image/") && out.foto.length <= 400000 ? out.foto : "";   // foto do personagem (pequena, dentro da ficha)                    // set Casco: tipo físico escolhido
@@ -1302,7 +1347,7 @@ function render() {
   const vazio = !S;
   $("#nav").classList.toggle("oculto", vazio);
   $("#nivel").classList.toggle("oculto", vazio);
-  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Conestoga connection"; $("#t-sub").textContent = "Ficha de mesa"; if ($("#t-foto")) $("#t-foto").hidden = true; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
+  if (vazio) { aplicarLayout(); document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Conestoga connection"; $("#t-sub").textContent = "Ficha de mesa"; if ($("#t-foto")) $("#t-foto").hidden = true; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
   C = calcular();
   $("#t-nome").textContent = S.identidade.nome || "Sonhador sem nome";
   const tf = $("#t-foto"); if (tf) { tf.hidden = !S.foto; if (S.foto && tf.getAttribute("src") !== S.foto) tf.src = S.foto; }
@@ -1316,7 +1361,10 @@ function render() {
   $("#nav-alma").classList.toggle("oculto", !!S.sem_alma);
   if (aba === "alma" && S.sem_alma) aba = "ficha";
   if (aba === "grupo" && !(sessao.ativa && sessao.id)) aba = "ficha";
-  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, notas: pNotas, grupo: pGrupo }[aba]();
+  if (aba === "turno" && !banco.layout) aba = "ficha";
+  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("on", b.dataset.aba === aba));
+  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, notas: pNotas, grupo: pGrupo, turno: pTurno }[aba]();
+  aplicarLayout();
   pintarSessao();
 }
 function aplicarTema() {
@@ -2885,6 +2933,7 @@ A["menu"] = () => {
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="imprimir"><div class="tx"><b>🖨 Imprimir / salvar PDF</b><small>A ficha inteira em folhas A4</small></div></div>` : ""}
+    <div class="item" data-a="layout" role="switch" aria-checked="${banco.layout ? "true" : "false"}"><div class="tx"><b>⚔ Layout de mesa</b><small>Aba Turno, vitais sempre à vista e o dado flutuante</small></div><span class="switch ${banco.layout ? "on" : ""}"><i></i></span></div>
     <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Tema: diurno, noturno ou Diário de trilha (lona, azul-prússia e vermelho)</small></div></div>
     ${S ? `<div class="item" data-a="excluir"><div class="tx"><b class="erro">Excluir esta ficha do aparelho</b></div></div>` : ""}</div>`);
 };
@@ -3104,7 +3153,10 @@ async function consultarSessao(espera = 0) {
   if (avisos.length) toast(avisos.join("<hr>"));
   let gmudou = false;
   if (r.grupo) { grupoChegou(r.grupo); sessao.gv = r.gv; gmudou = true; }
-  if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && (aba === "combate")) render(); else pintarSessao(); }
+  const chegouVez = r.vez && r.vez === sessao.id && sessao.vezAntes !== r.vez;   // Layout de mesa: a aba Turno abre sozinha na sua vez
+  sessao.vezAntes = r.vez || "";
+  if (chegouVez && banco.layout && S && aba !== "turno") { aba = "turno"; render(); window.scrollTo(0, 0); }
+  else if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && (aba === "combate" || aba === "turno")) render(); else pintarSessao(); }
   enviarFichaSessao();
   return true;
 }
@@ -3740,6 +3792,135 @@ A["nota-apagar"] = (el) => {
   if (!confirm("Apagar esta anotação?")) return;
   fecharFolha(); mudar((s) => { s.anotacoes = s.anotacoes.filter((x) => x.id !== el.dataset.id); });
 };
+// ------------------------------------------------------------------ Layout de mesa (opcional, liga no menu como o tema)
+// Três peças para a hora da luta: a aba Turno (ações, favoritos e o fim do turno numa tela só), a faixa de vitais
+// sempre visível no alto e o dado flutuante. A preferência é do aparelho (banco.layout); os favoritos vão na ficha.
+const layoutOn = () => !!banco.layout && !!S;
+function aplicarLayout() {
+  const on = layoutOn();
+  document.documentElement.classList.toggle("layout-mesa", on);
+  const nt = $("#nav-turno"); if (nt) nt.classList.toggle("oculto", !on);
+  if (!on && aba === "turno") aba = "ficha";
+  pintarFaixaVitais(); pintarDadoFlutuante();
+}
+A["layout"] = () => {
+  banco.layout = !banco.layout; gravarLocal(); fecharFolha();
+  if (banco.layout && S) aba = "turno";
+  render();
+  toast(banco.layout ? "Layout de mesa ligado: aba Turno, vitais sempre à vista e o dado flutuante." : "Layout de mesa desligado.");
+};
+
+// --- favoritos: armas, encantamentos e perícias, guardados na ficha
+const chaveFav = (f) => `${f.t}:${f.k}`;
+function opcoesFav() {
+  const ops = [];
+  S.armas.forEach((w, i) => { if (ARMAS[w.grupo]) ops.push({ t: "arma", k: String(i), nome: `${w.grupo} nv ${int(w.nivel, 1)}`, sub: "Atacar" }); });
+  S.encantamentos.forEach((x) => {
+    const e = ENC[x.familia]; if (!e) return;
+    e.versoes.filter((v) => x.versoes.includes(v.nivel)).forEach((v) => ops.push({ t: "enc", k: `${e.nome}|${v.nivel}`, nome: `${e.nome}${e.versoes.length > 1 ? " nv " + v.nivel : ""}`, sub: `${v.mana} · ${v.acao}${x.equipado ? "" : " · não equipado"}` }));
+  });
+  R.PERICIAS.forEach((p) => { const [b, d] = bonusPericia(p[0]); ops.push({ t: "per", k: p[0], nome: p[0], sub: `+${b} · ${d}d20${C.treinadas.has(p[0]) ? " · treinada" : ""}` }); });
+  return ops;
+}
+function favoritosValidos() {
+  const ops = new Map(opcoesFav().map((o) => [chaveFav(o), o]));
+  return (S.favoritos || []).map((f) => ops.get(chaveFav(f))).filter(Boolean);
+}
+function usarFav(f) {
+  if (f.t === "arma") return A["rolar-arma"]({ dataset: { i: f.k } });
+  if (f.t === "enc") { const [fam, nv] = f.k.split("|"); return A["conjurar"]({ dataset: { f: fam, v: nv } }); }
+  if (f.t === "per") { const [b, d] = bonusPericia(f.k); contarPericia(f.k); return A["rolar-per"]({ dataset: { n: f.k, b: String(b), d: String(d), rolar: "1" } }); }
+}
+A["fav-usar"] = (el) => { const f = favoritosValidos().find((x) => chaveFav(x) === el.dataset.c); if (f) { lembrarUltima(f); usarFav(f); } };
+A["fav-editar"] = () => {
+  const sel = new Set((S.favoritos || []).map(chaveFav)), ops = opcoesFav();
+  const grupo = (t, tit) => { const l = ops.filter((o) => o.t === t); return l.length ? `<p class="meta" style="margin:10px 0 4px">${tit}</p><div class="lista">${l.map((o) => `<label class="item"><input type="checkbox" class="fav-ck" value="${esc(chaveFav(o))}" ${sel.has(chaveFav(o)) ? "checked" : ""} style="width:22px;height:22px;margin-right:10px"><div class="tx"><b>${esc(o.nome)}</b><small>${esc(o.sub)}</small></div></label>`).join("")}</div>` : ""; };
+  folha("★ Favoritos do turno", `<p class="sub">Marque o que você usa na sua vez. Aparecem em cartões grandes na aba Turno.</p>${grupo("arma", "Armas")}${grupo("enc", "Encantamentos")}${grupo("per", "Perícias")}`,
+    `<button class="botao prim" data-a="fav-ok">Salvar</button>`);
+};
+A["fav-ok"] = () => {
+  const marc = [...document.querySelectorAll(".fav-ck")].filter((c) => c.checked).map((c) => { const i = c.value.indexOf(":"); return { t: c.value.slice(0, i), k: c.value.slice(i + 1) }; });
+  fecharFolha(); mudar((s) => { s.favoritos = marc.slice(0, 24); });
+};
+
+// --- perícias mais usadas e a última rolagem (memória do aparelho, por ficha)
+const CH_USO = "prevalecentes.layout.uso";
+function usoPericias() { try { return JSON.parse(localStorage.getItem(CH_USO) || "{}")[banco.atual] || {}; } catch (e) { return {}; } }
+function contarPericia(nome) {
+  try { const t = JSON.parse(localStorage.getItem(CH_USO) || "{}"), m = t[banco.atual] = t[banco.atual] || {}; m[nome] = (m[nome] || 0) + 1; localStorage.setItem(CH_USO, JSON.stringify(t)); } catch (e) { /* sem storage */ }
+}
+let ultimaFav = null;
+function lembrarUltima(f) { ultimaFav = f; }
+
+// --- aba Turno
+function pTurno() {
+  const [lim] = R.acoesDoTurno(C.d.acoes_extras, S.acoes_extras_tipos);
+  const minha = sessao.ativa && sessao.vez && sessao.vez === sessao.id;
+  const cab = sessao.ativa ? (minha ? `<div class="turno-aviso sua">⚔ Sua vez · rodada ${sessao.rodada}</div>` : `<div class="turno-aviso">${sessao.vez ? `Vez de <b>${esc(sessao.vez)}</b>` : "Fora de combate"} · rodada ${sessao.rodada}</div>`) : "";
+  const fichas = R.TIPOS_ACAO.map((t) => {
+    const u = int(S.turno[t]), n = Math.max(lim[t], u);
+    return [...Array(n)].map((_, i) => `<button class="ficha-acao t-${t === "Bônus" ? "bonus" : t === "Reação" ? "reacao" : t === "Movimento" ? "mov" : "comum"} ${i < u ? "gasta" : ""}" data-a="turno-marca" data-t="${t}" aria-label="${t} ${i < u ? "gasta" : "livre"}">${t[0]}</button>`).join("");
+  }).join("");
+  const favs = favoritosValidos();
+  let h = cab + secao("Ações do turno") + `<div class="fichas-acao">${fichas}</div>
+    <p class="sub">C comum · B bônus · M movimento · R reação. Toque para gastar ou devolver; ataques e magias gastam sozinhos.</p>`;
+  h += secao("Favoritos", `<button class="botao leve mini" data-a="fav-editar">★ Escolher</button>`);
+  h += favs.length ? `<div class="favs">${favs.map((f) => `<button class="fav t-${f.t}" data-a="fav-usar" data-c="${esc(chaveFav(f))}"><b>${esc(f.nome)}</b><small>${esc(f.sub)}</small></button>`).join("")}</div>`
+    : `<p class="vazio">Toque em ★ Escolher e marque seus ataques, magias e perícias da luta.</p>`;
+  const us = typeof usosLista === "function" ? usosLista() : [];
+  if (us.length) h += secao("Usos") + `<div class="favs">${us.map((u) => { const usado = int(S.usos[u.chave]); return `<button class="fav t-uso ${usado >= u.qtd ? "esgotado" : ""}" data-a="uso" data-c="${esc(u.chave)}"><b>${esc(u.nome)}</b><small>${u.qtd - usado}/${u.qtd} restantes</small></button>`; }).join("")}</div>`;
+  h += `<div class="linhabts" style="margin-top:16px">${sessao.ativa && sessao.id ? `<button class="botao prim grande" data-a="turno-terminei">✓ Terminei meu turno</button>` : `<button class="botao prim grande" data-a="novo-turno">↻ Novo turno</button>`}</div>`;
+  return h;
+}
+A["turno-terminei"] = async () => {
+  try { const r = await ga({ acao: "sinal", sinal: "Terminei meu turno" }); toast(r && r.ok === false ? esc(r.erro || "O mestre desligou os sinais.") : "Avisado: o mestre vê no Grupo que você terminou."); }
+  catch (e) { toast("Sem sinal com o mestre."); }
+};
+
+// --- faixa de vitais: fica no alto enquanto você rola qualquer aba
+function pintarFaixaVitais() {
+  const f = $("#faixa-vitais"); if (!f) return;
+  if (!layoutOn()) { f.hidden = true; return; }
+  const v = S.vida, d = C.d;
+  const barra = (rot, cor, ch, mx) => { const at = v[ch] === "" || v[ch] == null ? mx : int(v[ch], mx), p = Math.max(0, Math.min(100, (at / Math.max(1, mx)) * 100));
+    return `<button class="fv" data-a="editar-vital" data-chave="${ch}" data-max="${mx}" aria-label="${rot} ${at} de ${mx}"><span>${rot} <b>${at}</b>/${mx}</span><i><em style="width:${p}%;background:${cor}"></em></i></button>`; };
+  const conds = R.CONDICOES.filter((n) => int((S.condicoes[n] || {}).atual)).map((n) => `<button class="fv-cond" data-a="editar-cond" data-n="${n}">${n} ${int(S.condicoes[n].atual)}</button>`).join("");
+  f.innerHTML = `<div class="fv-linha">${barra("Vida", "var(--c-vida)", "atual", d.vida)}${barra("Mana", "var(--c-mana)", "mana_atual", d.mana)}${barra("Vigor", "var(--c-vigor)", "vigor_atual", d.vigor)}</div>${conds ? `<div class="fv-conds">${conds}</div>` : ""}`;
+  f.hidden = false;
+}
+
+// --- dado flutuante: toque abre o leque; segurar abre o diário
+function pintarDadoFlutuante() {
+  const b = $("#dado-flutuante"); if (b) b.hidden = !layoutOn();
+}
+A["leque"] = () => {
+  if (Date.now() - segurouEm < 800) return;    // foi um toque longo: o diário já abriu
+  const uso = usoPericias(), top = Object.keys(uso).sort((a, b) => uso[b] - uso[a]).slice(0, 4);
+  // as mais roladas nesta ficha; o resto se completa com as treinadas e, por fim, Percepção e Intuição
+  const extra = [...C.treinadas].filter((n) => R.PERICIAS.some((p) => p[0] === n)).sort((a, b) => bonusPericia(b)[0] - bonusPericia(a)[0]);
+  const pers = [...new Set([...top, ...extra, "Percepção", "Intuição"])].filter((n) => R.PERICIAS.some((p) => p[0] === n)).slice(0, 4);
+  folha("🎲 Rolar", `<div class="favs">
+      <button class="fav" data-a="rolar-ini"><b>⏳ Iniciativa</b><small>${C.d.iniciativa_dados}d20 +${C.d.iniciativa_bonus}</small></button>
+      ${ultimaFav ? `<button class="fav" data-a="leque-repetir"><b>↻ ${esc(ultimaFav.nome)}</b><small>repetir a última</small></button>` : ""}
+      ${pers.map((n) => { const [b, d] = bonusPericia(n); return `<button class="fav t-per" data-a="leque-per" data-n="${esc(n)}"><b>${esc(n)}</b><small>+${b} · ${d}d20</small></button>`; }).join("")}
+      <button class="fav" data-a="dados"><b>🎲 Dado livre</b><small>2d6+3, d20…</small></button>
+      <button class="fav" data-a="diario"><b>📜 Diário</b><small>últimas rolagens</small></button>
+    </div><p class="sub">Primeiro as perícias que você mais rola nesta ficha; depois as treinadas.</p>`);
+};
+A["leque-per"] = (el) => { fecharFolha(); const f = { t: "per", k: el.dataset.n, nome: el.dataset.n }; lembrarUltima(f); usarFav(f); };
+A["leque-repetir"] = () => { fecharFolha(); if (ultimaFav) usarFav(ultimaFav); };
+let segurouEm = 0;
+(function segurarDado() {
+  let t = null;
+  const ini = () => { clearTimeout(t); t = setTimeout(() => { t = null; segurouEm = Date.now(); if (S) A["diario"](); }, 600); };
+  const fim = (ev) => { if (t) { clearTimeout(t); t = null; } else if (ev.cancelable) ev.preventDefault(); };
+  const ligar = () => {
+    const b = $("#dado-flutuante"); if (!b) return;
+    b.addEventListener("touchstart", ini, { passive: true }); b.addEventListener("touchend", fim);
+    b.addEventListener("mousedown", ini); b.addEventListener("mouseup", fim); b.addEventListener("mouseleave", () => { clearTimeout(t); t = null; });
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ligar); else ligar();
+})();
 // ------------------------------------------------------------------ eventos
 document.addEventListener("click", (ev) => {
   const el = ev.target.closest("[data-a]");

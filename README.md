@@ -47,6 +47,7 @@ As fórmulas usadas estão em **Ajuda > Regras usadas nos cálculos**.
 - **Novidades do livro 3.2:** perícia **Alquimia** (poções; Kit de Alquimia, Colar do Herbolário e outros talismãs, talentos Destilador de Campo e Mestre Alquimista), 5 sets novos (50 no total), CA máxima 30, Agarrar e Derrubar como Fortitude do alvo contra a sua DT, Lira com Inteligência ou Fé à escolha (o programa usa o maior), Incapaz que nenhuma cura acorda e os tipos de dano Sangramento, Podridão e Congelamento. Poções de Mana e Vigor não têm mais limite por combate e as de nível 3 e 4 só saem por Alquimia (o preço aparece como "Feita por Alquimia" e não se compra).
 - Comparação entre duas fichas.
 - Temas diurno, noturno e **Diário de trilha** (as cores da carroça Conestoga: lona creme, azul-prússia, vermelho e latão, com trilhas, rodas e marcos de estrada).
+- **Layout de mesa** (celular, opcional; liga no menu ☰ com um botão de ligar e desligar): aba **Turno** com as ações do turno para tocar, favoritos (armas, encantamentos e perícias), usos e "Terminei meu turno" (vira um sinal para o mestre); a aba abre sozinha na sua vez. Vida, Mana, Vigor e condições ficam sempre no alto, e um **dado flutuante** abre iniciativa, a última rolagem, as perícias mais usadas e o dado livre (segure para o diário).
 - Aba **Anotações** (PC e celular): pistas, nomes e combinados do jogador, guardados dentro da ficha.
 - Exportação da ficha em PDF no visual Diário de trilha, com as características de espécie (ajustes de atributo e par descritivo).
 

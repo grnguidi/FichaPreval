@@ -4,7 +4,7 @@ function render() {
   const vazio = !S;
   $("#nav").classList.toggle("oculto", vazio);
   $("#nivel").classList.toggle("oculto", vazio);
-  if (vazio) { document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Conestoga connection"; $("#t-sub").textContent = "Ficha de mesa"; if ($("#t-foto")) $("#t-foto").hidden = true; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
+  if (vazio) { aplicarLayout(); document.documentElement.classList.remove("jogo"); $("#t-nome").textContent = "Conestoga connection"; $("#t-sub").textContent = "Ficha de mesa"; if ($("#t-foto")) $("#t-foto").hidden = true; $("#pagina").innerHTML = telaInicial(); pintarSessao(); return; }
   C = calcular();
   $("#t-nome").textContent = S.identidade.nome || "Sonhador sem nome";
   const tf = $("#t-foto"); if (tf) { tf.hidden = !S.foto; if (S.foto && tf.getAttribute("src") !== S.foto) tf.src = S.foto; }
@@ -18,7 +18,10 @@ function render() {
   $("#nav-alma").classList.toggle("oculto", !!S.sem_alma);
   if (aba === "alma" && S.sem_alma) aba = "ficha";
   if (aba === "grupo" && !(sessao.ativa && sessao.id)) aba = "ficha";
-  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, notas: pNotas, grupo: pGrupo }[aba]();
+  if (aba === "turno" && !banco.layout) aba = "ficha";
+  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("on", b.dataset.aba === aba));
+  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, notas: pNotas, grupo: pGrupo, turno: pTurno }[aba]();
+  aplicarLayout();
   pintarSessao();
 }
 function aplicarTema() {

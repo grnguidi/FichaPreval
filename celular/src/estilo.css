@@ -336,3 +336,44 @@ span.avatar.vazio{display:inline-flex;align-items:center;justify-content:center;
 .nota-cab small{color:var(--tinta2);font-size:12px;white-space:nowrap}
 .cartao.nota p{margin:6px 0 0;white-space:normal;line-height:1.45;max-height:8.7em;overflow:hidden}
 p.vazio{text-align:center;color:var(--tinta2);font-style:italic;margin:24px 0}
+
+/* Layout de mesa (opcional) */
+.switch{flex:none;width:46px;height:26px;border-radius:13px;background:var(--linha);position:relative;transition:background .15s}
+.switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .15s}
+.switch.on{background:var(--verde)}
+.switch.on i{left:23px}
+html.layout-mesa .topo{flex-wrap:wrap;row-gap:6px}
+#faixa-vitais{flex-basis:100%;display:flex;flex-direction:column;gap:5px}
+#faixa-vitais[hidden]{display:none}
+.fv-linha{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fv{border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit;font-size:11.5px;cursor:pointer;min-height:30px}
+.fv span{display:block;opacity:.85}
+.fv b{font-size:13px;opacity:1}
+.fv i{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.18);margin-top:3px;overflow:hidden}
+.fv i em{display:block;height:6px;border-radius:3px}
+.fv-conds{display:flex;gap:5px;flex-wrap:wrap}
+.fv-cond{border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.18);color:inherit;border-radius:999px;padding:2px 9px;font:inherit;font-size:11.5px}
+.dado-flutuante{position:fixed;right:14px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:31;width:56px;height:56px;border-radius:50%;border:2px solid var(--ouro);
+  background:var(--fundo);color:var(--ouro2);font-size:26px;box-shadow:0 6px 16px -6px rgba(0,0,0,.5);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.dado-flutuante[hidden]{display:none}
+body.com-mesa .dado-flutuante{bottom:calc(122px + env(safe-area-inset-bottom))}
+html.layout-mesa .pagina{padding-bottom:150px}
+.turno-aviso{margin:4px 0 10px;padding:9px 12px;border-radius:10px;background:var(--perg2);color:var(--tinta);text-align:center}
+.turno-aviso.sua{background:var(--vinho);color:#fff;font-weight:700;letter-spacing:.04em}
+.fichas-acao{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 6px}
+.ficha-acao{width:44px;height:44px;border-radius:50%;border:2px solid var(--fundo);background:var(--fundo);color:var(--ouro2);font-weight:700;font-size:15px;cursor:pointer}
+.ficha-acao.t-bonus{border-radius:10px;background:var(--vinho);border-color:var(--vinho);color:#fff}
+.ficha-acao.t-reacao{border-radius:10px;background:transparent;color:var(--vinho);border-color:var(--vinho)}
+.ficha-acao.t-mov{background:var(--c-mov);border-color:var(--c-mov);color:#fff}
+.ficha-acao.gasta{background:transparent!important;color:var(--tinta2)!important;border-style:dashed;border-color:var(--tinta2)!important;opacity:.7}
+.favs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:4px 0}
+.fav{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:58px;padding:9px 11px;border-radius:12px;border:1px solid var(--linha);
+  background:var(--campo);color:var(--tinta);font:inherit;cursor:pointer;box-shadow:var(--sombra)}
+.fav b{font-size:14.5px;line-height:1.2}
+.fav small{color:var(--tinta2);font-size:12px}
+.fav.t-arma{border-left:4px solid var(--c-atk)}
+.fav.t-enc{border-left:4px solid var(--c-mana)}
+.fav.t-per{border-left:4px solid var(--c-per)}
+.fav.t-uso{border-left:4px solid var(--c-tal)}
+.fav.esgotado{opacity:.5}
+.botao.grande{width:100%;padding:14px;font-size:16px}
