@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Exporta a ficha aberta para PDF (reportlab), no visual Vitral: creme, dourado e verde musgo,
-com vitrais e vinhas de enfeite."""
+"""Exporta a ficha aberta para PDF (reportlab), no visual Diário de trilha: as cores da carroça Conestoga
+(lona creme, caixa azul-prússia, rodas vermelhas, latão), com trilhas tracejadas, rodas e marcos de enfeite."""
 import math
 import os
 
@@ -13,129 +13,80 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (Flowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
 
-PERG = colors.HexColor("#f4ecd8")
-PERG2 = colors.HexColor("#e9dfc3")
-CAMPO = colors.HexColor("#fbf6e9")
-ZEBRA = colors.HexColor("#f3ebd3")
-TINTA = colors.HexColor("#2f3a22")
-TINTA2 = colors.HexColor("#666e50")
-OURO = colors.HexColor("#b08a3e")
-OURO2 = colors.HexColor("#e3cd8f")
-VINHO = colors.HexColor("#7d5f1c")     # cor dos títulos (dourado escuro)
-VERDE = colors.HexColor("#5d7340")
-MUSGO = colors.HexColor("#3f4f2e")     # chumbo dos vitrais e hastes
-FOLHA = colors.HexColor("#7d9157")
-FAIXA = colors.HexColor("#f8f1dc")
-C = {k: colors.HexColor(v) for k, v in dict(VIDA="#9a4a3a", MANA="#4a6a7a", VIGOR="#5d7340", MOV="#4f7a6a", CA="#7a715a",
-                                            ATK="#a0553f", DEF="#56708a", PER="#86661f", TAL="#5d7340", ATR="#4a5a36",
-                                            DIN="#5d7340").items()}
-VIDROS = [OURO, PERG, FOLHA, OURO2]
+PERG = colors.HexColor("#efe6d2")      # lona
+PERG2 = colors.HexColor("#e2d5b8")
+CAMPO = colors.HexColor("#f8f2e4")
+ZEBRA = colors.HexColor("#efe4cc")
+TINTA = colors.HexColor("#2b2620")
+TINTA2 = colors.HexColor("#5f5546")
+OURO = colors.HexColor("#c99a3e")      # latão
+OURO2 = colors.HexColor("#e6c77f")
+VINHO = colors.HexColor("#a63c26")     # vermelho das rodas: títulos de seção
+AZUL = colors.HexColor("#1f3d5c")      # azul-prússia da caixa
+VERDE = colors.HexColor("#4f6b3a")
+MUSGO = AZUL                           # nome antigo, usado na moldura da foto
+FAIXA = colors.HexColor("#f8f2e4")
+C = {k: colors.HexColor(v) for k, v in dict(VIDA="#9a3d2c", MANA="#2f5d8a", VIGOR="#4f6b3a", MOV="#3d6e74", CA="#6b6253",
+                                            ATK="#a63c26", DEF="#2f5d8a", PER="#8a6420", TAL="#4f6b3a", ATR="#1f3d5c",
+                                            DIN="#4f6b3a").items()}
 
 
-# ---------------------------------------------------------------- enfeites: só vinhas e vitrais
-def _folha(c, x, y, ang, t=3.2 * mm):
+# ---------------------------------------------------------------- enfeites: trilha, rodas e marcos
+def _roda(c, cx, cy, r, cor=None, aro=None):
+    """Roda de carroça: aro grosso, 12 raios e cubo."""
+    cor = cor or VINHO
     c.saveState()
-    c.translate(x, y)
-    c.rotate(ang)
+    c.setStrokeColor(cor)
+    c.setLineWidth(max(0.8, r * 0.16))
+    c.circle(cx, cy, r, stroke=1, fill=0)
+    c.setLineWidth(max(0.5, r * 0.07))
+    for k in range(12):
+        a = k * math.pi / 6
+        c.line(cx + math.cos(a) * r * 0.2, cy + math.sin(a) * r * 0.2, cx + math.cos(a) * r * 0.9, cy + math.sin(a) * r * 0.9)
+    c.setFillColor(aro or OURO)
+    c.circle(cx, cy, r * 0.22, stroke=1, fill=1)
+    c.restoreState()
+
+
+def _trilha(c, x0, x1, y, cor=None, larg=1.0):
+    """Trilha tracejada."""
+    c.saveState()
+    c.setStrokeColor(cor or VINHO)
+    c.setLineWidth(larg)
+    c.setDash(5, 3.5)
+    c.line(x0, y, x1, y)
+    c.restoreState()
+
+
+def _marco(c, x, y, h=7 * mm):
+    """Marco de estrada: um poste de pedra com o topo redondo, em azul-prússia."""
+    w = h * 0.42
+    c.saveState()
+    c.setFillColor(AZUL)
     p = c.beginPath()
-    p.moveTo(0, 0)
-    p.curveTo(t * 0.3, -t * 0.42, t * 0.8, -t * 0.32, t, 0)
-    p.curveTo(t * 0.8, t * 0.32, t * 0.3, t * 0.42, 0, 0)
+    p.moveTo(x - w / 2, y)
+    p.lineTo(x - w / 2, y + h - w / 2)
+    p.arcTo(x - w / 2, y + h - w, x + w / 2, y + h, 180, -180)
+    p.lineTo(x + w / 2, y)
+    p.close()
     c.drawPath(p, stroke=0, fill=1)
+    c.setStrokeColor(OURO2)
+    c.setLineWidth(0.5)
+    c.line(x - w * 0.25, y + h * 0.45, x + w * 0.25, y + h * 0.45)
     c.restoreState()
 
 
-def _vinha(c, x0, x1, y, amp=1.1 * mm, passo=9 * mm, t=2.6 * mm):
-    """Ramo ondulado de x0 a x1 com folhas alternadas."""
+def _faixa_trilha(c, x, y, larg, alt=6.5 * mm):
+    """Faixa do alto: azul-prússia, com uma trilha tracejada em latão e um fio vermelho embaixo."""
     c.saveState()
-    c.setStrokeColor(FOLHA)
-    c.setFillColor(FOLHA)
-    c.setLineWidth(0.6)
-    n = max(1, int(abs(x1 - x0) / passo))
-    dx = (x1 - x0) / n
-    p = c.beginPath()
-    p.moveTo(x0, y)
-    for i in range(n):
-        s = 1 if i % 2 == 0 else -1
-        p.curveTo(x0 + dx * (i + 0.33), y + amp * s, x0 + dx * (i + 0.66), y + amp * s, x0 + dx * (i + 1), y)
-    c.drawPath(p, stroke=1, fill=0)
-    for i in range(n):
-        s = 1 if i % 2 == 0 else -1
-        _folha(c, x0 + dx * (i + 0.5), y + amp * 0.75 * s, (48 if dx > 0 else 132) * s, t)
+    c.setFillColor(AZUL)
+    c.rect(x, y, larg, alt, stroke=0, fill=1)
     c.restoreState()
-
-
-def _canto(c, x, y, sx, sy, tam=30 * mm):
-    """Vinha de canto: nasce no canto (x, y) e sobe pelos dois lados; sx/sy = +1 ou -1 dizem para onde."""
+    _trilha(c, x + 3 * mm, x + larg - 3 * mm, y + alt / 2, OURO2, 1.0)
     c.saveState()
-    c.translate(x, y)
-    c.scale(sx, sy)
-    c.setStrokeColor(FOLHA)
-    c.setFillColor(FOLHA)
-    c.setLineWidth(0.7)
-    for horizontal in (True, False):
-        p = c.beginPath()
-        p.moveTo(1.5 * mm, 1.5 * mm)
-        pts = [(tam * 0.30, 3.6 * mm, tam * 0.55, 0.4 * mm, tam * 0.80, 2.4 * mm), (tam * 0.90, 3.2 * mm, tam * 0.96, 4.4 * mm, tam, 4.0 * mm)]
-        for a in pts:
-            p.curveTo(*(a if horizontal else (a[1], a[0], a[3], a[2], a[5], a[4])))
-        c.drawPath(p, stroke=1, fill=0)
-        for f, alt, ang in ((0.18, 2.6, 62), (0.34, 2.7, -48), (0.50, 1.5, 58), (0.66, 1.5, -44), (0.82, 2.6, 52), (0.97, 4.1, 20)):
-            px, py, an = tam * f, alt * mm, ang
-            if not horizontal:
-                px, py, an = py, px, 90 - ang
-            _folha(c, px, py, an, 3.0 * mm)
-    c.restoreState()
-
-
-def _faixa_vitral(c, x, y, larg, alt=6.5 * mm):
-    """Faixa de vitral: vidros coloridos com um arco em cada um, separados por chumbo."""
-    n = max(4, int(round(larg / (8.5 * mm))))
-    w = larg / n
-    c.saveState()
-    c.setStrokeColor(MUSGO)
-    c.setLineWidth(0.7)
-    for i in range(n):
-        c.setFillColor(VIDROS[i % 4])
-        c.rect(x + i * w, y, w, alt, stroke=1, fill=1)
-        c.setFillColor(VIDROS[(i + 2) % 4])
-        p = c.beginPath()
-        p.moveTo(x + i * w + w * 0.18, y)
-        p.lineTo(x + i * w + w * 0.18, y + alt * 0.42)
-        p.curveTo(x + i * w + w * 0.18, y + alt * 0.78, x + i * w + w * 0.42, y + alt * 0.92, x + i * w + w * 0.5, y + alt * 0.95)
-        p.curveTo(x + i * w + w * 0.58, y + alt * 0.92, x + i * w + w * 0.82, y + alt * 0.78, x + i * w + w * 0.82, y + alt * 0.42)
-        p.lineTo(x + i * w + w * 0.82, y)
-        p.close()
-        c.drawPath(p, stroke=1, fill=1)
-    c.restoreState()
-
-
-def _janela(c, x, y, w=11 * mm, h=17 * mm):
-    """Vitral em arco (janela): quatro vidros e uma rosácea no meio."""
-    c.saveState()
-    c.setStrokeColor(MUSGO)
-    c.setLineWidth(0.9)
-    m, base = x + w / 2, y + h * 0.52
-
-    def arco(esq):
-        p = c.beginPath()
-        p.moveTo(m, base)
-        p.lineTo(m, y + h)
-        x_fora = x if esq else x + w
-        p.curveTo(m + (x_fora - m) * 0.55, y + h * 0.97, x_fora, y + h * 0.80, x_fora, base)
-        p.close()
-        return p
-    c.setFillColor(OURO2)
-    c.drawPath(arco(True), stroke=1, fill=1)
-    c.setFillColor(FOLHA)
-    c.drawPath(arco(False), stroke=1, fill=1)
-    c.setFillColor(PERG)
-    c.rect(x, y, w / 2, h * 0.52, stroke=1, fill=1)
-    c.setFillColor(OURO)
-    c.rect(m, y, w / 2, h * 0.52, stroke=1, fill=1)
-    c.line(x, y + h * 0.26, x + w, y + h * 0.26)
-    c.setFillColor(FAIXA)
-    c.circle(m, base, w * 0.17, stroke=1, fill=1)
+    c.setStrokeColor(VINHO)
+    c.setLineWidth(1.2)
+    c.line(x, y, x + larg, y)
     c.restoreState()
 
 
@@ -163,7 +114,7 @@ def _foto(c, txt, x, y, lado):
 
 
 class Secao(Flowable):
-    """Título de seção: um raminho de vinha, o título em dourado escuro e um fio dourado embaixo."""
+    """Título de seção: uma roda pequena, o título em vermelho e uma trilha tracejada embaixo."""
 
     def __init__(self, texto, fonte, largura):
         super().__init__()
@@ -175,21 +126,14 @@ class Secao(Flowable):
 
     def draw(self):
         c = self.canv
-        c.setStrokeColor(FOLHA)
-        c.setFillColor(FOLHA)
-        c.setLineWidth(0.6)
-        c.line(0, 8, 8 * mm, 8)
-        for px, ang in ((0.6 * mm, 40), (3.0 * mm, -40), (5.4 * mm, 40)):
-            _folha(c, px, 8, ang, 2.6 * mm)
+        _roda(c, 2.8 * mm, 8, 2.6 * mm, AZUL, OURO)
         c.setFillColor(VINHO)
-        t = c.beginText(10.5 * mm, 5)
+        t = c.beginText(8 * mm, 5)
         t.setFont(self.fonte, 11.5)
-        t.setCharSpace(1.6)
+        t.setCharSpace(1.4)
         t.textOut(self.texto)
         c.drawText(t)
-        c.setStrokeColor(OURO)
-        c.setLineWidth(0.6)
-        c.line(0, 1, self.width, 1)
+        _trilha(c, 0, self.width, 1, VINHO, 0.8)
 
 
 def _fontes():
@@ -233,7 +177,7 @@ def gerar_pdf(caminho, app):
     s_cel = ParagraphStyle("c", parent=s_txt, fontSize=8.5, leading=10.5)
     s_cab = ParagraphStyle("h", parent=s_txt, fontName=FB, fontSize=8, leading=10, textColor=FAIXA)
     s_sec = ParagraphStyle("s", fontName=FB, fontSize=11.5, leading=14, textColor=VINHO, spaceBefore=8, spaceAfter=3)
-    s_tit = ParagraphStyle("T", fontName=FB, fontSize=24, leading=28, textColor=VINHO, alignment=TA_CENTER)
+    s_tit = ParagraphStyle("T", fontName=FB, fontSize=24, leading=28, textColor=AZUL, alignment=TA_CENTER)
     s_sub = ParagraphStyle("S", fontName=FI, fontSize=10, leading=13, textColor=TINTA2, alignment=TA_CENTER)
     s_num = ParagraphStyle("n", fontName=FB, fontSize=16, leading=19, textColor=TINTA, alignment=TA_CENTER)
     s_rot = ParagraphStyle("r", fontName=FB, fontSize=7, leading=9, textColor=FAIXA, alignment=TA_CENTER)
@@ -390,7 +334,7 @@ def gerar_pdf(caminho, app):
             continue
         vs = [v for v in en["versoes"] if v["nivel"] in x.get("versoes", [])] or en["versoes"][:1]
         v = vs[-1]
-        bloco = [Paragraph(L(f"{en['nome']}") + f"<font color='#666e50' size='8'>  {L(en['dominio'])} · {L(en['categoria'])} · Espaço {en['espaco']}"
+        bloco = [Paragraph(L(f"{en['nome']}") + f"<font color='#5f5546' size='8'>  {L(en['dominio'])} · {L(en['categoria'])} · Espaço {en['espaco']}"
                            f"{' · EQUIPADO' if x.get('equipado') else ''}</font>", ParagraphStyle("en", parent=s_txt, fontName=FB, textColor=VINHO, spaceBefore=4)),
                  Paragraph(L(f"Versões aprendidas: {', '.join(map(str, x.get('versoes', [])))}  ·  Maior: {v['tier']} nível {v['nivel']}  ·  "
                              f"Mana {v['mana']}  ·  Ação {v['acao']}  ·  Distância {v['distancia']}"), s_peq),
@@ -440,16 +384,17 @@ def gerar_pdf(caminho, app):
         canv.rect(9 * mm, 9 * mm, A4[0] - 18 * mm, A4[1] - 18 * mm)
         canv.setLineWidth(0.4)
         canv.rect(10.5 * mm, 10.5 * mm, A4[0] - 21 * mm, A4[1] - 21 * mm)
-        # vitral no alto, vinhas nos cantos de baixo e um ramo acima do rodapé
-        _faixa_vitral(canv, 10.5 * mm, A4[1] - 10.5 * mm - 6.5 * mm, A4[0] - 21 * mm)
-        _canto(canv, 10.5 * mm, 10.5 * mm, 1, 1)
-        _canto(canv, A4[0] - 10.5 * mm, 10.5 * mm, -1, 1)
+        # faixa da trilha no alto; embaixo, a trilha segue com um marco em cada canto
+        _faixa_trilha(canv, 10.5 * mm, A4[1] - 10.5 * mm - 6.5 * mm, A4[0] - 21 * mm)
+        _trilha(canv, 18 * mm, A4[0] - 18 * mm, 15 * mm, VINHO, 0.9)
+        _marco(canv, 15.5 * mm, 13 * mm)
+        _marco(canv, A4[0] - 15.5 * mm, 13 * mm)
         if doc.page == 1:
-            _janela(canv, 19 * mm, A4[1] - 41 * mm)
+            _roda(canv, 25 * mm, A4[1] - 33 * mm, 7.5 * mm)
             if not _foto(canv, st.get("foto"), A4[0] - 15 * mm - 32 * mm, A4[1] - 20.5 * mm - 32 * mm, 32 * mm):
-                _janela(canv, A4[0] - 30 * mm, A4[1] - 41 * mm)
-            _vinha(canv, A4[0] / 2 - 42 * mm, A4[0] / 2 - 6 * mm, A4[1] - 40.4 * mm)
-            _vinha(canv, A4[0] / 2 + 42 * mm, A4[0] / 2 + 6 * mm, A4[1] - 40.4 * mm)
+                _roda(canv, A4[0] - 25 * mm, A4[1] - 33 * mm, 7.5 * mm)
+            _trilha(canv, A4[0] / 2 - 46 * mm, A4[0] / 2 - 8 * mm, A4[1] - 40.4 * mm, OURO, 1.0)
+            _trilha(canv, A4[0] / 2 + 8 * mm, A4[0] / 2 + 46 * mm, A4[1] - 40.4 * mm, OURO, 1.0)
         canv.setFont(FI, 8)
         canv.setFillColor(TINTA2)
         canv.drawCentredString(A4[0] / 2, 5.5 * mm, L(f"{idt.get('nome') or 'Sonhador'} · Prevalecentes · página {doc.page}"))

@@ -14,11 +14,11 @@ A["menu"] = () => {
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="imprimir"><div class="tx"><b>🖨 Imprimir / salvar PDF</b><small>A ficha inteira em folhas A4</small></div></div>` : ""}
-    <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Tema: diurno, noturno ou Vitral (creme, dourado e verde musgo)</small></div></div>
+    <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Tema: diurno, noturno ou Diário de trilha (lona, azul-prússia e vermelho)</small></div></div>
     ${S ? `<div class="item" data-a="excluir"><div class="tx"><b class="erro">Excluir esta ficha do aparelho</b></div></div>` : ""}</div>`);
 };
-const TEMAS_ROT = { dia: "☀ Modo diurno", noite: "☾ Modo noturno", vitral: "❧ Tema Vitral" };
-const proximoTema = () => ({ dia: "noite", noite: "vitral", vitral: "dia" }[banco.tema] || "noite");
+const TEMAS_ROT = { dia: "☀ Modo diurno", noite: "☾ Modo noturno", trilha: "🛞 Diário de trilha" };
+const proximoTema = () => ({ dia: "noite", noite: "trilha", trilha: "dia" }[banco.tema] || "noite");
 A["tema"] = () => { banco.tema = proximoTema(); gravarLocal(); fecharFolha(); render(); };
 A["lista"] = () => { fecharFolha(); S = null; banco.atual = null; gravarLocal(); render(); };
 A["abrir"] = (el) => abrirFicha(el.dataset.id);

@@ -46,8 +46,9 @@ As fórmulas usadas estão em **Ajuda > Regras usadas nos cálculos**.
 - **Novidades do livro 3.3:** Adaga reformulada (Sangria e Estourar no lugar do Modo Frenesi), Espada com Guardas no lugar das Posturas (Riposte, Avanço, Abertura, Apoio e Linha de Frente), Katana com Aparar e Foco, Machado Grande com Fúria no lugar do Berserk, Espada Grande com Carregar e Golpe Carregado, Bastão com Posicionar, Colisão e Zona de Controle, Lâmina-Dínamo com o Modo Serra, Arco com Preparar Flecha, margens de crítico novas, talentos de estilo de arma reescritos, sets de condição aplicando 1d6, terreno difícil e o **Portão da Morte** novo: a morte vem com 3 falhas, mais 1 a cada 40 de Vitalidade, e a Medicina de um aliado sobe 10 de DT por cicatriz do Incapaz (a ficha, o painel do grupo e o app já usam isso).
 - **Novidades do livro 3.2:** perícia **Alquimia** (poções; Kit de Alquimia, Colar do Herbolário e outros talismãs, talentos Destilador de Campo e Mestre Alquimista), 5 sets novos (50 no total), CA máxima 30, Agarrar e Derrubar como Fortitude do alvo contra a sua DT, Lira com Inteligência ou Fé à escolha (o programa usa o maior), Incapaz que nenhuma cura acorda e os tipos de dano Sangramento, Podridão e Congelamento. Poções de Mana e Vigor não têm mais limite por combate e as de nível 3 e 4 só saem por Alquimia (o preço aparece como "Feita por Alquimia" e não se compra).
 - Comparação entre duas fichas.
-- Temas diurno, noturno e **Vitral** (creme, dourado e verde musgo, com vinhas e vitrais).
-- Exportação da ficha em PDF no visual Vitral, com as características de espécie (ajustes de atributo e par descritivo).
+- Temas diurno, noturno e **Diário de trilha** (as cores da carroça Conestoga: lona creme, azul-prússia, vermelho e latão, com trilhas, rodas e marcos de estrada).
+- Aba **Anotações** (PC e celular): pistas, nomes e combinados do jogador, guardados dentro da ficha.
+- Exportação da ficha em PDF no visual Diário de trilha, com as características de espécie (ajustes de atributo e par descritivo).
 
 ### Equipamento e build
 

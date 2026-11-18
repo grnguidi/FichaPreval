@@ -9,6 +9,7 @@ import os
 import random
 import re
 import sys
+import time
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, font as tkfont
 
@@ -40,19 +41,20 @@ TEMAS = {
         MESA_CAMPO="#1d2721", MESA_BORDA="#36463b", MESA_ATIVO="#243128", MESA_TXT="#8a998a", ALERTA="#e8907c",
         C_VIDA="#80352d", C_MANA="#34516e", C_VIGOR="#476532", C_MOV="#33605e", C_CA="#5b554a", C_ATK="#86403a",
         C_DEF="#3d5679", C_PER="#8c6232", C_TAL="#33605e", C_DIN="#476532", C_ATR="#2f3d33"),
-    # "Vitral": creme, dourado e detalhes em verde musgo; os únicos enfeites são vinhas e vitrais.
-    "vitral": dict(
-        FUNDO="#3f4f2e", FUNDO2="#4d5f39", PERG="#f4ecd8", PERG2="#e9dfc3", CAMPO="#fbf6e9",
-        TINTA="#2f3a22", TINTA2="#666e50", OURO="#b08a3e", OURO2="#e3cd8f", VINHO="#7d5f1c", VINHO_BG="#7d5f1c", VERDE="#5d7340",
-        FAIXA="#f8f1dc", LINHA="#dccf9f", ROSA="#f3e3d3", AGUA="#e2ead6",
-        MESA_CAMPO="#4d5f39", MESA_BORDA="#7d9157", MESA_ATIVO="#586b40", MESA_TXT="#d5dcc0", ALERTA="#f2c9a0",
-        C_VIDA="#9a4a3a", C_MANA="#4a6a7a", C_VIGOR="#5d7340", C_MOV="#4f7a6a", C_CA="#7a715a", C_ATK="#a0553f",
-        C_DEF="#56708a", C_PER="#86661f", C_TAL="#5d7340", C_DIN="#5d7340", C_ATR="#4a5a36"),
+    # "Diário de trilha": as cores da carroça Conestoga — lona creme, caixa azul-prússia, rodas vermelhas e latão.
+    # Enfeites: trilha tracejada, rodas e marcos de estrada.
+    "trilha": dict(
+        FUNDO="#1f3d5c", FUNDO2="#2a4d70", PERG="#efe6d2", PERG2="#e2d5b8", CAMPO="#f8f2e4",
+        TINTA="#2b2620", TINTA2="#5f5546", OURO="#c99a3e", OURO2="#e6c77f", VINHO="#a63c26", VINHO_BG="#a63c26", VERDE="#4f6b3a",
+        FAIXA="#f8f2e4", LINHA="#d9ccb0", ROSA="#f3e0d6", AGUA="#dfe7ee",
+        MESA_CAMPO="#2a4d70", MESA_BORDA="#4a6d90", MESA_ATIVO="#335a80", MESA_TXT="#c9d4de", ALERTA="#f2b49f",
+        C_VIDA="#9a3d2c", C_MANA="#2f5d8a", C_VIGOR="#4f6b3a", C_MOV="#3d6e74", C_CA="#6b6253", C_ATK="#a63c26",
+        C_DEF="#2f5d8a", C_PER="#8a6420", C_TAL="#4f6b3a", C_DIN="#4f6b3a", C_ATR="#1f3d5c"),
 }
 NOTURNO = False
 TEMA = "diurno"
-ORDEM_TEMAS = ["diurno", "noturno", "vitral"]
-ROTULO_TEMA = {"diurno": "☀ Modo diurno", "noturno": "☾ Modo noturno", "vitral": "❧ Tema Vitral"}
+ORDEM_TEMAS = ["diurno", "noturno", "trilha"]
+ROTULO_TEMA = {"diurno": "☀ Modo diurno", "noturno": "☾ Modo noturno", "trilha": "🛞 Diário de trilha"}
 
 
 def proximo_tema():
@@ -61,44 +63,32 @@ def proximo_tema():
 
 def aplicar_tema(nome):
     global NOTURNO, TEMA
+    nome = "trilha" if nome == "vitral" else nome     # o tema Vitral virou o Diário de trilha
     nome = nome if nome in TEMAS else "diurno"
     NOTURNO, TEMA = nome == "noturno", nome
     globals().update(TEMAS[nome])
 
 
-def desenhar_vitral(cv, largura, altura=22):
-    """Faixa de vitral com uma vinha por cima (enfeite do tema Vitral)."""
-    cv.delete("all")
-    cores, chumbo, x, i = ["#b08a3e", "#f4ecd8", "#7d9157", "#e3cd8f"], "#3f4f2e", 0, 0
-    while x < largura:
-        cv.create_rectangle(x, 0, x + 26, altura, fill=cores[i % 4], outline=chumbo)
-        cv.create_arc(x + 3, 3, x + 23, altura * 2 - 6, start=0, extent=180, style="arc", outline=chumbo)
-        x, i = x + 26, i + 1
-    cv.create_line(0, altura, largura, altura, fill=chumbo)
-
-
-def desenhar_arco(cv, w=40, h=52):
-    """Vitral em arco (ícone do cabeçalho no tema Vitral)."""
-    chumbo, m = "#2f3a22", w // 2
-    cv.create_rectangle(3, h * 0.45, m, h - 3, fill="#f4ecd8", outline=chumbo, width=2)
-    cv.create_rectangle(m, h * 0.45, w - 3, h - 3, fill="#b08a3e", outline=chumbo, width=2)
-    cv.create_arc(3, 3, w - 3, h * 0.9, start=90, extent=90, style="pieslice", fill="#e3cd8f", outline=chumbo, width=2)
-    cv.create_arc(3, 3, w - 3, h * 0.9, start=0, extent=90, style="pieslice", fill="#7d9157", outline=chumbo, width=2)
-    cv.create_oval(m - 5, h * 0.45 - 5, m + 5, h * 0.45 + 5, fill="#f8f1dc", outline=chumbo, width=2)
-
-
-def desenhar_vinha(cv, largura, altura=18, cor="#7d9157"):
-    """Vinha: um ramo ondulado com folhas dos dois lados."""
-    cv.delete("all")
+def desenhar_roda(cv, cx, cy, r, cor="#e6c77f", cubo="#c99a3e"):
+    """Roda de carroça: aro, 12 raios e cubo."""
     import math
-    pts = []
-    for x in range(0, int(largura) + 12, 12):
-        pts += [x, altura / 2 + math.sin(x / 38) * 3]
-    if len(pts) >= 4:
-        cv.create_line(*pts, fill=cor, smooth=True, width=1.4)
-    for k, x in enumerate(range(18, int(largura), 44)):
-        y, s = altura / 2 + math.sin(x / 38) * 3, -1 if k % 2 else 1
-        cv.create_polygon(x, y, x + 6, y - 6 * s, x + 14, y - 5 * s, x + 8, y, fill=cor, outline="", smooth=True)
+    cv.create_oval(cx - r, cy - r, cx + r, cy + r, outline=cor, width=max(2, int(r * 0.16)))
+    for k in range(12):
+        a = k * math.pi / 6
+        cv.create_line(cx + math.cos(a) * r * 0.2, cy + math.sin(a) * r * 0.2, cx + math.cos(a) * r * 0.88, cy + math.sin(a) * r * 0.88,
+                       fill=cor, width=max(1, int(r * 0.07)))
+    cv.create_oval(cx - r * 0.22, cy - r * 0.22, cx + r * 0.22, cy + r * 0.22, fill=cubo, outline=cor)
+
+
+def desenhar_trilha(cv, largura, altura=20):
+    """Faixa do tema Diário de trilha: uma trilha tracejada em vermelho com marcos de estrada a cada trecho."""
+    cv.delete("all")
+    y = altura - 6
+    cv.create_line(0, y, largura, y, fill="#a63c26", width=2, dash=(7, 5))
+    for x in range(40, int(largura), 220):
+        cv.create_rectangle(x - 4, y - 12, x + 4, y, fill="#1f3d5c", outline="")
+        cv.create_oval(x - 4, y - 16, x + 4, y - 8, fill="#1f3d5c", outline="")
+        cv.create_line(x - 2, y - 7, x + 2, y - 7, fill="#e6c77f")
 
 
 aplicar_tema("diurno")
@@ -509,7 +499,7 @@ class App(tk.Tk):
         ms.add_command(label="Inimigos, anotações e combate (painel do mestre)…", command=self.abrir_painel_mestre)
         m.add_cascade(label="Mestre", menu=ms)
         ex = tk.Menu(m, tearoff=0)
-        ex.add_command(label="Trocar tema (diurno, noturno, Vitral)", command=self.alternar_tema, accelerator="Ctrl+T")
+        ex.add_command(label="Trocar tema (diurno, noturno, Diário de trilha)", command=self.alternar_tema, accelerator="Ctrl+T")
         m.add_cascade(label="Exibir", menu=ex)
         self.bind("<Control-t>", lambda e: self.alternar_tema())
         aj = tk.Menu(m, tearoff=0)
@@ -529,10 +519,10 @@ class App(tk.Tk):
         ban.pack(fill="x")
         tit = tk.Frame(ban, bg=FUNDO)
         tit.pack(side="left", anchor="n")
-        if TEMA == "vitral":
-            arco = tk.Canvas(ban, width=40, height=52, bg=FUNDO, highlightthickness=0)
-            arco.pack(side="left", anchor="n", padx=(0, 10), before=tit)
-            desenhar_arco(arco)
+        if TEMA == "trilha":
+            rd = tk.Canvas(ban, width=48, height=48, bg=FUNDO, highlightthickness=0)
+            rd.pack(side="left", anchor="n", padx=(0, 12), before=tit)
+            desenhar_roda(rd, 24, 24, 21)
         tk.Label(tit, text="Conestoga connection", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
         tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.3", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
@@ -579,15 +569,11 @@ class App(tk.Tk):
         self.lbl_pontos_topo_sub = Rot(pts, bg=FUNDO, fg=MESA_TXT, size=9, bold=False, italic=True, anchor="e")
         self.lbl_pontos_topo_sub.pack(anchor="e")
         tk.Frame(self, height=1, bg=OURO).pack(fill="x")
-        if TEMA == "vitral":   # enfeites do tema: uma faixa de vitral e uma vinha
-            vt = tk.Canvas(self, height=22, bg=PERG, highlightthickness=0)
+        if TEMA == "trilha":   # enfeite do tema: a trilha com os marcos de estrada
+            vt = tk.Canvas(self, height=20, bg=PERG, highlightthickness=0)
             vt.pack(fill="x")
-            vt.bind("<Configure>", lambda e: desenhar_vitral(vt, e.width))
-            vn = tk.Canvas(self, height=18, bg=PERG, highlightthickness=0)
-            vn.pack(fill="x")
-            vn.bind("<Configure>", lambda e: desenhar_vinha(vn, e.width))
-            desenhar_vitral(vt, 1400)
-            desenhar_vinha(vn, 1400)
+            vt.bind("<Configure>", lambda e: desenhar_trilha(vt, e.width))
+            desenhar_trilha(vt, 1400)
 
         self.nb = ttk.Notebook(self)
         self.nb.pack(fill="both", expand=True, padx=12, pady=(4, 12))
@@ -597,6 +583,7 @@ class App(tk.Tk):
         self._pag_inventario()
         self._pag_encantamentos()
         self._pag_talentos()
+        self._pag_anotacoes()
         self.abas_nomes = []
         for w in (self.nb.tabs() or ()):
             try:
@@ -640,7 +627,7 @@ class App(tk.Tk):
                 self.nb.add(self.aba_alma)
         except tk.TclError:
             pass
-        romanos = ["I", "II", "III", "IV", "V", "VI", "VII"]
+        romanos = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
         i = 0
         for w, nome in self.abas_nomes:
             if w is self.aba_alma and sem:
@@ -1351,6 +1338,138 @@ class App(tk.Tk):
             self._pintar_foto()
             self.alterado = True
             self._titulo()
+
+    # ------------------------------------------------------------ VII · Anotações
+    def _pag_anotacoes(self):
+        """Anotações livres do jogador (pistas, nomes, combinados com o mestre): uma lista à esquerda, o texto à direita.
+        Funcionam no Modo Jogo e no Modo Edição e vão dentro da ficha."""
+        p = self._pagina("VII · Anotações")
+        p.columnconfigure(0, weight=1)
+        c = self.secao(p, "Anotações  ·  pistas, nomes, lugares e combinados", row=0, column=0)
+        c.columnconfigure(1, weight=1)
+        esq = tk.Frame(c, bg=PERG)
+        esq.grid(row=0, column=0, sticky="nsw", padx=(0, 12))
+        bts = tk.Frame(esq, bg=PERG)
+        bts.pack(fill="x", pady=(0, 6))
+        ttk.Button(bts, text="✍ Nova", command=self._nota_nova).pack(side="left")
+        ttk.Button(bts, text="Apagar", command=self._nota_apagar).pack(side="left", padx=6)
+        self.lst_notas = tk.Listbox(esq, width=34, height=22, activestyle="none", exportselection=False, bg=CAMPO, fg=TINTA,
+                                    selectbackground=FUNDO, selectforeground=OURO2, highlightthickness=1, highlightbackground=LINHA,
+                                    font=(FONTE, 11), relief="flat")
+        self.lst_notas.pack(fill="y")
+        self.lst_notas.bind("<<ListboxSelect>>", lambda e: self._nota_mostrar())
+        dir_ = tk.Frame(c, bg=PERG)
+        dir_.grid(row=0, column=1, sticky="nsew")
+        dir_.columnconfigure(0, weight=1)
+        self.v_nota_tit = tk.StringVar()
+        self.lbl_nota_quando = tk.Label(dir_, text="", bg=PERG, fg=TINTA2, font=(FONTE, 9, "italic"), anchor="w")
+        self.lbl_nota_quando.grid(row=0, column=0, sticky="w")
+        self.ent_nota_tit = ttk.Entry(dir_, textvariable=self.v_nota_tit, font=(FONTE, 12, "bold"))
+        self.ent_nota_tit.grid(row=1, column=0, sticky="we", pady=(2, 6))
+        self.txt_nota = tk.Text(dir_, height=20, wrap="word", bg=CAMPO, fg=TINTA, insertbackground=TINTA, font=(FONTE, 11), relief="flat",
+                                highlightthickness=1, highlightbackground=LINHA, padx=8, pady=6, undo=True)
+        self.txt_nota.grid(row=2, column=0, sticky="nsew")
+        self.lbl_nota_vazia = tk.Label(dir_, text="Toque em ✍ Nova para começar uma anotação.", bg=PERG, fg=TINTA2, font=(FONTE, 10, "italic"))
+        self.lbl_nota_vazia.grid(row=3, column=0, sticky="w", pady=(6, 0))
+        self.anotacoes = []
+        self._nota_atual = None
+        self._nota_carregando = False
+        self.v_nota_tit.trace_add("write", lambda *a: self._nota_editou())
+        self.txt_nota.bind("<<Modified>>", self._nota_txt_mod)
+        self._nota_lista()
+
+    @staticmethod
+    def _agora_txt():
+        return time.strftime("%d/%m/%Y %H:%M")
+
+    def _nota_txt_mod(self, e):
+        if self.txt_nota.edit_modified():
+            self.txt_nota.edit_modified(False)
+            self._nota_editou()
+
+    def _nota_editou(self):
+        """Copia o editor para a anotação aberta e marca a ficha como alterada."""
+        if self._nota_carregando or self._nota_atual is None:
+            return
+        n = next((x for x in self.anotacoes if x["id"] == self._nota_atual), None)
+        if n is None:
+            return
+        tit, txt = self.v_nota_tit.get().strip(), self.txt_nota.get("1.0", "end-1c")
+        if tit == n["titulo"] and txt == n["texto"]:
+            return
+        n["titulo"], n["texto"], n["quando"] = tit, txt, self._agora_txt()
+        self.lbl_nota_quando.config(text=f"Editada em {n['quando']}")
+        i = self.anotacoes.index(n)
+        self.lst_notas.delete(i)
+        self.lst_notas.insert(i, tit or "Sem título")
+        self.lst_notas.selection_set(i)
+        if self.inicializado:
+            self.alterado = True
+            self._titulo()
+
+    def _nota_lista(self, selecionar=None):
+        self.lst_notas.delete(0, "end")
+        for n in self.anotacoes:
+            self.lst_notas.insert("end", n["titulo"] or "Sem título")
+        ids = [n["id"] for n in self.anotacoes]
+        if selecionar not in ids:
+            selecionar = ids[0] if ids else None
+        if selecionar is not None:
+            self.lst_notas.selection_set(ids.index(selecionar))
+        self._nota_mostrar(selecionar)
+
+    def _nota_mostrar(self, nid=None):
+        if nid is None:
+            sel = self.lst_notas.curselection()
+            nid = self.anotacoes[sel[0]]["id"] if sel else None
+        n = next((x for x in self.anotacoes if x["id"] == nid), None)
+        self._nota_carregando = True
+        self._nota_atual = n["id"] if n else None
+        self.v_nota_tit.set(n["titulo"] if n else "")
+        self.txt_nota.configure(state="normal")      # um Text desabilitado ignora delete/insert
+        self.ent_nota_tit.configure(state="normal")
+        self.txt_nota.delete("1.0", "end")
+        if n:
+            self.txt_nota.insert("1.0", n["texto"])
+        self.txt_nota.edit_modified(False)
+        estado = "normal" if n else "disabled"
+        self.txt_nota.configure(state=estado)
+        self.ent_nota_tit.configure(state=estado)
+        self.lbl_nota_quando.config(text=f"Editada em {n['quando']}" if n and n.get("quando") else "")
+        if n:
+            self.lbl_nota_vazia.grid_remove()
+        else:
+            self.lbl_nota_vazia.grid()
+        self._nota_carregando = False
+
+    def _nota_nova(self):
+        n = {"id": "%08x" % random.getrandbits(32), "titulo": "", "texto": "", "quando": self._agora_txt()}
+        self.anotacoes.insert(0, n)
+        self._nota_lista(n["id"])
+        self.ent_nota_tit.focus_set()
+        if self.inicializado:
+            self.alterado = True
+            self._titulo()
+
+    def _nota_apagar(self):
+        if self._nota_atual is None:
+            return
+        n = next((x for x in self.anotacoes if x["id"] == self._nota_atual), None)
+        if n and (n["titulo"] or n["texto"].strip()) and not messagebox.askyesno(APP_NOME, f"Apagar a anotação “{n['titulo'] or 'Sem título'}”?"):
+            return
+        self.anotacoes = [x for x in self.anotacoes if x["id"] != self._nota_atual]
+        self._nota_lista()
+        if self.inicializado:
+            self.alterado = True
+            self._titulo()
+
+    def _notas_de(self, lista):
+        out = []
+        for x in lista if isinstance(lista, list) else []:
+            if isinstance(x, dict):
+                out.append({"id": str(x.get("id") or "%08x" % random.getrandbits(32)), "titulo": str(x.get("titulo") or ""),
+                            "texto": str(x.get("texto") or ""), "quando": str(x.get("quando") or "")})
+        return out
 
     def _txt_mod(self, e):
         e.widget.edit_modified(False)
@@ -4177,6 +4296,7 @@ class App(tk.Tk):
             "talentos_escolha": {sl: ui["escolha"].get() for sl, ui in self.tal_ui.items() if ui["escolha"].get()},
             "especie_notas": self.v_esp_notas.get(),
             "foto": self.foto,
+            "anotacoes": [dict(n) for n in getattr(self, "anotacoes", [])],
         }
 
     def aplicar(self, s):
@@ -4268,6 +4388,9 @@ class App(tk.Tk):
             self.desfazer = []
             self.v_esp_notas.set(s.get("especie_notas", ""))
             self.foto = s.get("foto") if F.valida(s.get("foto")) else ""
+            if hasattr(self, "lst_notas"):
+                self.anotacoes = self._notas_de(s.get("anotacoes"))
+                self._nota_lista()
             self._pintar_foto()
             self.nivel_anterior = to_int(i.get("nivel", 1), 1)
             self.inicializado = s.get("inicializado", all(self.atr[k]["inicial"].get() for k in R.ATRIBUTOS))

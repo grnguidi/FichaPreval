@@ -124,9 +124,9 @@ details.acoes summary:before{content:"📖 "}
 .avisos li.info{color:var(--tinta2)} .avisos li.info:before{content:"ℹ"}
 .avisos li.tudo{color:var(--verde)} .avisos li.tudo:before{content:"✓"}
 /* barra inferior */
-.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--fundo);border-top:1px solid var(--ouro);display:grid;grid-template-columns:repeat(6,1fr);
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--fundo);border-top:1px solid var(--ouro);display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);
   padding-bottom:env(safe-area-inset-bottom)}
-.nav button{border:0;background:transparent;color:#9fae9f;padding:8px 0 7px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--serif)}
+.nav button{border:0;background:transparent;color:#9fae9f;padding:8px 0 7px;font-size:10.5px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--serif)}
 .nav button i{font-style:normal;font-size:20px;line-height:1}
 .nav button.on{color:var(--ouro2)}
 .nav button.on i{transform:translateY(-1px)}
@@ -245,32 +245,31 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
   html.imprimindo body{background:#fff;color:#000;padding:0}
   html.imprimindo body>*:not(#impressao){display:none!important}
   html.imprimindo #impressao{display:block}
-  /* folha impressa no visual Vitral: creme, dourado e verde musgo, com vitrais e vinhas */
-  html.imprimindo,html.imprimindo body{background:#f4ecd8!important}
+  /* folha impressa no visual Diário de trilha: lona creme, azul-prússia, vermelho das rodas e latão */
+  html.imprimindo,html.imprimindo body{background:#efe6d2!important}
   .impr,.impr *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .impr{font-family:Georgia,"Times New Roman",serif;font-size:10.5pt;color:#2f3a22;background:#f4ecd8}
-  .impr .vitral-faixa{height:6mm;border:1px solid #3f4f2e;
-    background:repeating-linear-gradient(90deg,#b08a3e 0 8mm,#3f4f2e 8mm 8.4mm,#f4ecd8 8.4mm 16.4mm,#3f4f2e 16.4mm 16.8mm,#7d9157 16.8mm 24.8mm,#3f4f2e 24.8mm 25.2mm,#e3cd8f 25.2mm 33.2mm,#3f4f2e 33.2mm 33.6mm)}
-  .impr .cab{padding:0 16mm;min-height:17mm;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cg stroke='%233f4f2e' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M2 18 V16 Q2 2 15 2 V18Z' fill='%23e3cd8f'/%3E%3Cpath d='M15 2 Q28 2 28 16 V18 H15Z' fill='%237d9157'/%3E%3Cpath d='M2 18 H15 V38 H2Z' fill='%23f4ecd8'/%3E%3Cpath d='M15 18 H28 V38 H15Z' fill='%23b08a3e'/%3E%3Cpath d='M2 28 H28' fill='none'/%3E%3Ccircle cx='15' cy='18' r='4.2' fill='%23f8f1dc'/%3E%3C/g%3E%3C/svg%3E") left center/12mm 16mm no-repeat,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cg stroke='%233f4f2e' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M2 18 V16 Q2 2 15 2 V18Z' fill='%23e3cd8f'/%3E%3Cpath d='M15 2 Q28 2 28 16 V18 H15Z' fill='%237d9157'/%3E%3Cpath d='M2 18 H15 V38 H2Z' fill='%23f4ecd8'/%3E%3Cpath d='M15 18 H28 V38 H15Z' fill='%23b08a3e'/%3E%3Cpath d='M2 28 H28' fill='none'/%3E%3Ccircle cx='15' cy='18' r='4.2' fill='%23f8f1dc'/%3E%3C/g%3E%3C/svg%3E") right center/12mm 16mm no-repeat}
-  .impr h1{font-size:20pt;margin:0 0 1mm;color:#7d5f1c;text-align:center}
-  .impr .cab .linha{text-align:center;color:#666e50}
-  .impr h2{font-size:11pt;margin:5mm 0 1.5mm;padding-left:9mm;color:#7d5f1c;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid #b08a3e;break-after:avoid;
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 14'%3E%3Cpath d='M1 7 H25' stroke='%236b7f4a' stroke-width='1.2' fill='none'/%3E%3Cg fill='%236b7f4a'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(4 7) rotate(-35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(11 7) rotate(35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(18 7) rotate(-35)'/%3E%3C/g%3E%3C/svg%3E") left center/7.5mm 4mm no-repeat}
-  .impr table{width:100%;border-collapse:collapse;margin:1mm 0;break-inside:avoid;background:#fbf6e9}
-  .impr th,.impr td{border:1px solid #b08a3e;padding:1mm 1.5mm;text-align:left;vertical-align:top}
-  .impr th{background:#4a5a36;color:#f8f1dc;font-size:9pt}
-  .impr tbody tr:nth-child(even) td{background:#f3ebd3}
+  .impr{font-family:Georgia,"Times New Roman",serif;font-size:10.5pt;color:#2b2620;background:#efe6d2}
+  .impr .trilha-faixa{height:7mm;background:#1f3d5c url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 10'%3E%3Cpath d='M0 5 H40' stroke='%23e6c77f' stroke-width='1.6' stroke-dasharray='7 5'/%3E%3C/svg%3E") repeat-x center/12mm 3mm;border-bottom:1.2pt solid #a63c26}
+  .impr .cab{padding:0 16mm;min-height:17mm;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23a63c26' stroke-width='2'%3E%3Ccircle cx='20' cy='20' r='17' stroke-width='3'/%3E%3Cline x1='20' y1='20' x2='35.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='35.0'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='5.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='12.5'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='5.0'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='12.5'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4' fill='%23a63c26'/%3E%3C/svg%3E") left center/13mm 13mm no-repeat,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23a63c26' stroke-width='2'%3E%3Ccircle cx='20' cy='20' r='17' stroke-width='3'/%3E%3Cline x1='20' y1='20' x2='35.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='35.0'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='5.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='12.5'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='5.0'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='12.5'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4' fill='%23a63c26'/%3E%3C/svg%3E") right center/13mm 13mm no-repeat}
+  .impr h1{font-family:Rockwell,"Roboto Slab",Georgia,serif;font-size:20pt;margin:0 0 1mm;color:#1f3d5c;text-align:center}
+  .impr .cab .linha{text-align:center;color:#5f5546}
+  .impr h2{font-family:Rockwell,"Roboto Slab",Georgia,serif;font-size:11pt;margin:5mm 0 1.5mm;padding-left:7mm;color:#a63c26;letter-spacing:.06em;text-transform:uppercase;border-bottom:1.2pt dashed #a63c26;break-after:avoid;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%231f3d5c' stroke-width='2'%3E%3Ccircle cx='20' cy='20' r='17' stroke-width='3'/%3E%3Cline x1='20' y1='20' x2='35.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='35.0'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='5.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='12.5'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='5.0'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='12.5'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4' fill='%231f3d5c'/%3E%3C/svg%3E") left 0.3mm/5mm 5mm no-repeat}
+  .impr table{width:100%;border-collapse:collapse;margin:1mm 0;break-inside:avoid;background:#f8f2e4}
+  .impr th,.impr td{border:1px solid #c9b48a;padding:1mm 1.5mm;text-align:left;vertical-align:top}
+  .impr th{background:#1f3d5c;color:#f8f2e4;font-size:9pt}
+  .impr tbody tr:nth-child(even) td{background:#efe4cc}
   .impr .linha{margin:1mm 0}
-  .impr .rodape-impr{align-self:flex-end;font-size:8pt;color:#666e50;text-align:center}
+  .impr .rodape-impr{align-self:flex-end;font-size:8pt;color:#5f5546;text-align:center}
   /* moldura de cada página: o cabeçalho e o rodapé da tabela se repetem em todas as folhas */
   .impr table.pg{background:none;break-inside:auto;margin:0;border:0}
   .impr table.pg>thead>tr>td,.impr table.pg>tbody>tr>td,.impr table.pg>tfoot>tr>td{border:0;background:none!important}
   .impr table.pg>thead>tr>td{padding:8mm 10mm 4mm}
   .impr table.pg>tbody>tr>td{padding:0 12mm}
   .impr table.pg>tfoot>tr>td{padding:2mm 8mm 6mm}
-  .impr .vinhas-pe{display:flex;justify-content:space-between;height:22mm}
-  .impr .vinhas-pe i{display:block;width:22mm;height:22mm;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%236b7f4a' stroke-width='1.6' stroke-linecap='round' opacity='.5'%3E%3Cpath d='M138 2 C104 6 82 22 68 48 C56 70 36 76 8 72'/%3E%3Cpath d='M112 12 C108 26 114 36 126 38'/%3E%3Cpath d='M82 30 C70 24 60 28 56 38'/%3E%3Cpath d='M52 68 C50 82 56 90 66 92'/%3E%3C/g%3E%3Cg fill='%236b7f4a' opacity='.42'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(120 8) rotate(-150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(100 16) rotate(60)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(126 38) rotate(20)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(86 28) rotate(-120)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(56 38) rotate(110)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(70 48) rotate(-30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(60 62) rotate(150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(66 92) rotate(30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(36 74) rotate(-160)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(22 72) rotate(40)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(8 72) rotate(170)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;transform:rotate(180deg)}
-  .impr .vinhas-pe i+i{transform:scaleY(-1)}
+  .impr .trilha-pe{display:flex;justify-content:space-between;align-items:flex-end;gap:4mm;height:12mm}
+  .impr .trilha-pe i{display:block;flex:1;height:10mm;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 40'%3E%3Cpath d='M0 30 H120' stroke='%23a63c26' stroke-width='2' stroke-dasharray='7 5'/%3E%3Cg fill='%231f3d5c'%3E%3Cpath d='M14 30 V12 Q14 6 20 6 Q26 6 26 12 V30Z'/%3E%3C/g%3E%3Ctext x='20' y='20' font-size='7' text-anchor='middle' fill='%23efe6d2' font-family='Georgia'%3Emi%3C/text%3E%3C/svg%3E") left bottom/30mm 10mm repeat-x}
+  .impr .trilha-pe i+span+i{transform:scaleX(-1)}
   .impr .cab,.impr .cab h1,.impr .cab .linha{display:block}
   .impr .cab .linha{text-transform:none;letter-spacing:0;font-size:10.5pt;justify-content:center}
   @page{size:A4;margin:0}
@@ -301,33 +300,39 @@ html.noite .mesa.vez,html.noite .mesa .mao.on{background:#a5423a;color:#fff}
 .reacoes button.on{background:var(--ouro2);border-color:var(--ouro);color:#2d2015}
 .reacoes .sub{margin-left:auto}
 
-/* tema Vitral: creme, dourado e verde musgo; só vinhas e vitrais de enfeite */
-html.vitral{
-  --fundo:#3f4f2e; --fundo2:#4d5f39; --perg:#f4ecd8; --perg2:#e9dfc3; --campo:#fbf6e9; --tinta:#2f3a22; --tinta2:#666e50;
-  --ouro:#b08a3e; --ouro2:#e3cd8f; --vinho:#7d5f1c; --verde:#5d7340; --faixa:#f8f1dc; --linha:#dccf9f;
-  --c-vida:#9a4a3a; --c-mana:#4a6a7a; --c-vigor:#5d7340; --c-mov:#4f7a6a; --c-ca:#7a715a; --c-atk:#a0553f; --c-def:#56708a;
-  --c-per:#86661f; --c-tal:#5d7340; --c-atr:#4a5a36; --rosa:#f3e3d3; --agua:#e2ead6;
-  --sombra:0 1px 0 rgba(0,0,0,.03),0 5px 14px -10px rgba(60,70,30,.3);
+/* tema Diário de trilha: as cores da carroça Conestoga — lona creme, caixa azul-prússia, rodas vermelhas e latão.
+   Enfeites: trilhas tracejadas, rodas e uma rosa dos ventos. */
+html.trilha{
+  --fundo:#1f3d5c; --fundo2:#2a4d70; --perg:#efe6d2; --perg2:#e2d5b8; --campo:#f8f2e4; --tinta:#2b2620; --tinta2:#5f5546;
+  --ouro:#c99a3e; --ouro2:#e6c77f; --vinho:#a63c26; --verde:#4f6b3a; --faixa:#f8f2e4; --linha:#d9ccb0;
+  --c-vida:#9a3d2c; --c-mana:#2f5d8a; --c-vigor:#4f6b3a; --c-mov:#3d6e74; --c-ca:#6b6253; --c-atk:#a63c26; --c-def:#2f5d8a;
+  --c-per:#8a6420; --c-tal:#4f6b3a; --c-atr:#1f3d5c; --rosa:#f3e0d6; --agua:#dfe7ee;
+  --tit:"Rockwell","Roboto Slab","Bitter","Clarendon",Georgia,serif;
+  --sombra:0 1px 0 rgba(0,0,0,.03),0 5px 14px -10px rgba(31,61,92,.35);
 }
-html.vitral,html.vitral body{background:var(--perg)}
-html.vitral .topo{background:var(--campo);color:var(--vinho);border-bottom:0}
-html.vitral .topo:after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:7px;
-  background:repeating-linear-gradient(90deg,#b08a3e 0 18px,#3f4f2e 18px 20px,#f4ecd8 20px 38px,#3f4f2e 38px 40px,#7d9157 40px 58px,#3f4f2e 58px 60px,#e3cd8f 60px 78px,#3f4f2e 78px 80px);
-  border-top:1px solid #3f4f2e;border-bottom:1px solid #3f4f2e}
-html.vitral .topo .nome{padding-left:38px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 40'%3E%3Cg stroke='%233f4f2e' stroke-width='1.4' stroke-linejoin='round'%3E%3Cpath d='M2 18 V16 Q2 2 15 2 V18Z' fill='%23e3cd8f'/%3E%3Cpath d='M15 2 Q28 2 28 16 V18 H15Z' fill='%237d9157'/%3E%3Cpath d='M2 18 H15 V38 H2Z' fill='%23f4ecd8'/%3E%3Cpath d='M15 18 H28 V38 H15Z' fill='%23b08a3e'/%3E%3Cpath d='M2 28 H28' fill='none'/%3E%3Ccircle cx='15' cy='18' r='4.2' fill='%23f8f1dc'/%3E%3C/g%3E%3C/svg%3E") left center/28px 37px no-repeat}
-html.vitral .topo .nome small{color:var(--tinta2)}
-html.vitral .nivel,html.vitral .icone{background:var(--perg);border-color:var(--ouro);color:var(--vinho)}
-html.vitral .nivel button{color:var(--vinho)}
-html.vitral .pagina{margin-top:14px;border-radius:0;background:var(--perg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'%3E%3Cg fill='none' stroke='%236b7f4a' stroke-width='1.6' stroke-linecap='round' opacity='.5'%3E%3Cpath d='M138 2 C104 6 82 22 68 48 C56 70 36 76 8 72'/%3E%3Cpath d='M112 12 C108 26 114 36 126 38'/%3E%3Cpath d='M82 30 C70 24 60 28 56 38'/%3E%3Cpath d='M52 68 C50 82 56 90 66 92'/%3E%3C/g%3E%3Cg fill='%236b7f4a' opacity='.42'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(120 8) rotate(-150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(100 16) rotate(60)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(126 38) rotate(20)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(86 28) rotate(-120)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(56 38) rotate(110)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(70 48) rotate(-30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(60 62) rotate(150)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(66 92) rotate(30)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(36 74) rotate(-160)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(22 72) rotate(40)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(8 72) rotate(170)'/%3E%3C/g%3E%3C/svg%3E") right top/150px 150px no-repeat}
-html.vitral .nav{background:var(--campo)}
-html.vitral .nav button{color:var(--tinta2)}
-html.vitral .nav button.on{color:var(--vinho)}
-html.vitral .mesa{background:var(--perg2)}
-html.vitral .mesa .info{color:var(--tinta)}
-html.vitral .mesa.vez .info{color:#fff}
-html.vitral .secao:before{content:"";width:26px;height:14px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 14'%3E%3Cpath d='M1 7 H25' stroke='%236b7f4a' stroke-width='1.2' fill='none'/%3E%3Cg fill='%236b7f4a'%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(4 7) rotate(-35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(11 7) rotate(35)'/%3E%3Cpath d='M0 0 Q6 -7 14 0 Q6 7 0 0Z' transform='translate(18 7) rotate(-35)'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
-html.vitral .cartao{border-color:#cdb679}
-html.vitral #t-sub span{color:#a0553f!important}
+html.trilha,html.trilha body{background:var(--perg)}
+html.trilha .topo{background:var(--fundo);border-bottom:0}
+html.trilha .topo:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;background:var(--fundo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 6'%3E%3Cpath d='M0 3 H40' stroke='%23e6c77f' stroke-width='1.6' stroke-dasharray='7 5'/%3E%3C/svg%3E") repeat-x center/40px 6px}
+html.trilha .topo .nome{padding-left:36px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23e6c77f' stroke-width='2'%3E%3Ccircle cx='20' cy='20' r='17' stroke-width='3'/%3E%3Cline x1='20' y1='20' x2='35.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='35.0'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='5.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='12.5'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='5.0'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='12.5'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4' fill='%23e6c77f'/%3E%3C/svg%3E") left center/28px 28px no-repeat}
+html.trilha .topo .avatar~.nome{padding-left:0;background:none}
+html.trilha .topo .nome b{font-family:var(--tit);letter-spacing:.02em;color:#f8f2e4}
+html.trilha .topo .nome small{color:#c9d4de}
+html.trilha .nivel,html.trilha .icone{background:var(--fundo2);border-color:var(--ouro);color:var(--ouro2)}
+html.trilha .pagina{margin-top:12px;background:var(--perg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg opacity='.08' fill='%231f3d5c'%3E%3Cpath d='M50 4 L56 50 L50 96 L44 50Z'/%3E%3Cpath d='M4 50 L50 44 L96 50 L50 56Z'/%3E%3Cpath d='M50 50 L70 30 L54 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 70 L46 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L70 70 L50 54Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 30 L50 46Z' opacity='.7'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%231f3d5c' stroke-opacity='.12' stroke-width='1.5'/%3E%3C/svg%3E") right 6px top 110px/96px 96px no-repeat}
+html.trilha .nav{background:var(--fundo);border-top:2px solid var(--vinho)}
+html.trilha .nav button{color:#b8c6d4}
+html.trilha .nav button.on{color:var(--ouro2)}
+html.trilha .secao{font-family:var(--tit);color:var(--vinho)}
+html.trilha .secao:before{content:"";width:22px;height:22px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23a63c26' stroke-width='2'%3E%3Ccircle cx='20' cy='20' r='17' stroke-width='3'/%3E%3Cline x1='20' y1='20' x2='35.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='35.0'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='5.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='12.5'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='5.0'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='12.5'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4' fill='%23a63c26'/%3E%3C/svg%3E") center/contain no-repeat}
+html.trilha .secao:after{background:none;border-top:2px dashed var(--vinho);opacity:.55;height:0}
+html.trilha .capa h1{font-family:var(--tit)}
+html.trilha .capa .orn{color:transparent;width:46px;height:46px;margin:0 auto;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23a63c26' stroke-width='2'%3E%3Ccircle cx='20' cy='20' r='17' stroke-width='3'/%3E%3Cline x1='20' y1='20' x2='35.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='35.0'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='33.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='27.5'/%3E%3Cline x1='20' y1='20' x2='5.0' y2='20.0'/%3E%3Cline x1='20' y1='20' x2='7.0' y2='12.5'/%3E%3Cline x1='20' y1='20' x2='12.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='20.0' y2='5.0'/%3E%3Cline x1='20' y1='20' x2='27.5' y2='7.0'/%3E%3Cline x1='20' y1='20' x2='33.0' y2='12.5'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='4' fill='%23a63c26'/%3E%3C/svg%3E") center/contain no-repeat}
+html.trilha .cartao{border-color:#d4c29a}
+html.trilha .botao.prim{background:var(--fundo);border-color:var(--fundo)}
+html.trilha .mesa{background:var(--perg2)}
+html.trilha .mesa .info{color:var(--tinta)}
+html.trilha .mesa.vez .info{color:#fff}
+html.trilha #t-sub span{color:#f2b49f!important}
 
 /* foto do personagem */
 .avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid var(--ouro);flex:none;margin-right:10px;background:var(--perg2)}
@@ -339,6 +344,13 @@ span.avatar.vazio{display:inline-flex;align-items:center;justify-content:center;
 .retrato img{width:min(62vw,240px);height:min(62vw,240px);border-radius:16px;object-fit:cover;border:2px solid var(--ouro);box-shadow:var(--sombra)}
 .item.apagado{opacity:.5}
 @media print{.impr .cab.com-foto{position:relative;min-height:32mm;background-position:left 4mm,200% 0}.impr .cab .foto-impr{position:absolute;right:0;top:0;width:31mm;height:31mm;object-fit:cover;border:1.2pt solid #b08a3e;outline:.4pt solid #3f4f2e;outline-offset:1pt}}
+
+/* aba Anotações */
+.cartao.nota{cursor:pointer;margin-bottom:10px;padding:12px 14px}
+.nota-cab{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.nota-cab small{color:var(--tinta2);font-size:12px;white-space:nowrap}
+.cartao.nota p{margin:6px 0 0;white-space:normal;line-height:1.45;max-height:8.7em;overflow:hidden}
+p.vazio{text-align:center;color:var(--tinta2);font-style:italic;margin:24px 0}
 </style>
 </head>
 <body>
@@ -359,6 +371,7 @@ span.avatar.vazio{display:inline-flex;align-items:center;justify-content:center;
   <button data-a="aba" data-aba="alma" id="nav-alma"><i>☽</i>Alma</button>
   <button data-a="aba" data-aba="talentos"><i>❖</i>Talentos</button>
   <button data-a="aba" data-aba="bolsa"><i>⚖</i>Bolsa</button>
+  <button data-a="aba" data-aba="notas"><i>✍</i>Notas</button>
   <button data-a="aba" data-aba="grupo" id="nav-grupo" class="oculto"><i>♟</i>Grupo</button>
 </nav>
 <div class="veu" id="veu"></div>
@@ -1070,6 +1083,8 @@ function normalizar(s) {
   out.contra_usados = int(out.contra_usados);
   out.fome_usos = Math.max(0, int(out.fome_usos));          // Símbolo da Fome: Poções Espirituais gastas pelo grupo
   out.casco_tipo = out.casco_tipo || "";
+  out.anotacoes = (Array.isArray(out.anotacoes) ? out.anotacoes : []).filter((x) => x && typeof x === "object")   // aba Anotações
+    .map((x) => ({ id: String(x.id || Math.random().toString(36).slice(2, 10)), titulo: String(x.titulo || ""), texto: String(x.texto || ""), quando: String(x.quando || "") }));
   out.foto = typeof out.foto === "string" && out.foto.startsWith("data:image/") && out.foto.length <= 400000 ? out.foto : "";   // foto do personagem (pequena, dentro da ficha)                    // set Casco: tipo físico escolhido
   out.recursos = Object.assign({}, out.recursos || {});
   out.diario = Array.isArray(out.diario) ? out.diario.slice(0, 100) : [];
@@ -1301,14 +1316,15 @@ function render() {
   $("#nav-alma").classList.toggle("oculto", !!S.sem_alma);
   if (aba === "alma" && S.sem_alma) aba = "ficha";
   if (aba === "grupo" && !(sessao.ativa && sessao.id)) aba = "ficha";
-  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, grupo: pGrupo }[aba]();
+  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, notas: pNotas, grupo: pGrupo }[aba]();
   pintarSessao();
 }
 function aplicarTema() {
   const h = document.documentElement;
-  h.classList.toggle("noite", banco.tema === "noite"); h.classList.toggle("vitral", banco.tema === "vitral");
+  if (banco.tema === "vitral") banco.tema = "trilha";   // o tema Vitral virou o Diário de trilha
+  h.classList.toggle("noite", banco.tema === "noite"); h.classList.toggle("trilha", banco.tema === "trilha");
   const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute("content", banco.tema === "vitral" ? "#fbf6e9" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
+  if (m) m.setAttribute("content", banco.tema === "trilha" ? "#1f3d5c" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
 }
 
 // ------------------------------------------------------------------ levar a ficha do app (https) para a mesa do mestre (http)
@@ -2279,8 +2295,8 @@ function folhaImpressao() {
     + (S.alma.habilidades.length ? t(["Habilidade", "Tipo", "Valor", "Efeito"], S.alma.habilidades.map((x) => { const inf = infoHab(x); return [esc(x.nome), x.tipo, x.tabela ? `${esc(x.tabela)}: ${esc(inf.valor)}` : "", esc(x.efeito)]; })) : "");
   h += sec("Condições e Portão") + t(R.CONDICOES, [R.CONDICOES.map((n) => `${int(S.condicoes[n].atual)}/${condMax(n)}`)]) + `<p class="linha">Portão: ${S.portao.Sucessos.filter(Boolean).length} sucesso(s), ${S.portao.Falhas.filter(Boolean).length} falha(s) · Cicatrizes: ${esc(S.cicatrizes || "—")}</p>`;
   h += sec("Vínculos e Meta de Vida") + `<p class="linha">Grupo: ${esc(S.vinculos.grupo || "—")} · Mundo: ${esc(S.vinculos.mundo || "—")}</p><p class="linha">Meta: ${esc(S.meta.caminho || "—")}${S.meta.caminho ? ` · etapas ${S.meta.etapas.filter(Boolean).length}/3` : ""} · concluídas ${int(S.meta.concluidas)}</p>`;
-  // a tabela de fora só serve de moldura: o vitral (thead) e as vinhas (tfoot) saem em todas as páginas
-  return `<div class="impr"><table class="pg"><thead><tr><td><div class="vitral-faixa"></div></td></tr></thead><tbody><tr><td>${h}</td></tr></tbody><tfoot><tr><td><div class="vinhas-pe"><i></i><span class="rodape-impr">${esc(S.identidade.nome || "Sonhador")} · Ficha Prevalecentes 3.3 · ${new Date().toLocaleDateString("pt-BR")}</span><i></i></div></td></tr></tfoot></table></div>`;
+  // a tabela de fora só serve de moldura: a faixa da trilha (thead) e o pé com os marcos (tfoot) saem em todas as páginas
+  return `<div class="impr"><table class="pg"><thead><tr><td><div class="trilha-faixa"></div></td></tr></thead><tbody><tr><td>${h}</td></tr></tbody><tfoot><tr><td><div class="trilha-pe"><i></i><span class="rodape-impr">${esc(S.identidade.nome || "Sonhador")} · Ficha Prevalecentes 3.3 · ${new Date().toLocaleDateString("pt-BR")}</span><i></i></div></td></tr></tfoot></table></div>`;
 }
 A["imprimir"] = () => {
   fecharFolha();
@@ -2869,11 +2885,11 @@ A["menu"] = () => {
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="imprimir"><div class="tx"><b>🖨 Imprimir / salvar PDF</b><small>A ficha inteira em folhas A4</small></div></div>` : ""}
-    <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Tema: diurno, noturno ou Vitral (creme, dourado e verde musgo)</small></div></div>
+    <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Tema: diurno, noturno ou Diário de trilha (lona, azul-prússia e vermelho)</small></div></div>
     ${S ? `<div class="item" data-a="excluir"><div class="tx"><b class="erro">Excluir esta ficha do aparelho</b></div></div>` : ""}</div>`);
 };
-const TEMAS_ROT = { dia: "☀ Modo diurno", noite: "☾ Modo noturno", vitral: "❧ Tema Vitral" };
-const proximoTema = () => ({ dia: "noite", noite: "vitral", vitral: "dia" }[banco.tema] || "noite");
+const TEMAS_ROT = { dia: "☀ Modo diurno", noite: "☾ Modo noturno", trilha: "🛞 Diário de trilha" };
+const proximoTema = () => ({ dia: "noite", noite: "trilha", trilha: "dia" }[banco.tema] || "noite");
 A["tema"] = () => { banco.tema = proximoTema(); gravarLocal(); fecharFolha(); render(); };
 A["lista"] = () => { fecharFolha(); S = null; banco.atual = null; gravarLocal(); render(); };
 A["abrir"] = (el) => abrirFicha(el.dataset.id);
@@ -3687,6 +3703,43 @@ A["foto"] = () => {
   inp.click();
 };
 A["foto-tirar"] = () => { mudar((s) => { s.foto = ""; }); };
+// ------------------------------------------------------------------ aba Anotações
+// Anotações livres do jogador (pistas, nomes, mapas de cabeça, combinados com o mestre). Ficam na ficha:
+// vão no .json, na ficha da mesa e no backup. Funcionam no Modo Jogo e no Modo Edição.
+const hojeTxt = () => { const d = new Date(); return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+function pNotas() {
+  const ns = S.anotacoes || [];
+  let h = secao("Anotações", `${ns.length} anotaç${ns.length === 1 ? "ão" : "ões"}`)
+    + `<p class="sub">Pistas, nomes, lugares, combinados com o mestre. Ficam guardadas na ficha.</p>
+      <button class="botao prim" data-a="nota-nova" style="width:100%;margin:4px 0 12px">✍ Nova anotação</button>`;
+  if (!ns.length) h += `<p class="vazio">Escreva aqui o que o grupo descobriu na trilha.</p>`;
+  h += ns.map((n) => `<div class="cartao nota" data-a="nota-abrir" data-id="${esc(n.id)}">
+      <div class="nota-cab"><b>${esc(n.titulo || "Sem título")}</b><small>${esc(n.quando)}</small></div>
+      <p>${esc(n.texto).replace(/\n/g, "<br>") || '<span class="sub">vazia</span>'}</p></div>`).join("");
+  return h;
+}
+function editorNota(n) {
+  folha(n ? "Anotação" : "Nova anotação", `<label class="campo"><span>Título</span><input id="nt-t" maxlength="80" value="${esc(n ? n.titulo : "")}" placeholder="O ferreiro de Andar 2"></label>
+    <label class="campo"><span>Texto</span><textarea id="nt-x" rows="9" style="width:100%">${esc(n ? n.texto : "")}</textarea></label>`,
+    `${n ? `<button class="botao leve" data-a="nota-apagar" data-id="${esc(n.id)}">Apagar</button>` : `<button class="botao leve" data-a="fechar">Cancelar</button>`}<button class="botao prim" data-a="nota-ok" data-id="${esc(n ? n.id : "")}">Salvar</button>`,
+    (c) => { const t = $("#nt-x", c); if (t && !n) setTimeout(() => $("#nt-t", c).focus(), 50); });
+}
+A["nota-nova"] = () => editorNota(null);
+A["nota-abrir"] = (el) => { const n = (S.anotacoes || []).find((x) => x.id === el.dataset.id); if (n) editorNota(n); };
+A["nota-ok"] = (el) => {
+  const titulo = $("#nt-t").value.trim(), texto = $("#nt-x").value;
+  if (!titulo && !texto.trim()) { fecharFolha(); return; }
+  fecharFolha();
+  mudar((s) => {
+    const n = s.anotacoes.find((x) => x.id === el.dataset.id);
+    if (n) { n.titulo = titulo; n.texto = texto; n.quando = hojeTxt(); }
+    else s.anotacoes.unshift({ id: Math.random().toString(36).slice(2, 10), titulo, texto, quando: hojeTxt() });
+  });
+};
+A["nota-apagar"] = (el) => {
+  if (!confirm("Apagar esta anotação?")) return;
+  fecharFolha(); mudar((s) => { s.anotacoes = s.anotacoes.filter((x) => x.id !== el.dataset.id); });
+};
 // ------------------------------------------------------------------ eventos
 document.addEventListener("click", (ev) => {
   const el = ev.target.closest("[data-a]");

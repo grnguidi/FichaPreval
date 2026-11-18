@@ -45,6 +45,8 @@ function normalizar(s) {
   out.contra_usados = int(out.contra_usados);
   out.fome_usos = Math.max(0, int(out.fome_usos));          // Símbolo da Fome: Poções Espirituais gastas pelo grupo
   out.casco_tipo = out.casco_tipo || "";
+  out.anotacoes = (Array.isArray(out.anotacoes) ? out.anotacoes : []).filter((x) => x && typeof x === "object")   // aba Anotações
+    .map((x) => ({ id: String(x.id || Math.random().toString(36).slice(2, 10)), titulo: String(x.titulo || ""), texto: String(x.texto || ""), quando: String(x.quando || "") }));
   out.foto = typeof out.foto === "string" && out.foto.startsWith("data:image/") && out.foto.length <= 400000 ? out.foto : "";   // foto do personagem (pequena, dentro da ficha)                    // set Casco: tipo físico escolhido
   out.recursos = Object.assign({}, out.recursos || {});
   out.diario = Array.isArray(out.diario) ? out.diario.slice(0, 100) : [];

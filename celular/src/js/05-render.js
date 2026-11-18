@@ -18,13 +18,14 @@ function render() {
   $("#nav-alma").classList.toggle("oculto", !!S.sem_alma);
   if (aba === "alma" && S.sem_alma) aba = "ficha";
   if (aba === "grupo" && !(sessao.ativa && sessao.id)) aba = "ficha";
-  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, grupo: pGrupo }[aba]();
+  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, notas: pNotas, grupo: pGrupo }[aba]();
   pintarSessao();
 }
 function aplicarTema() {
   const h = document.documentElement;
-  h.classList.toggle("noite", banco.tema === "noite"); h.classList.toggle("vitral", banco.tema === "vitral");
+  if (banco.tema === "vitral") banco.tema = "trilha";   // o tema Vitral virou o Diário de trilha
+  h.classList.toggle("noite", banco.tema === "noite"); h.classList.toggle("trilha", banco.tema === "trilha");
   const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute("content", banco.tema === "vitral" ? "#fbf6e9" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
+  if (m) m.setAttribute("content", banco.tema === "trilha" ? "#1f3d5c" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
 }
 
