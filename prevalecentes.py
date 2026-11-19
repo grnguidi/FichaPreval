@@ -144,12 +144,17 @@ def gravar_pref(**kw):
 FONTE = "Georgia"
 FONTE_TIT = "Georgia"
 FONTE_FRAK = ""   # letra gótica, se houver uma instalada
+MAC = sys.platform == "darwin"
+MOD, MOD_TXT = ("Command", "⌘") if MAC else ("Control", "Ctrl")   # tecla dos atalhos (Ctrl no Windows, ⌘ no Mac)
 
 
 
 def pasta_app():
     if getattr(sys, "frozen", False):
-        return os.path.dirname(sys.executable)
+        d = os.path.dirname(sys.executable)
+        if MAC and ".app/Contents/MacOS" in d:   # no Mac, o executável fica dentro do .app: usa a pasta onde o .app está
+            d = os.path.dirname(os.path.dirname(os.path.dirname(d)))
+        return d
     return os.path.dirname(os.path.abspath(__file__))
 
 
@@ -341,7 +346,8 @@ class App(tk.Tk):
         self._montar()
         self._aplicar_modo()
         self.novo(perguntar=False)
-        self.bind_all("<MouseWheel>", lambda e: self._roda(e, -1 if e.delta > 0 else 1, abs(e.delta)))
+        # Windows manda delta em múltiplos de 120; no macOS vem 1, 2, 3… (já é o número de linhas)
+        self.bind_all("<MouseWheel>", lambda e: self._roda(e, -1 if e.delta > 0 else 1, abs(e.delta) * (120 if sys.platform == "darwin" else 1)))
         self.bind_all("<Button-4>", lambda e: self._roda(e, -1, 120))
         self.bind_all("<Button-5>", lambda e: self._roda(e, 1, 120))
         self.protocol("WM_DELETE_WINDOW", self.fechar)
@@ -508,12 +514,12 @@ class App(tk.Tk):
     def _menu(self):
         m = tk.Menu(self)
         arq = tk.Menu(m, tearoff=0)
-        arq.add_command(label="Nova ficha", command=self.novo, accelerator="Ctrl+N")
-        arq.add_command(label="Abrir…", command=self.abrir, accelerator="Ctrl+O")
-        arq.add_command(label="Salvar", command=self.salvar, accelerator="Ctrl+S")
+        arq.add_command(label="Nova ficha", command=self.novo, accelerator=f"{MOD_TXT}+N")
+        arq.add_command(label="Abrir…", command=self.abrir, accelerator=f"{MOD_TXT}+O")
+        arq.add_command(label="Salvar", command=self.salvar, accelerator=f"{MOD_TXT}+S")
         arq.add_command(label="Salvar como…", command=lambda: self.salvar(como=True))
         arq.add_separator()
-        arq.add_command(label="Exportar ficha em PDF…", command=self.exportar_pdf, accelerator="Ctrl+P")
+        arq.add_command(label="Exportar ficha em PDF…", command=self.exportar_pdf, accelerator=f"{MOD_TXT}+P")
         arq.add_separator()
         arq.add_command(label="Sair", command=self.fechar)
         m.add_cascade(label="Arquivo", menu=arq)
@@ -529,19 +535,19 @@ class App(tk.Tk):
         ms.add_command(label="Inimigos, anotações e combate (painel do mestre)…", command=self.abrir_painel_mestre)
         m.add_cascade(label="Mestre", menu=ms)
         ex = tk.Menu(m, tearoff=0)
-        ex.add_command(label="Trocar tema (Catedral, Vigília ou a sua paleta)", command=self.alternar_tema, accelerator="Ctrl+T")
+        ex.add_command(label="Trocar tema (Catedral, Vigília ou a sua paleta)", command=self.alternar_tema, accelerator=f"{MOD_TXT}+T")
         ex.add_command(label="🎨 Minha paleta…", command=self.editar_paleta)
         m.add_cascade(label="Exibir", menu=ex)
-        self.bind("<Control-t>", lambda e: self.alternar_tema())
+        self.bind(f"<{MOD}-t>", lambda e: self.alternar_tema())
         aj = tk.Menu(m, tearoff=0)
         aj.add_command(label="Criar personagem passo a passo…", command=self.novo)
         aj.add_command(label="Regras usadas nos cálculos", command=self.mostrar_regras)
         m.add_cascade(label="Ajuda", menu=aj)
         self.config(menu=m)
-        self.bind("<Control-n>", lambda e: self.novo())
-        self.bind("<Control-o>", lambda e: self.abrir())
-        self.bind("<Control-s>", lambda e: self.salvar())
-        self.bind("<Control-p>", lambda e: self.exportar_pdf())
+        self.bind(f"<{MOD}-n>", lambda e: self.novo())
+        self.bind(f"<{MOD}-o>", lambda e: self.abrir())
+        self.bind(f"<{MOD}-s>", lambda e: self.salvar())
+        self.bind(f"<{MOD}-p>", lambda e: self.exportar_pdf())
 
     # ============================================================ montagem
     def _montar(self):
@@ -2007,7 +2013,7 @@ class App(tk.Tk):
         if esc["maestria"]:
             partes.append(f"Maestria: {', '.join(esc['maestria'])} (+1 acerto)")
         if esc["dominio"]:
-            partes.append("Domínio: " + ", ".join(f"{g} (+{n} propriedade{"s" if n > 1 else ""})" for g, n in esc["dominio"].items()))
+            partes.append("Domínio: " + ", ".join(f"{g} (+{n} propriedade{'s' if n > 1 else ''})" for g, n in esc["dominio"].items()))
         if esc["mana"]:
             partes.append("Matrícula: " + ("todas as escolas" if esc["todas_escolas"] else ", ".join(esc["escolas"]))
                           + f" (−{esc['mana']} Mana" + (", −1 espaço)" if esc["espaco"] else ")"))
@@ -2404,9 +2410,10 @@ class App(tk.Tk):
             t.insert("end", f"{v['tier']} — Nível {v['nivel']}{' (base)' if v['base'] else ''}   [{estado}]\n", tag)
             dt = 15 + 3 * (v["nivel"] - 1)
             impl = "Cajado" if e["dominio"] == "Magia" else "Selo"
+            seu = "" if nimpl >= v["nivel"] else " (seu: %s)" % (nimpl or "nenhum")
             t.insert("end", f"Mana: {v['mana']} • Ação: {v['acao']} • Distância: {v['distancia']}\n"
                             f"Requisitos: {v['req_texto']} • Teste de aprendizado: DT {dt} • {impl} nv {v['nivel']}+ para conjurar"
-                            f"{'' if nimpl >= v['nivel'] else f' (seu: {nimpl or 'nenhum'})'}\n")
+                            f"{seu}\n")
             t.insert("end", f"{v['descricao']}\n\n")
         t.configure(state="disabled")
 
@@ -4646,7 +4653,7 @@ class App(tk.Tk):
             import pdf_ficha
         except ImportError:
             messagebox.showerror(APP_NOME, "Para exportar em PDF é preciso o pacote reportlab.\n\n"
-                                           "No Prompt de Comando: py -m pip install reportlab\n"
+                                           "No terminal: python3 -m pip install reportlab (no Windows: py -m pip install reportlab)\n"
                                            "(o GERAR_EXE.bat já instala e embute no .exe)")
             return
         nome = (self.v_nome.get() or "ficha").strip().replace(" ", "_")
@@ -4666,10 +4673,11 @@ class App(tk.Tk):
             return
         if messagebox.askyesno(APP_NOME, f"PDF salvo em:\n{fn}\n\nAbrir agora?"):
             try:
-                os.startfile(fn)  # Windows
-            except AttributeError:
-                import subprocess
-                subprocess.Popen(["xdg-open", fn])
+                if sys.platform.startswith("win"):
+                    os.startfile(fn)
+                else:
+                    import subprocess
+                    subprocess.Popen(["open" if MAC else "xdg-open", fn])
             except Exception:
                 pass
 

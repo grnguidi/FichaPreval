@@ -2,7 +2,7 @@
 
 <img src="celular/src/icone-192.png" alt="Ícone: carroça Conestoga" width="96" align="right">
 
-Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.3)**, para PC (Windows) e celular (app instalável, funciona offline), com **sessão de mesa**: o mestre vê Vida, Mana e Vigor dos jogadores em tempo real e envia dano, condições, efeitos e itens.
+Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.3)**, para PC (Windows e Mac) e celular (app instalável, funciona offline), com **sessão de mesa**: o mestre vê Vida, Mana e Vigor dos jogadores em tempo real e envia dano, condições, efeitos e itens.
 
 ## Índice
 
@@ -20,6 +20,7 @@ Ficha de personagem automatizada para o RPG **Prevalecentes (PREVA 3.3)**, para 
 |---|---|
 | **No PC (Windows)** | Baixe `ConestogaConnection.exe` na página de [Releases](../../releases/latest) e abra. Não requer Python. |
 | **No celular** | Abra <https://grnguidi.github.io/FichaPreval/> no Chrome e toque em ⋮ → "Instalar app". |
+| **No Mac** | Instale o Python de [python.org](https://www.python.org/downloads/macos/) e dê dois cliques em `INICIAR.command` (instala as dependências na 1ª vez). |
 | **Pelo código-fonte** | Instale o Python 3 e rode os comandos abaixo. |
 
 ```
@@ -27,7 +28,9 @@ py -m pip install -r requirements.txt
 py prevalecentes.py
 ```
 
-Para **gerar o executável**, execute `GERAR_EXE.bat` (requer Python no PATH). Ele instala as dependências (`requirements.txt` e `requirements-build.txt`), compila o programa e substitui `ConestogaConnection.exe` na pasta.
+**Mac:** use o Python de python.org (ou `brew install python-tk`). O Python que vem com as Ferramentas de Linha de Comando da Apple tem um Tk antigo que fecha ao abrir janelas em alguns macOS (erro `macOS 12 (1207) or later required`). Pelo terminal: `python3 -m pip install -r requirements.txt && python3 prevalecentes.py`. No Mac os atalhos usam ⌘ (⌘S, ⌘O…) e o painel do mestre abre no Chrome/Edge se instalados; para o link público da sessão, `brew install cloudflared`. Para gerar um `ConestogaConnection.app`, rode `GERAR_APP.command`.
+
+Para **gerar o executável** no Windows, execute `GERAR_EXE.bat` (requer Python no PATH). Ele instala as dependências (`requirements.txt` e `requirements-build.txt`), compila o programa e substitui `ConestogaConnection.exe` na pasta.
 
 ## Funcionalidades
 

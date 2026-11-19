@@ -301,6 +301,7 @@ def _navegador_app():
     import shutil
     pastas = [os.environ.get(v, "") for v in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA")]
     candidatos = [os.path.join(p, r) for p in pastas if p for r in (r"Microsoft\Edge\Application\msedge.exe", r"Google\Chrome\Application\chrome.exe")]
+    candidatos += [f"/Applications/{a}.app/Contents/MacOS/{a}" for a in ("Microsoft Edge", "Google Chrome", "Chromium")]   # macOS
     candidatos += [shutil.which(n) or "" for n in ("msedge", "chrome", "google-chrome", "chromium")]
     return next((c for c in candidatos if c and os.path.exists(c)), "")
 

@@ -27,7 +27,10 @@ LIMITE_BYTES = 3_000_000
 
 def _base():
     if getattr(sys, "frozen", False):
-        return os.path.dirname(sys.executable)
+        d = os.path.dirname(sys.executable)
+        if sys.platform == "darwin" and ".app/Contents/MacOS" in d:   # Mac: pasta onde está o .app
+            d = os.path.dirname(os.path.dirname(os.path.dirname(d)))
+        return d
     return os.path.dirname(os.path.abspath(__file__))
 
 
