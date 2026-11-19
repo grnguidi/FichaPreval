@@ -16,6 +16,7 @@ from tkinter import ttk, messagebox, filedialog, simpledialog, font as tkfont
 import regras as R
 import foto as F
 import sessao
+import paleta as PAL
 from ponte_sessao import PonteSessao
 from regras_texto import REGRAS_TXT
 from dados_prevalecentes import DADOS as _DADOS_EMBUTIDOS
@@ -50,13 +51,26 @@ ROTULO_TEMA = {"diurno": "☀ Tema Catedral", "noturno": "☾ Tema Vigília"}
 
 
 def proximo_tema():
-    return ORDEM_TEMAS[(ORDEM_TEMAS.index(TEMA) + 1) % len(ORDEM_TEMAS)]
+    ordem = ORDEM_TEMAS + (["pessoal"] if PAL.valida(ler_pref().get("paleta")) else [])
+    return ordem[(ordem.index(TEMA) + 1) % len(ordem)] if TEMA in ordem else "diurno"
+
+
+def rotulo_tema(nome):
+    if nome == "pessoal":
+        return "🎨 " + (ler_pref().get("paleta") or {}).get("nome", "Minha paleta")
+    return ROTULO_TEMA[nome]
 
 
 def aplicar_tema(nome):
     global NOTURNO, TEMA
+    if nome == "pessoal":   # a paleta que a pessoa criou (guardada nas preferências)
+        p = ler_pref().get("paleta")
+        if PAL.valida(p):
+            TEMAS["pessoal"] = PAL.tema_pc(p)
+        else:
+            nome = "diurno"
     nome = nome if nome in TEMAS else "diurno"     # temas antigos (gótico, vitral, trilha) viram a Catedral
-    NOTURNO, TEMA = nome == "noturno", nome
+    NOTURNO, TEMA = nome == "noturno" or (nome == "pessoal" and bool(ler_pref().get("paleta", {}).get("escuro"))), nome
     globals().update(TEMAS[nome])
 
 
@@ -65,10 +79,14 @@ VIDROS_NOITE = ["#c9a8f0", "#b6f0a4", "#9a62e0", "#f0d98c", "#e6d6ff", "#9fe08c"
 
 
 def vidros():
+    if TEMA == "pessoal" and PAL.valida(ler_pref().get("paleta")):
+        return PAL.derivar(ler_pref()["paleta"])[0]["vidros"]
     return VIDROS_NOITE if NOTURNO else VIDROS_DIA
 
 
 def chumbo():
+    if TEMA == "pessoal" and PAL.valida(ler_pref().get("paleta")):
+        return PAL.derivar(ler_pref()["paleta"])[0]["chumbo"]
     return "#000000" if NOTURNO else "#2a1a3d"
 
 
@@ -511,7 +529,8 @@ class App(tk.Tk):
         ms.add_command(label="Inimigos, anotações e combate (painel do mestre)…", command=self.abrir_painel_mestre)
         m.add_cascade(label="Mestre", menu=ms)
         ex = tk.Menu(m, tearoff=0)
-        ex.add_command(label="Trocar tema (Catedral ou Vigília)", command=self.alternar_tema, accelerator="Ctrl+T")
+        ex.add_command(label="Trocar tema (Catedral, Vigília ou a sua paleta)", command=self.alternar_tema, accelerator="Ctrl+T")
+        ex.add_command(label="🎨 Minha paleta…", command=self.editar_paleta)
         m.add_cascade(label="Exibir", menu=ex)
         self.bind("<Control-t>", lambda e: self.alternar_tema())
         aj = tk.Menu(m, tearoff=0)
@@ -568,7 +587,7 @@ class App(tk.Tk):
         ext.pack(side="right", anchor="n", padx=(12, 0), pady=(4, 0))
         self.bt_modo = ttk.Button(ext, text="✎ Modo Edição", command=self.alternar_modo)
         self.bt_modo.pack(fill="x", pady=1)
-        ttk.Button(ext, text=ROTULO_TEMA[proximo_tema()], command=self.alternar_tema).pack(fill="x", pady=1)
+        ttk.Button(ext, text=rotulo_tema(proximo_tema()), command=self.alternar_tema).pack(fill="x", pady=1)
         ttk.Button(ext, text="⚖ Comparar fichas", command=self.comparar).pack(fill="x", pady=1)
         ttk.Button(ext, text="📜 Exportar PDF", command=self.exportar_pdf).pack(fill="x", pady=1)
         ttk.Button(ext, text="✋ Sessão", command=self.abrir_sessao).pack(fill="x", pady=1)
@@ -3898,13 +3917,15 @@ class App(tk.Tk):
 
     # ============================================================ tema
     def alternar_tema(self):
+        self.trocar_tema(proximo_tema())
+
+    def trocar_tema(self, novo_tema):
         estado = self.estado()
         arq, alt, ini = self.arquivo, self.alterado, self.inicializado
         try:
             aba = self.nb.index(self.nb.select())
         except tk.TclError:
             aba = 0
-        novo_tema = proximo_tema()
         aplicar_tema(novo_tema)
         gravar_pref(tema=novo_tema)
         for w in list(self.winfo_children()):
@@ -3924,6 +3945,103 @@ class App(tk.Tk):
         except tk.TclError:
             pass
         self._titulo()
+
+    # ============================================================ minha paleta
+    def editar_paleta(self):
+        """Editor da paleta pessoal: 5 cores, clara ou escura, modelos prontos e o código PAL- para compartilhar."""
+        from tkinter import colorchooser
+        atual = dict(ler_pref().get("paleta") or {})
+        if not PAL.valida(atual):
+            atual = dict(PAL.MODELOS[1 if NOTURNO else 0], nome="Minha paleta")
+        w = tk.Toplevel(self)
+        w.title("Minha paleta")
+        w.configure(background=PERG)
+        w.transient(self)
+        corpo = tk.Frame(w, bg=PERG, padx=20, pady=14)
+        corpo.pack(fill="both", expand=True)
+        tk.Label(corpo, text="🎨  Minha paleta", bg=PERG, fg=VINHO, font=(FONTE_TIT, 16, "bold")).grid(row=0, column=0, columnspan=3, sticky="w")
+        tk.Label(corpo, text="Escolha 5 cores; o resto do tema sai delas. Vale para o programa todo, não para a ficha.",
+                 bg=PERG, fg=TINTA2, font=(FONTE, 10, "italic")).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 8))
+        v_nome = tk.StringVar(value=atual.get("nome", "Minha paleta"))
+        tk.Label(corpo, text="Nome", bg=PERG, fg=TINTA, font=(FONTE, 10, "bold")).grid(row=2, column=0, sticky="w")
+        ttk.Entry(corpo, textvariable=v_nome, width=28).grid(row=2, column=1, columnspan=2, sticky="w", pady=2)
+        botoes, v_cod, v_av = {}, tk.StringVar(), tk.StringVar()
+        v_esc = tk.BooleanVar(value=bool(atual.get("escuro")))
+
+        def pintar():
+            atual["escuro"] = v_esc.get()
+            for k, b in botoes.items():
+                b.configure(bg=atual[k], activebackground=atual[k])
+            v_cod.set(PAL.codigo(atual))
+            av = PAL.derivar(atual)[1]
+            v_av.set(("Ajuste automático: " + "; ".join(av) + ".") if av else "")
+
+        def escolher(k):
+            cor = colorchooser.askcolor(color=atual[k], parent=w, title=dict((c, r) for c, r, _ in PAL.CHAVES)[k])
+            if cor and cor[1]:
+                atual[k] = cor[1].lower()
+                pintar()
+
+        for i, (k, rot, dica) in enumerate(PAL.CHAVES):
+            b = tk.Button(corpo, width=6, relief="solid", bd=1, cursor="hand2", command=lambda k=k: escolher(k))
+            b.grid(row=3 + i, column=0, sticky="w", pady=3)
+            botoes[k] = b
+            tk.Label(corpo, text=rot, bg=PERG, fg=TINTA, font=(FONTE, 11, "bold")).grid(row=3 + i, column=1, sticky="w", padx=(10, 6))
+            tk.Label(corpo, text=dica, bg=PERG, fg=TINTA2, font=(FONTE, 10)).grid(row=3 + i, column=2, sticky="w")
+        ttk.Radiobutton(corpo, text="☀ Clara", variable=v_esc, value=False, command=pintar).grid(row=8, column=1, sticky="w", pady=(6, 0))
+        ttk.Radiobutton(corpo, text="☾ Escura", variable=v_esc, value=True, command=pintar).grid(row=8, column=2, sticky="w", pady=(6, 0))
+        tk.Label(corpo, textvariable=v_av, bg=PERG, fg=VINHO, font=(FONTE, 9, "italic"), wraplength=440, justify="left").grid(row=9, column=0, columnspan=3, sticky="w")
+
+        tk.Label(corpo, text="Partir de um modelo", bg=PERG, fg=VINHO, font=(FONTE_TIT, 11, "bold")).grid(row=10, column=0, columnspan=3, sticky="w", pady=(10, 2))
+        mods = tk.Frame(corpo, bg=PERG)
+        mods.grid(row=11, column=0, columnspan=3, sticky="w")
+
+        def usar_modelo(m):
+            atual.update({k: m[k] for k, _, _ in PAL.CHAVES})
+            v_esc.set(m["escuro"])
+            pintar()
+
+        for i, m in enumerate(PAL.MODELOS):
+            ttk.Button(mods, text=m["nome"], command=lambda m=m: usar_modelo(m)).grid(row=i // 4, column=i % 4, padx=2, pady=2, sticky="we")
+
+        tk.Label(corpo, text="Compartilhar", bg=PERG, fg=VINHO, font=(FONTE_TIT, 11, "bold")).grid(row=12, column=0, columnspan=3, sticky="w", pady=(10, 2))
+        lin = tk.Frame(corpo, bg=PERG)
+        lin.grid(row=13, column=0, columnspan=3, sticky="we")
+        ttk.Entry(lin, textvariable=v_cod, width=46, state="readonly").pack(side="left")
+
+        def copiar():
+            self.clipboard_clear()
+            self.clipboard_append(v_cod.get())
+
+        ttk.Button(lin, text="Copiar", command=copiar).pack(side="left", padx=4)
+        lin2 = tk.Frame(corpo, bg=PERG)
+        lin2.grid(row=14, column=0, columnspan=3, sticky="we", pady=(4, 0))
+        v_colar = tk.StringVar()
+        ttk.Entry(lin2, textvariable=v_colar, width=46).pack(side="left")
+
+        def receber():
+            p = PAL.ler_codigo(v_colar.get())
+            if not p:
+                messagebox.showwarning("Minha paleta", "Código inválido. Ele começa com PAL- e tem 5 cores.", parent=w)
+                return
+            usar_modelo(p)
+
+        ttk.Button(lin2, text="Usar código", command=receber).pack(side="left", padx=4)
+
+        def salvar():
+            atual["nome"] = v_nome.get().strip() or "Minha paleta"
+            atual["escuro"] = v_esc.get()
+            gravar_pref(paleta={k: atual[k] for k in ["nome", "escuro"] + [c for c, _, _ in PAL.CHAVES]})
+            w.destroy()
+            self.trocar_tema("pessoal")
+
+        rod = tk.Frame(corpo, bg=PERG)
+        rod.grid(row=15, column=0, columnspan=3, sticky="e", pady=(14, 0))
+        ttk.Button(rod, text="Cancelar", command=w.destroy).pack(side="right")
+        ttk.Button(rod, text="Salvar e usar", command=salvar).pack(side="right", padx=6)
+        pintar()
+        w.grab_set()
+        return w
 
     # ============================================================ comparar
     def comparar(self):

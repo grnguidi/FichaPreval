@@ -459,3 +459,27 @@ html.noite .botao.prim{background:#2a1a3d;border-color:var(--lilas);color:var(--
 #t-sub span{color:#f6b8cf!important}
 .switch.on{background:var(--verde)}
 @media (prefers-reduced-motion:reduce){html.rolando .rosa-topo{animation:none}}
+
+/* ---- Minha paleta: editor de cores */
+.pal-nome{display:flex;align-items:center;gap:8px;font-family:var(--tit);font-size:12px;letter-spacing:.06em;margin-bottom:10px}
+.pal-nome input{flex:1}
+.pal-cores{display:grid;gap:8px;margin-bottom:10px}
+.pal-cor{display:flex;align-items:center;gap:12px;padding:6px 8px;border:1px solid var(--linha);border-radius:12px;background:var(--campo)}
+.pal-cor input[type=color]{flex:none;width:52px;height:40px;padding:0;border:2px solid var(--chumbo);border-radius:14px 14px 4px 4px;background:none;cursor:pointer}
+.pal-cor input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.pal-cor input[type=color]::-webkit-color-swatch{border:0;border-radius:12px 12px 3px 3px}
+.pal-cor span{display:flex;flex-direction:column}
+.pal-cor small{color:var(--tinta2);font-size:12px}
+.pal-modo{margin:4px 0}
+.pal-modelos{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;margin:4px 0 10px}
+.pal-modelo{display:flex;flex-wrap:wrap;gap:0;padding:6px;border:1px solid var(--linha);border-radius:12px 12px 4px 4px;background:var(--campo);color:var(--tinta);cursor:pointer}
+.pal-modelo i,.pal-amostra i{display:block;width:20%;height:18px}
+.pal-modelo i:first-child,.pal-amostra i:first-child{border-radius:8px 0 0 0}.pal-modelo i:nth-child(5),.pal-amostra i:nth-child(5){border-radius:0 8px 0 0}
+.pal-modelo span{width:100%;font-size:11.5px;margin-top:4px;text-align:center;font-family:var(--tit);letter-spacing:.03em}
+.pal-amostra{display:flex;flex:none;width:70px;border:1.5px solid var(--chumbo);border-radius:9px 9px 3px 3px;overflow:hidden;margin-right:10px}
+.pal-item.on{outline:2px solid var(--verde);outline-offset:-2px}
+.pal-item .chip-acao{margin-left:auto}
+.pal-codigo{display:flex;gap:6px;margin:6px 0}
+.pal-codigo input{flex:1;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+/* no escuro o destaque é claro: texto escuro sobre ele */
+html.noite .turno-aviso.sua,html.noite .ficha-acao.t-bonus,html.noite .modo-pill.ed{color:var(--perg)}

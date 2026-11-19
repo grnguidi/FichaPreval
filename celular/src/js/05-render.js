@@ -24,7 +24,10 @@ function render() {
 }
 function aplicarTema() {
   const h = document.documentElement;
-  if (banco.tema !== "noite") banco.tema = "dia";   // dois temas: Catedral (dia) e Vigília (noite); os antigos viram o dia
+  if (banco.tema === "minha" && !paletaAtual()) banco.tema = "dia";
+  if (!["noite", "minha"].includes(banco.tema)) banco.tema = "dia";   // Catedral (dia), Vigília (noite) ou a paleta da pessoa
+  if (banco.tema === "minha") { pintarPaleta(paletaAtual()); return; }
+  pintarPaleta(null);
   h.classList.toggle("noite", banco.tema === "noite");
   const m = document.querySelector('meta[name="theme-color"]');
   if (m) m.setAttribute("content", banco.tema === "noite" ? "#08070b" : "#2a1a3d");

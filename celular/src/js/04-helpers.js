@@ -15,7 +15,7 @@ function folha(titulo, corpo, rodape = "", aoMontar) {
   $("#folha-corpo").scrollTop = 0;
   if (aoMontar) aoMontar($("#folha-corpo"));
 }
-function fecharFolha() { $("#folha").classList.remove("on"); $("#veu").classList.remove("on"); pickerAtual = null; }
+function fecharFolha() { $("#folha").classList.remove("on"); $("#veu").classList.remove("on"); pickerAtual = null; if (typeof palEdit !== "undefined" && palEdit) { palEdit = null; aplicarTema(); } }
 
 /* Seletor genérico: itens [{id,nome,sub,motivo[],busca}] — permitidos primeiro */
 let pickerAtual = null;
