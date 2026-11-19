@@ -1,6 +1,7 @@
 // ------------------------------------------------------------------ render
 function render() {
   aplicarTema();
+  montarNav();
   const vazio = !S;
   $("#nav").classList.toggle("oculto", vazio);
   $("#nivel").classList.toggle("oculto", vazio);
@@ -11,18 +12,14 @@ function render() {
   $("#t-sub").innerHTML = C.resto ? `<span style="color:#f0a08c">${C.resto > 0 ? `faltam ${C.resto} pontos` : `excedeu ${-C.resto}`}</span>` : (S.identidade.especie || "") + (S.sem_alma ? " · sem alma" : "");
   $("#nv").textContent = `Nv ${C.nv}`;
   document.documentElement.classList.toggle("jogo", banco.modo !== "edicao");
-  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("on", b.dataset.aba === aba));
-  const faixa = banco.modo === "edicao"
-    ? `<div class="faixa-modo ed"><span>✎ <b>Modo Edição</b> — criar, subir de nível, escolher e aprender</span><button data-a="modo">⚔ Jogar</button></div>`
-    : `<div class="faixa-modo"><span>⚔ <b>Modo Jogo</b> — rolar, gastar e anotar na mesa</span><button data-a="modo">✎ Editar</button></div>`;
-  $("#nav-alma").classList.toggle("oculto", !!S.sem_alma);
-  if (aba === "alma" && S.sem_alma) aba = "ficha";
+  irPara(aba);
   if (aba === "grupo" && !(sessao.ativa && sessao.id)) aba = "ficha";
-  if (aba === "turno" && !banco.layout) aba = "ficha";
+  $("#pagina").innerHTML = barraSub() + paginaAtual();
   document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("on", b.dataset.aba === aba));
-  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, notas: pNotas, grupo: pGrupo, turno: pTurno }[aba]();
   aplicarLayout();
   pintarSessao();
+  pintarPontos();
+  medirTopo();
 }
 function aplicarTema() {
   const h = document.documentElement;

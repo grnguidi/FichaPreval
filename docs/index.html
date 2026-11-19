@@ -318,7 +318,7 @@ html.trilha .topo .avatar~.nome{padding-left:0;background:none}
 html.trilha .topo .nome b{font-family:var(--tit);letter-spacing:.02em;color:#f8f2e4}
 html.trilha .topo .nome small{color:#c9d4de}
 html.trilha .nivel,html.trilha .icone{background:var(--fundo2);border-color:var(--ouro);color:var(--ouro2)}
-html.trilha .pagina{margin-top:12px;background:var(--perg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg opacity='.08' fill='%231f3d5c'%3E%3Cpath d='M50 4 L56 50 L50 96 L44 50Z'/%3E%3Cpath d='M4 50 L50 44 L96 50 L50 56Z'/%3E%3Cpath d='M50 50 L70 30 L54 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 70 L46 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L70 70 L50 54Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 30 L50 46Z' opacity='.7'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%231f3d5c' stroke-opacity='.12' stroke-width='1.5'/%3E%3C/svg%3E") right 6px top 110px/96px 96px no-repeat}
+html.trilha .pagina{margin-top:12px;background:var(--perg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg opacity='.08' fill='%231f3d5c'%3E%3Cpath d='M50 4 L56 50 L50 96 L44 50Z'/%3E%3Cpath d='M4 50 L50 44 L96 50 L50 56Z'/%3E%3Cpath d='M50 50 L70 30 L54 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 70 L46 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L70 70 L50 54Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 30 L50 46Z' opacity='.7'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%231f3d5c' stroke-opacity='.12' stroke-width='1.5'/%3E%3C/svg%3E") right 6px bottom 96px/96px 96px no-repeat}
 html.trilha .nav{background:var(--fundo);border-top:2px solid var(--vinho)}
 html.trilha .nav button{color:#b8c6d4}
 html.trilha .nav button.on{color:var(--ouro2)}
@@ -392,6 +392,34 @@ html.layout-mesa .pagina{padding-bottom:150px}
 .fav.t-uso{border-left:4px solid var(--c-tal)}
 .fav.esgotado{opacity:.5}
 .botao.grande{width:100%;padding:14px;font-size:16px}
+
+/* abas novas: barra de baixo com ícones de traço, sub-abas presas no alto, blocos que abrem e fecham */
+.nav{grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.nav button{position:relative;gap:3px;font-size:11px;letter-spacing:.02em}
+.nav button svg{display:block}
+.nav button.on svg{stroke-width:2.1}
+.nav button .ponto{position:absolute;top:6px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#e2563c;box-shadow:0 0 0 2px var(--fundo)}
+.nav button .ponto[hidden]{display:none}
+.subabas{position:sticky;top:var(--topo-h,62px);z-index:15;display:flex;align-items:center;gap:8px;margin:-14px -14px 12px;border-radius:14px 14px 0 0;padding:8px 14px;background:var(--perg);border-bottom:1px solid var(--linha)}
+.seg{flex:1;min-width:0;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:3px;border-radius:12px;background:var(--perg2)}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:1 0 auto;border:0;background:transparent;color:var(--tinta2);font:inherit;font-size:13.5px;padding:7px 10px;border-radius:9px;white-space:nowrap;min-height:34px}
+.seg button.on{background:var(--campo);color:var(--vinho);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg-tit{padding:7px 10px;font-family:var(--tit);color:var(--vinho)}
+.modo-pill{flex:none;border:1px solid var(--ouro);background:var(--campo);color:var(--tinta);font:inherit;font-size:12.5px;padding:7px 10px;border-radius:999px;min-height:34px;white-space:nowrap}
+.modo-pill.ed{background:var(--vinho);border-color:var(--vinho);color:#fff}
+.faixa-modo{display:none}
+.bloco{margin-bottom:6px}
+.bloco-cab{cursor:pointer;-webkit-user-select:none;user-select:none}
+.bloco-cab .chev{order:5;flex:none;width:9px;height:9px;border-right:2px solid var(--tinta2);border-bottom:2px solid var(--tinta2);transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s;margin:0 4px 0 2px}
+.bloco.fechado .bloco-cab .chev{transform:rotate(-45deg)}
+.bloco.fechado .bloco-corpo{display:none}
+.bloco.fechado .bloco-cab{margin-bottom:4px}
+.ajuda-bt{order:4;flex:none;width:24px;height:24px;border-radius:50%;border:1px solid var(--ouro);background:transparent;color:var(--tinta2);font:inherit;font-size:13px;letter-spacing:0;line-height:1;padding:0}
+.ajuda-bt.on{background:var(--ouro);color:#fff}
+.ajuda-txt{margin:-4px 2px 10px;padding:9px 12px;border-radius:10px;background:var(--perg2);color:var(--tinta2);font-size:13.5px;line-height:1.45}
+.ajuda-txt[hidden]{display:none}
+.item.apagado{opacity:.55}
 </style>
 </head>
 <body>
@@ -406,18 +434,7 @@ html.layout-mesa .pagina{padding-bottom:150px}
 <main class="pagina" id="pagina"></main>
 <div class="mesa oculto" id="mesa"></div>
 <button class="dado-flutuante" id="dado-flutuante" data-a="leque" aria-label="Rolar: iniciativa, perícias e dado livre (segure para o diário)" hidden>🎲</button>
-<nav class="nav" id="nav">
-  <button data-a="aba" data-aba="ficha"><i>⚜</i>Ficha</button>
-  <button data-a="aba" data-aba="combate"><i>⚔</i>Combate</button>
-  <button data-a="aba" data-aba="pericias"><i>✎</i>Perícias</button>
-  <button data-a="aba" data-aba="grimorio"><i>✧</i>Grimório</button>
-  <button data-a="aba" data-aba="alma" id="nav-alma"><i>☽</i>Alma</button>
-  <button data-a="aba" data-aba="talentos"><i>❖</i>Talentos</button>
-  <button data-a="aba" data-aba="turno" id="nav-turno" class="oculto"><i>⚑</i>Turno</button>
-  <button data-a="aba" data-aba="bolsa"><i>⚖</i>Bolsa</button>
-  <button data-a="aba" data-aba="notas"><i>✍</i>Notas</button>
-  <button data-a="aba" data-aba="grupo" id="nav-grupo" class="oculto"><i>♟</i>Grupo</button>
-</nav>
+<nav class="nav" id="nav"></nav>
 <div class="veu" id="veu"></div>
 <section class="folha" id="folha" role="dialog" aria-modal="true">
   <div class="alca"></div>
@@ -1344,6 +1361,7 @@ function itemSeletor(id) {
 // ------------------------------------------------------------------ render
 function render() {
   aplicarTema();
+  montarNav();
   const vazio = !S;
   $("#nav").classList.toggle("oculto", vazio);
   $("#nivel").classList.toggle("oculto", vazio);
@@ -1354,18 +1372,14 @@ function render() {
   $("#t-sub").innerHTML = C.resto ? `<span style="color:#f0a08c">${C.resto > 0 ? `faltam ${C.resto} pontos` : `excedeu ${-C.resto}`}</span>` : (S.identidade.especie || "") + (S.sem_alma ? " · sem alma" : "");
   $("#nv").textContent = `Nv ${C.nv}`;
   document.documentElement.classList.toggle("jogo", banco.modo !== "edicao");
-  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("on", b.dataset.aba === aba));
-  const faixa = banco.modo === "edicao"
-    ? `<div class="faixa-modo ed"><span>✎ <b>Modo Edição</b> — criar, subir de nível, escolher e aprender</span><button data-a="modo">⚔ Jogar</button></div>`
-    : `<div class="faixa-modo"><span>⚔ <b>Modo Jogo</b> — rolar, gastar e anotar na mesa</span><button data-a="modo">✎ Editar</button></div>`;
-  $("#nav-alma").classList.toggle("oculto", !!S.sem_alma);
-  if (aba === "alma" && S.sem_alma) aba = "ficha";
+  irPara(aba);
   if (aba === "grupo" && !(sessao.ativa && sessao.id)) aba = "ficha";
-  if (aba === "turno" && !banco.layout) aba = "ficha";
+  $("#pagina").innerHTML = barraSub() + paginaAtual();
   document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("on", b.dataset.aba === aba));
-  $("#pagina").innerHTML = faixa + { ficha: pFicha, combate: pCombate, pericias: pPericias, grimorio: pGrimorio, alma: pAlma, talentos: pTalentos, bolsa: pBolsa, notas: pNotas, grupo: pGrupo, turno: pTurno }[aba]();
   aplicarLayout();
   pintarSessao();
+  pintarPontos();
+  medirTopo();
 }
 function aplicarTema() {
   const h = document.documentElement;
@@ -1375,6 +1389,172 @@ function aplicarTema() {
   if (m) m.setAttribute("content", banco.tema === "trilha" ? "#1f3d5c" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
 }
 
+// ------------------------------------------------------------------ abas: 5 fixas (+ Grupo na sessão), cada uma com sub-abas
+// A barra de baixo responde a uma pergunta por aba; as páginas antigas viram sub-abas. As seções de cada página
+// viram blocos que abrem e fecham (o app lembra), e os textos de ajuda (p.ajuda) ficam atrás de um "?".
+const IC = {   // ícones de traço, todos do mesmo desenho (24×24, cor do texto)
+  ficha: '<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+  combate: '<path d="M4 4l10 10M4 4h4M4 4v4M20 4L10 14M20 4h-4M20 4v4M7 17l-3 3M17 17l3 3M8 13l3 3M16 13l-3 3"/>',
+  saberes: '<path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5c-.8 0-1.5-.7-1.5-1.5v-13zM20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5c.8 0 1.5-.7 1.5-1.5v-13z"/><path d="M7 8h2M15 8h2M7 11h2M15 11h2"/>',
+  bolsa: '<path d="M7 8V6a5 5 0 0 1 10 0v2"/><rect x="4" y="8" width="16" height="13" rx="3"/><path d="M9 13h6"/>',
+  diario: '<path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M9 8h6M9 12h6M9 16h3"/>',
+  grupo: '<path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c1-3.5 3.5-5 6.5-5s5.5 1.5 6.5 5"/><path d="M16 4.5a3 3 0 0 1 0 6M18 14.5c2 .6 3.2 2.3 3.6 5"/>',
+};
+const icone = (k) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
+const ABAS = {
+  ficha: { rot: "Ficha", subs: [["resumo", "Resumo"], ["atributos", "Atributos"], ["especie", "Espécie e alma"]] },
+  combate: { rot: "Combate", subs: [["turno", "Turno"], ["armas", "Armas"], ["magias", "Magias"], ["defesas", "Defesas"]] },
+  saberes: { rot: "Saberes", subs: [["pericias", "Perícias"], ["talentos", "Talentos"], ["grimorio", "Grimório"]] },
+  bolsa: { rot: "Bolsa", subs: [["itens", "Itens"], ["equip", "Equipamento"], ["dinheiro", "Dinheiro"]] },
+  diario: { rot: "Diário", subs: [["notas", "Notas"], ["rolagens", "Rolagens"], ["metas", "Metas e vínculos"]] },
+  grupo: { rot: "Grupo", subs: [] },
+};
+// nomes antigos de aba (botões, avisos e o Layout de mesa ainda podem pedir por eles)
+const ALIAS_ABA = { pericias: ["saberes", "pericias"], grimorio: ["saberes", "grimorio"], talentos: ["saberes", "talentos"], alma: ["ficha", "especie"],
+  notas: ["diario", "notas"], turno: ["combate", "turno"], metas: ["diario", "metas"], rolagens: ["diario", "rolagens"] };
+function irPara(a, s) {
+  if (ALIAS_ABA[a]) [a, s] = ALIAS_ABA[a];
+  aba = ABAS[a] ? a : "ficha";
+  banco.subs = banco.subs || {};
+  if (s) banco.subs[aba] = s;
+}
+function subAtual() {
+  const subs = ABAS[aba] ? ABAS[aba].subs : [];
+  const s = (banco.subs || {})[aba];
+  return subs.some((x) => x[0] === s) ? s : (subs[0] || [""])[0];
+}
+function montarNav() {
+  const nav = $("#nav"); if (!nav || nav.dataset.ok) return;
+  nav.innerHTML = Object.entries(ABAS).map(([k, a]) => `<button data-a="aba" data-aba="${k}" ${k === "grupo" ? 'id="nav-grupo" class="oculto"' : ""}>${icone(k)}<span>${a.rot}</span><b class="ponto" hidden></b></button>`).join("");
+  nav.dataset.ok = "1";
+}
+// avisos nas próprias abas
+function pintarPontos() {
+  const marca = (k, on, t) => { const b = document.querySelector(`#nav [data-aba="${k}"] .ponto`); if (b) { b.hidden = !on; b.title = on ? t : ""; } };
+  if (!S || !C) { ["ficha", "combate", "bolsa", "saberes"].forEach((k) => marca(k, false)); return; }
+  marca("combate", !!(sessao.ativa && sessao.vez && sessao.vez === sessao.id), "Sua vez");
+  marca("bolsa", C.carga > C.d.carga || !!C.lentidao, "Carga acima do limite");
+  marca("ficha", C.resto > 0, "Pontos para distribuir");
+}
+
+// ---- páginas: cada página antiga é cortada nas suas seções, e as sub-abas escolhem quais mostrar
+function secoesDe(html) {
+  const d = document.createElement("div"); d.innerHTML = html;
+  const out = []; let cur = { titulo: "", extra: "", nos: [] }; out.push(cur);
+  for (const e of [...d.children]) {
+    if (e.classList.contains("secao")) {
+      const ex = e.querySelector(".extra"); if (ex) ex.remove();
+      cur = { titulo: e.textContent.trim(), extra: ex ? ex.innerHTML : "", nos: [] }; out.push(cur);
+    } else cur.nos.push(e);
+  }
+  return out.filter((s) => s.titulo || s.nos.length);
+}
+const pegar = (secs, titulos) => secs.filter((s) => titulos.includes(s.titulo));
+const tirar = (secs, titulos) => secs.filter((s) => !titulos.includes(s.titulo));
+function blocoHtml(s, chave) {
+  const ajuda = s.nos.filter((n) => n.matches("p.ajuda")), resto = s.nos.filter((n) => !n.matches("p.ajuda"));
+  const corpo = resto.map((n) => n.outerHTML).join("");
+  if (!s.titulo) return corpo;
+  const k = `${chave}:${s.titulo}`, fechado = !!(banco.fechados || {})[k];
+  return `<section class="bloco ${fechado ? "fechado" : ""}">
+    <div class="secao bloco-cab" data-a="bloco" data-k="${esc(k)}" role="button" aria-expanded="${fechado ? "false" : "true"}">${esc(s.titulo)}${s.extra ? `<span class="extra">${s.extra}</span>` : ""}
+      ${ajuda.length ? `<button class="ajuda-bt" data-a="ajuda" aria-label="O que é isto?">?</button>` : ""}<span class="chev" aria-hidden="true"></span></div>
+    ${ajuda.length ? `<div class="ajuda-txt" hidden>${ajuda.map((n) => n.innerHTML).join("<br>")}</div>` : ""}
+    <div class="bloco-corpo">${corpo}</div></section>`;
+}
+const montar = (secs) => secs.map((s) => blocoHtml(s, `${aba}/${subAtual()}`)).join("");
+A["bloco"] = (el) => {
+  const sec = el.closest(".bloco"); if (!sec) return;
+  const fechado = sec.classList.toggle("fechado");
+  el.setAttribute("aria-expanded", fechado ? "false" : "true");
+  banco.fechados = banco.fechados || {};
+  if (fechado) banco.fechados[el.dataset.k] = 1; else delete banco.fechados[el.dataset.k];
+  gravarLocal();
+};
+A["ajuda"] = (el, ev) => {
+  if (ev) ev.stopPropagation();
+  const t = el.closest(".bloco").querySelector(".ajuda-txt"); if (t) t.hidden = !t.hidden;
+  el.classList.toggle("on", t && !t.hidden);
+};
+
+function pEspecie() {
+  const ajustes = R.ATRIBUTOS.map((k) => [k, int(S.atributos[k].especie)]).filter(([, n]) => n).map(([k, n]) => `${n > 0 ? "+" : "−"}${Math.abs(n)} ${R.NOMES_ATR[k]}`);
+  const notas = String(S.especie_notas || "").trim();
+  return secao("Espécie") + `<div class="cartao" style="padding:12px 14px" ${banco.modo === "edicao" ? 'data-a="especie-editar"' : ""}>
+      <b style="font-size:17px">${esc(S.identidade.especie || "Espécie não anotada")}</b>${ajustes.length ? `<div class="sub" style="margin-top:2px">${ajustes.join(" · ")}</div>` : ""}
+      <p style="margin:8px 0 0;line-height:1.45">${notas ? esc(notas).replace(/\n/g, "<br>") : '<span class="sub">Sem par descritivo anotado (vantagem e desvantagem).</span>'}</p>
+      ${banco.modo === "edicao" ? '<div class="sub" style="margin-top:6px">Toque para editar.</div>' : ""}</div>`;
+}
+A["especie-editar"] = () => folha("Espécie", `<label class="campo"><span>Espécie</span><input id="es-n" value="${esc(S.identidade.especie || "")}"></label>
+  <label class="campo"><span>Vantagem e desvantagem</span><textarea id="es-t" rows="6" style="width:100%">${esc(S.especie_notas || "")}</textarea></label>
+  <p class="sub">Os pontos de atributo da espécie ficam na sub-aba Atributos.</p>`, `<button class="botao prim" data-a="especie-ok">Salvar</button>`);
+A["especie-ok"] = () => { const n = $("#es-n").value.trim(), t = $("#es-t").value; fecharFolha(); mudar((s) => { s.identidade.especie = n; s.especie_notas = t; }); };
+
+function pMagias() {   // Combate › Magias: o que dá para conjurar agora, em um toque
+  const ops = [];
+  S.encantamentos.forEach((x) => { const e = ENC[x.familia]; if (e) e.versoes.filter((v) => x.versoes.includes(v.nivel)).forEach((v) => ops.push({ e, v, eq: x.equipado })); });
+  ops.sort((a, b) => (b.eq - a.eq) || a.e.nome.localeCompare(b.e.nome) || a.v.nivel - b.v.nivel);
+  const mana = S.vida.mana_atual === "" || S.vida.mana_atual == null ? C.d.mana : int(S.vida.mana_atual, C.d.mana);
+  let h = secao("Magias", `Mana ${mana}/${C.d.mana}`);
+  if (!ops.length) return h + `<p class="vazio">Nenhum encantamento aprendido ainda.</p><button class="botao leve" data-a="aba" data-aba="grimorio" style="width:100%">Abrir o Grimório</button>`;
+  h += `<div class="lista">${ops.map((o) => { const custo = custoEnc(o.e, o.v)[0], falta = custo > mana;
+    return `<div class="item ${falta ? "apagado" : ""}" data-a="conjurar" data-f="${esc(o.e.nome)}" data-v="${o.v.nivel}"><span class="marca">✧</span>
+      <div class="tx"><b>${esc(o.e.nome)}</b><small>${esc(o.v.tier)} nv ${o.v.nivel} · ${esc(o.v.mana)} · ${esc(o.v.acao)}${o.v.distancia ? " · " + esc(o.v.distancia) : ""}${o.eq ? "" : " · não equipado"}${falta ? " · falta mana" : ""}</small></div><span class="sub">🎲</span></div>`; }).join("")}</div>
+    <p class="sub ajuda">Toque para conjurar: a Mana e a ação são gastas sozinhas. Para aprender e equipar, use Saberes › Grimório.</p>`;
+  return h;
+}
+function pRolagens() {
+  const lista = S.diario.length ? `<div class="lista">${S.diario.map((r) => `<div class="item" style="display:block"><b style="color:var(--vinho)">${esc(r.titulo)}</b> <span class="sub">${r.hora}</span><div style="font-size:14px;line-height:1.5;margin-top:4px">${r.linhas.join("<br>")}</div></div>`).join("")}</div>`
+    : `<p class="vazio">Nenhuma rolagem ainda.</p>`;
+  return secao("Rolagens", `${S.diario.length} registradas`) + lista
+    + `<div class="linhabts" style="margin-top:10px">${desfazer.length ? `<button class="botao leve" data-a="desfazer">↺ Desfazer último custo</button>` : ""}${S.diario.length ? `<button class="botao leve" data-a="diario-limpar">Limpar</button>` : ""}</div>`;
+}
+
+function paginaAtual() {
+  const s = subAtual();
+  if (aba === "ficha") {
+    const f = secoesDe(pFicha());
+    if (s === "atributos") return montar(pegar(f, ["Atributos"]));
+    if (s === "especie") return montar(secoesDe(pEspecie() + (S.sem_alma ? "" : pAlma())));
+    return montar(tirar(f, ["Atributos"]));
+  }
+  if (aba === "combate") {
+    const c = secoesDe(pCombate());
+    if (s === "turno") return montar(pegar(c, ["Rolar"]).concat(secoesDe(pTurno())));
+    if (s === "armas") return montar(pegar(c, ["Armas", "Ataque sem arma"]));
+    if (s === "magias") return montar(secoesDe(pMagias()));
+    return montar(tirar(c, ["Rolar", "Turno", "Usos", "Armas", "Ataque sem arma"]));
+  }
+  if (aba === "saberes") {
+    if (s === "talentos") return montar(tirar(secoesDe(pTalentos()), ["Metas de Vida", "Vínculos"]));
+    if (s === "grimorio") return montar(secoesDe(pGrimorio()));
+    return montar(secoesDe(pPericias()));
+  }
+  if (aba === "bolsa") {
+    const b = secoesDe(pBolsa());
+    const dinheiro = [];
+    b.forEach((x) => { x.nos = x.nos.filter((n) => { const m = n.matches(".dinheiro, .moedas"); if (m) dinheiro.push(n); return !m; }); });
+    if (s === "dinheiro") return montar([{ titulo: "Dinheiro", extra: "", nos: dinheiro }]);
+    if (s === "equip") return montar(tirar(b, ["Carga", "Itens"]));
+    return montar(pegar(b, ["Carga", "Itens"]));
+  }
+  if (aba === "diario") {
+    if (s === "rolagens") return montar(secoesDe(pRolagens()));
+    if (s === "metas") return montar(pegar(secoesDe(pTalentos()), ["Metas de Vida", "Vínculos"]));
+    return montar(secoesDe(pNotas()));
+  }
+  if (aba === "grupo") return pGrupo();
+  return pFicha();
+}
+function barraSub() {
+  const a = ABAS[aba], s = subAtual(), ed = banco.modo === "edicao";
+  const subs = a.subs.map(([k, r]) => [k, k === "especie" && S.sem_alma ? "Espécie" : r]);
+  return `<div class="subabas" id="subabas"><div class="seg" role="tablist">${subs.length ? subs.map(([k, r]) => `<button role="tab" aria-selected="${k === s}" class="${k === s ? "on" : ""}" data-a="sub" data-s="${k}">${r}</button>`).join("") : `<b class="seg-tit">${a.rot}</b>`}</div>
+    <button class="modo-pill ${ed ? "ed" : ""}" data-a="modo" aria-label="${ed ? "Voltar ao Modo Jogo" : "Editar a ficha"}">${ed ? "⚔ Jogar" : "✎ Editar"}</button></div>`;
+}
+A["sub"] = (el) => { banco.subs = banco.subs || {}; banco.subs[aba] = el.dataset.s; gravarLocal(); render(); window.scrollTo(0, 0); };
+function medirTopo() { const t = document.querySelector(".topo"); if (t) document.documentElement.style.setProperty("--topo-h", t.offsetHeight + "px"); }
+window.addEventListener("resize", medirTopo);
 // ------------------------------------------------------------------ levar a ficha do app (https) para a mesa do mestre (http)
 // Um site https não pode falar com http://IP (o navegador bloqueia), mas pode ABRIR o endereço. A ficha vai no
 // "#f=" do endereço (só o navegador vê, nada passa por servidor) e a página do mestre a guarda como ficha sua.
@@ -1604,10 +1784,10 @@ function pCombate() {
   h += secao("Condições") + `<div class="conds">${R.CONDICOES.map((n) => {
     const c = S.condicoes[n] || { atual: "", max: "100" }, mx = condMax(n), at = int(c.atual), pct = Math.max(0, Math.min(100, (at / Math.max(1, mx)) * 100));
     return `<button class="cond ${at ? "on" : ""}" data-a="editar-cond" data-n="${n}"><b>${n}</b><span>${at}/${mx}</span><i style="width:${pct}%"></i></button>`;
-  }).join("")}</div><p class="sub">Enchem com pontos; ao chegar no máximo, o efeito ativa e a barra zera. Descanso curto tira 25 de cada; o longo zera. Toque para ver o efeito.</p>`;
+  }).join("")}</div><p class="sub ajuda">Enchem com pontos; ao chegar no máximo, o efeito ativa e a barra zera. Descanso curto tira 25 de cada; o longo zera. Toque para ver o efeito.</p>`;
   h += secao("Portão da Morte") + ["Sucessos", "Falhas"].map((n) => `<div class="portao"><span class="r" style="background:${n === "Sucessos" ? "var(--c-vigor)" : "var(--c-vida)"}">${n}</span>
     ${S.portao[n].slice(0, n === "Falhas" ? d.limite_morte : 5).map((on, i) => `<button class="bolinha ${on ? "on" : ""} ${n === "Sucessos" ? "s" : "f"}" data-a="portao" data-n="${n}" data-i="${i}"></button>`).join("")}</div>`).join("")
-    + `<div class="linhabts" style="margin-top:6px"><button class="botao leve" data-a="portao-rolar">🎲 Rolar o d20 do turno</button></div><p class="sub">d20 no início do turno: 11+ é sucesso. 5 sucessos: volta com 1 de Vida e 1 cicatriz. ${d.limite_morte} falhas: morte (3 + 1 a cada 40 de Vitalidade). Cada cicatriz já começa com 1 falha (até ${d.limite_morte - 1}). Medicina de um aliado: DT 15 + 10 por cicatriz sua.</p>`;
+    + `<div class="linhabts" style="margin-top:6px"><button class="botao leve" data-a="portao-rolar">🎲 Rolar o d20 do turno</button></div><p class="sub ajuda">d20 no início do turno: 11+ é sucesso. 5 sucessos: volta com 1 de Vida e 1 cicatriz. ${d.limite_morte} falhas: morte (3 + 1 a cada 40 de Vitalidade). Cada cicatriz já começa com 1 falha (até ${d.limite_morte - 1}). Medicina de um aliado: DT 15 + 10 por cicatriz sua.</p>`;
   h += secao("Resistências") + `<div>${R.RESISTENCIAS.map(([lim, n]) => `<span class="chip ${d.resistencias.includes(n) ? "on" : ""}">${d.resistencias.includes(n) ? "☑" : "☐"} ${n} ${lim}</span>`).join("")}</div>`;
   h += secao("Descanso") + `<div class="linhabts" style="margin-top:0"><button class="botao" data-a="descanso" data-t="curto">☾ Descanso curto</button><button class="botao" data-a="descanso" data-t="longo">☀ Longo</button>
     <button class="botao" data-a="pocao">⚗ Poção Espiritual</button></div>
@@ -1626,7 +1806,7 @@ function pPericias() {
       const bonus = bonus0 + (C.ef.pericia[nome] || 0) + (mestre ? 2 : 0) + discreta;
       return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados + (mestre ? 1 : 0)}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
         <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados + (mestre ? 1 : 0)}d20${mestre ? " · Mestre" : ""}</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
-    }).join("")}</div><p class="sub">${banco.modo === "edicao" ? "Toque na perícia para ver o que ela faz" : "Toque na perícia para rolar (1d20 a mais a cada 20 pontos do atributo, fica o maior)"}. A caixa marca o treino (Modo Edição). • exige treino.</p>`;
+    }).join("")}</div><p class="sub ajuda">${banco.modo === "edicao" ? "Toque na perícia para ver o que ela faz" : "Toque na perícia para rolar (1d20 a mais a cada 20 pontos do atributo, fica o maior)"}. A caixa marca o treino (Modo Edição). • exige treino.</p>`;
   h += secao("Perícia de ataque treinada") + `<div>${R.PERICIAS_ATAQUE.map(([nn]) => `<span class="chip ${S.pericia_ataque === nn ? "on" : ""}" data-a="per-atk" data-n="${nn}">${nn}</span>`).join("")}</div>`;
   h += secao("Atributo da Prevalência") + `<div>${R.ATRIBUTOS.map((k) => `<span class="chip ${S.prevalencia_attr === k ? "on" : ""}" data-a="prev-attr" data-k="${k}">${k}</span>`).join("")}</div>`;
   return h;
@@ -1646,7 +1826,7 @@ function pGrimorio() {
     return `<div class="item" data-a="ver-enc" data-i="${i}"><span class="check ${x.equipado ? "on" : ""}" data-a="equipar" data-i="${i}"></span>
       <div class="tx"><b>${esc(e.nome)}</b><small>${e.dominio} · nv ${x.versoes.join(", ")} · ${esc(top.mana)}${custoEnc(e, top)[0] != null && custoEnc(e, top)[0] !== R.custoMana(top) ? ` (Matrícula: ${custoEnc(e, top)[0]})` : ""} · esp ${custoEnc(e)[1]}${conj ? "" : ` · ${NO} sem ${e.dominio === "Magia" ? "cajado" : "selo"} nv ${top.nivel}`}</small></div>
       <button class="passos" style="border:0;background:none;padding:0" data-a="conjurar" data-f="${esc(e.nome)}" data-v="${top.nivel}"><span class="botao prim" style="min-height:38px;padding:6px 12px">🎲</span></button></div>`;
-  }).join("")}</div><p class="sub">Marque a caixa para equipar. Toque no nome para ver a descrição.</p>`;
+  }).join("")}</div><p class="sub ajuda">Marque a caixa para equipar. Toque no nome para ver a descrição.</p>`;
   return h;
 }
 function descEnc(nome, destaque) {
@@ -1688,7 +1868,7 @@ function pTalentos() {
     ${cam ? cam[2].map((t, k) => `<div class="item" data-a="meta-etapa" data-k="${k}"><span class="check ${mt.etapas[k] ? "on" : ""}"></span><div class="tx"><b>Etapa ${k + 1} · ${R.ETAPAS_META[k]}</b><small>${esc(t)}</small></div></div>`).join("") : ""}
     <div class="item" data-a="meta-notas"><div class="tx"><b>Anotações</b><small>${esc(mt.notas || "toque para escrever")}</small></div></div></div>
     ${cam && mt.etapas.every(Boolean) ? `<div class="linhabts"><button class="botao prim" data-a="meta-concluir">✦ Concluir a Meta</button></div>` : ""}
-    <p class="sub">Cada Meta concluída dá 1 talento extra; a primeira dá também +5 pontos em um atributo.${rec.talentos ? ` Você já tem ${rec.talentos} talento(s) de Meta (M1…)${rec.pontos ? " e os +5 pontos na distribuição" : ""}.` : ""}
+    <p class="sub ajuda">Cada Meta concluída dá 1 talento extra; a primeira dá também +5 pontos em um atributo.${rec.talentos ? ` Você já tem ${rec.talentos} talento(s) de Meta (M1…)${rec.pontos ? " e os +5 pontos na distribuição" : ""}.` : ""}
     <span class="so-ed"> · <a href="#" data-a="meta-n" data-d="1" style="color:var(--vinho)">+1 concluída</a> · <a href="#" data-a="meta-n" data-d="-1" style="color:var(--vinho)">−1</a> · <a href="#" data-a="meta-perder" style="color:var(--vinho)">perder a Meta (subiu de Andar)</a></span></p>`;
   h += secao("Vínculos") + `<div class="lista">${[["grupo", "Com o grupo"], ["mundo", "Com o mundo"]].map(([k, r]) =>
     `<div class="item" data-a="editar-vinc" data-k="${k}"><div class="tx"><b>${r}</b><small>${esc(S.vinculos[k] || "toque para escrever")}</small></div></div>`).join("")}</div>`;
@@ -1742,7 +1922,7 @@ function pAlma() {
       <div class="linhabts">${x.tipo === "Ativo" ? `<button class="botao prim" data-a="hab-usar" data-i="${i}">${x.tabela && x.tabela.startsWith("Dano") ? "🎲 Usar e rolar" : "✓ Usar"}</button>` : ""}<button class="botao leve so-ed" data-a="hab-editar" data-i="${i}">✎ Editar</button></div></div>`;
   }).join("") : `<div class="vazio-msg">Nenhuma habilidade ainda.</div>`)
     + `<div class="linhabts so-ed"><button class="botao prim" data-a="hab-editar" data-i="-1" ${al.habilidades.length >= 6 ? "disabled" : ""}>＋ Habilidade</button></div>
-    <p class="sub">Toda Alma começa com 1 passiva e 1 ativa; novas ativas nos níveis 10, 20 e 30. A Alma nunca cura. O valor vem da Tabela de valores do livro, no nível da alma com os ajustes da habilidade.</p>`;
+    <p class="sub ajuda">Toda Alma começa com 1 passiva e 1 ativa; novas ativas nos níveis 10, 20 e 30. A Alma nunca cura. O valor vem da Tabela de valores do livro, no nível da alma com os ajustes da habilidade.</p>`;
   return h;
 }
 A["alma-ident"] = () => {
@@ -2363,7 +2543,12 @@ A["modo"] = () => {
   banco.modo = banco.modo === "edicao" ? "jogo" : "edicao"; gravarLocal(); fecharFolha(); render();
   toast(banco.modo === "edicao" ? "<b>Modo Edição</b>: suba de nível, escolha talentos, armas e encantamentos." : "<b>Modo Jogo</b>: a ficha fica pronta para a mesa.");
 };
-A["aba"] = (el) => { aba = el.dataset.aba; render(); window.scrollTo(0, 0); };
+A["aba"] = (el) => {
+  const a = el.dataset.aba;
+  if (a === "combate" && banco.layout && aba !== "combate") irPara("combate", "turno");   // Layout de mesa: o Combate abre no Turno
+  else irPara(a, el.dataset.sub);
+  gravarLocal(); render(); window.scrollTo(0, 0);
+};
 A["nivel"] = (el) => {
   const n0 = nivel(), n1 = Math.max(1, Math.min(30, n0 + int(el.dataset.d)));
   if (n1 === n0) return;
@@ -2933,7 +3118,7 @@ A["menu"] = () => {
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="imprimir"><div class="tx"><b>🖨 Imprimir / salvar PDF</b><small>A ficha inteira em folhas A4</small></div></div>` : ""}
-    <div class="item" data-a="layout" role="switch" aria-checked="${banco.layout ? "true" : "false"}"><div class="tx"><b>⚔ Layout de mesa</b><small>Aba Turno, vitais sempre à vista e o dado flutuante</small></div><span class="switch ${banco.layout ? "on" : ""}"><i></i></span></div>
+    <div class="item" data-a="layout" role="switch" aria-checked="${banco.layout ? "true" : "false"}"><div class="tx"><b>⚔ Layout de mesa</b><small>Combate abre no Turno, vitais sempre à vista e o dado flutuante</small></div><span class="switch ${banco.layout ? "on" : ""}"><i></i></span></div>
     <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Tema: diurno, noturno ou Diário de trilha (lona, azul-prússia e vermelho)</small></div></div>
     ${S ? `<div class="item" data-a="excluir"><div class="tx"><b class="erro">Excluir esta ficha do aparelho</b></div></div>` : ""}</div>`);
 };
@@ -3155,8 +3340,8 @@ async function consultarSessao(espera = 0) {
   if (r.grupo) { grupoChegou(r.grupo); sessao.gv = r.gv; gmudou = true; }
   const chegouVez = r.vez && r.vez === sessao.id && sessao.vezAntes !== r.vez;   // Layout de mesa: a aba Turno abre sozinha na sua vez
   sessao.vezAntes = r.vez || "";
-  if (chegouVez && banco.layout && S && aba !== "turno") { aba = "turno"; render(); window.scrollTo(0, 0); }
-  else if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && (aba === "combate" || aba === "turno")) render(); else pintarSessao(); }
+  if (chegouVez && banco.layout && S && !(aba === "combate" && subAtual() === "turno")) { irPara("combate", "turno"); render(); window.scrollTo(0, 0); }
+  else if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && aba === "combate") render(); else { pintarSessao(); pintarPontos(); } }
   enviarFichaSessao();
   return true;
 }
@@ -3762,7 +3947,7 @@ const hojeTxt = () => { const d = new Date(); return `${String(d.getDate()).padS
 function pNotas() {
   const ns = S.anotacoes || [];
   let h = secao("Anotações", `${ns.length} anotaç${ns.length === 1 ? "ão" : "ões"}`)
-    + `<p class="sub">Pistas, nomes, lugares, combinados com o mestre. Ficam guardadas na ficha.</p>
+    + `<p class="sub ajuda">Pistas, nomes, lugares, combinados com o mestre. Ficam guardadas na ficha.</p>
       <button class="botao prim" data-a="nota-nova" style="width:100%;margin:4px 0 12px">✍ Nova anotação</button>`;
   if (!ns.length) h += `<p class="vazio">Escreva aqui o que o grupo descobriu na trilha.</p>`;
   h += ns.map((n) => `<div class="cartao nota" data-a="nota-abrir" data-id="${esc(n.id)}">
@@ -3799,15 +3984,13 @@ const layoutOn = () => !!banco.layout && !!S;
 function aplicarLayout() {
   const on = layoutOn();
   document.documentElement.classList.toggle("layout-mesa", on);
-  const nt = $("#nav-turno"); if (nt) nt.classList.toggle("oculto", !on);
-  if (!on && aba === "turno") aba = "ficha";
   pintarFaixaVitais(); pintarDadoFlutuante();
 }
 A["layout"] = () => {
   banco.layout = !banco.layout; gravarLocal(); fecharFolha();
-  if (banco.layout && S) aba = "turno";
+  if (banco.layout && S) irPara("combate", "turno");
   render();
-  toast(banco.layout ? "Layout de mesa ligado: aba Turno, vitais sempre à vista e o dado flutuante." : "Layout de mesa desligado.");
+  toast(banco.layout ? "Layout de mesa ligado: Combate abre no Turno, vitais sempre à vista e o dado flutuante." : "Layout de mesa desligado.");
 };
 
 // --- favoritos: armas, encantamentos e perícias, guardados na ficha
@@ -3863,13 +4046,14 @@ function pTurno() {
   }).join("");
   const favs = favoritosValidos();
   let h = cab + secao("Ações do turno") + `<div class="fichas-acao">${fichas}</div>
-    <p class="sub">C comum · B bônus · M movimento · R reação. Toque para gastar ou devolver; ataques e magias gastam sozinhos.</p>`;
+    <p class="sub ajuda">C comum · B bônus · M movimento · R reação. Toque para gastar ou devolver; ataques e magias gastam sozinhos.</p>`;
   h += secao("Favoritos", `<button class="botao leve mini" data-a="fav-editar">★ Escolher</button>`);
   h += favs.length ? `<div class="favs">${favs.map((f) => `<button class="fav t-${f.t}" data-a="fav-usar" data-c="${esc(chaveFav(f))}"><b>${esc(f.nome)}</b><small>${esc(f.sub)}</small></button>`).join("")}</div>`
     : `<p class="vazio">Toque em ★ Escolher e marque seus ataques, magias e perícias da luta.</p>`;
   const us = typeof usosLista === "function" ? usosLista() : [];
   if (us.length) h += secao("Usos") + `<div class="favs">${us.map((u) => { const usado = int(S.usos[u.chave]); return `<button class="fav t-uso ${usado >= u.qtd ? "esgotado" : ""}" data-a="uso" data-c="${esc(u.chave)}"><b>${esc(u.nome)}</b><small>${u.qtd - usado}/${u.qtd} restantes</small></button>`; }).join("")}</div>`;
-  h += `<div class="linhabts" style="margin-top:16px">${sessao.ativa && sessao.id ? `<button class="botao prim grande" data-a="turno-terminei">✓ Terminei meu turno</button>` : `<button class="botao prim grande" data-a="novo-turno">↻ Novo turno</button>`}</div>`;
+  h += secao("Fim do turno") + `<div class="linhabts">${sessao.ativa && sessao.id ? `<button class="botao prim grande" data-a="turno-terminei">✓ Terminei meu turno</button>` : `<button class="botao prim grande" data-a="novo-turno">↻ Novo turno</button>`}</div>
+    <div class="linhabts" style="margin-top:8px">${sessao.ativa && sessao.id ? `<button class="botao leve" data-a="novo-turno">↻ Renovar ações</button>` : ""}<button class="botao leve" data-a="novo-combate">⚔ Novo combate</button><button class="botao leve" data-a="acoes-livro">📖 Ações do livro</button></div>`;
   return h;
 }
 A["turno-terminei"] = async () => {

@@ -121,8 +121,8 @@ async function consultarSessao(espera = 0) {
   if (r.grupo) { grupoChegou(r.grupo); sessao.gv = r.gv; gmudou = true; }
   const chegouVez = r.vez && r.vez === sessao.id && sessao.vezAntes !== r.vez;   // Layout de mesa: a aba Turno abre sozinha na sua vez
   sessao.vezAntes = r.vez || "";
-  if (chegouVez && banco.layout && S && aba !== "turno") { aba = "turno"; render(); window.scrollTo(0, 0); }
-  else if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && (aba === "combate" || aba === "turno")) render(); else pintarSessao(); }
+  if (chegouVez && banco.layout && S && !(aba === "combate" && subAtual() === "turno")) { irPara("combate", "turno"); render(); window.scrollTo(0, 0); }
+  else if (gmudou && aba === "grupo" && S) render(); else if (mudou) { if (S && aba === "combate") render(); else { pintarSessao(); pintarPontos(); } }
   enviarFichaSessao();
   return true;
 }

@@ -5,15 +5,13 @@ const layoutOn = () => !!banco.layout && !!S;
 function aplicarLayout() {
   const on = layoutOn();
   document.documentElement.classList.toggle("layout-mesa", on);
-  const nt = $("#nav-turno"); if (nt) nt.classList.toggle("oculto", !on);
-  if (!on && aba === "turno") aba = "ficha";
   pintarFaixaVitais(); pintarDadoFlutuante();
 }
 A["layout"] = () => {
   banco.layout = !banco.layout; gravarLocal(); fecharFolha();
-  if (banco.layout && S) aba = "turno";
+  if (banco.layout && S) irPara("combate", "turno");
   render();
-  toast(banco.layout ? "Layout de mesa ligado: aba Turno, vitais sempre à vista e o dado flutuante." : "Layout de mesa desligado.");
+  toast(banco.layout ? "Layout de mesa ligado: Combate abre no Turno, vitais sempre à vista e o dado flutuante." : "Layout de mesa desligado.");
 };
 
 // --- favoritos: armas, encantamentos e perícias, guardados na ficha
@@ -69,13 +67,14 @@ function pTurno() {
   }).join("");
   const favs = favoritosValidos();
   let h = cab + secao("Ações do turno") + `<div class="fichas-acao">${fichas}</div>
-    <p class="sub">C comum · B bônus · M movimento · R reação. Toque para gastar ou devolver; ataques e magias gastam sozinhos.</p>`;
+    <p class="sub ajuda">C comum · B bônus · M movimento · R reação. Toque para gastar ou devolver; ataques e magias gastam sozinhos.</p>`;
   h += secao("Favoritos", `<button class="botao leve mini" data-a="fav-editar">★ Escolher</button>`);
   h += favs.length ? `<div class="favs">${favs.map((f) => `<button class="fav t-${f.t}" data-a="fav-usar" data-c="${esc(chaveFav(f))}"><b>${esc(f.nome)}</b><small>${esc(f.sub)}</small></button>`).join("")}</div>`
     : `<p class="vazio">Toque em ★ Escolher e marque seus ataques, magias e perícias da luta.</p>`;
   const us = typeof usosLista === "function" ? usosLista() : [];
   if (us.length) h += secao("Usos") + `<div class="favs">${us.map((u) => { const usado = int(S.usos[u.chave]); return `<button class="fav t-uso ${usado >= u.qtd ? "esgotado" : ""}" data-a="uso" data-c="${esc(u.chave)}"><b>${esc(u.nome)}</b><small>${u.qtd - usado}/${u.qtd} restantes</small></button>`; }).join("")}</div>`;
-  h += `<div class="linhabts" style="margin-top:16px">${sessao.ativa && sessao.id ? `<button class="botao prim grande" data-a="turno-terminei">✓ Terminei meu turno</button>` : `<button class="botao prim grande" data-a="novo-turno">↻ Novo turno</button>`}</div>`;
+  h += secao("Fim do turno") + `<div class="linhabts">${sessao.ativa && sessao.id ? `<button class="botao prim grande" data-a="turno-terminei">✓ Terminei meu turno</button>` : `<button class="botao prim grande" data-a="novo-turno">↻ Novo turno</button>`}</div>
+    <div class="linhabts" style="margin-top:8px">${sessao.ativa && sessao.id ? `<button class="botao leve" data-a="novo-turno">↻ Renovar ações</button>` : ""}<button class="botao leve" data-a="novo-combate">⚔ Novo combate</button><button class="botao leve" data-a="acoes-livro">📖 Ações do livro</button></div>`;
   return h;
 }
 A["turno-terminei"] = async () => {

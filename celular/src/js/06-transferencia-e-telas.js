@@ -227,10 +227,10 @@ function pCombate() {
   h += secao("Condições") + `<div class="conds">${R.CONDICOES.map((n) => {
     const c = S.condicoes[n] || { atual: "", max: "100" }, mx = condMax(n), at = int(c.atual), pct = Math.max(0, Math.min(100, (at / Math.max(1, mx)) * 100));
     return `<button class="cond ${at ? "on" : ""}" data-a="editar-cond" data-n="${n}"><b>${n}</b><span>${at}/${mx}</span><i style="width:${pct}%"></i></button>`;
-  }).join("")}</div><p class="sub">Enchem com pontos; ao chegar no máximo, o efeito ativa e a barra zera. Descanso curto tira 25 de cada; o longo zera. Toque para ver o efeito.</p>`;
+  }).join("")}</div><p class="sub ajuda">Enchem com pontos; ao chegar no máximo, o efeito ativa e a barra zera. Descanso curto tira 25 de cada; o longo zera. Toque para ver o efeito.</p>`;
   h += secao("Portão da Morte") + ["Sucessos", "Falhas"].map((n) => `<div class="portao"><span class="r" style="background:${n === "Sucessos" ? "var(--c-vigor)" : "var(--c-vida)"}">${n}</span>
     ${S.portao[n].slice(0, n === "Falhas" ? d.limite_morte : 5).map((on, i) => `<button class="bolinha ${on ? "on" : ""} ${n === "Sucessos" ? "s" : "f"}" data-a="portao" data-n="${n}" data-i="${i}"></button>`).join("")}</div>`).join("")
-    + `<div class="linhabts" style="margin-top:6px"><button class="botao leve" data-a="portao-rolar">🎲 Rolar o d20 do turno</button></div><p class="sub">d20 no início do turno: 11+ é sucesso. 5 sucessos: volta com 1 de Vida e 1 cicatriz. ${d.limite_morte} falhas: morte (3 + 1 a cada 40 de Vitalidade). Cada cicatriz já começa com 1 falha (até ${d.limite_morte - 1}). Medicina de um aliado: DT 15 + 10 por cicatriz sua.</p>`;
+    + `<div class="linhabts" style="margin-top:6px"><button class="botao leve" data-a="portao-rolar">🎲 Rolar o d20 do turno</button></div><p class="sub ajuda">d20 no início do turno: 11+ é sucesso. 5 sucessos: volta com 1 de Vida e 1 cicatriz. ${d.limite_morte} falhas: morte (3 + 1 a cada 40 de Vitalidade). Cada cicatriz já começa com 1 falha (até ${d.limite_morte - 1}). Medicina de um aliado: DT 15 + 10 por cicatriz sua.</p>`;
   h += secao("Resistências") + `<div>${R.RESISTENCIAS.map(([lim, n]) => `<span class="chip ${d.resistencias.includes(n) ? "on" : ""}">${d.resistencias.includes(n) ? "☑" : "☐"} ${n} ${lim}</span>`).join("")}</div>`;
   h += secao("Descanso") + `<div class="linhabts" style="margin-top:0"><button class="botao" data-a="descanso" data-t="curto">☾ Descanso curto</button><button class="botao" data-a="descanso" data-t="longo">☀ Longo</button>
     <button class="botao" data-a="pocao">⚗ Poção Espiritual</button></div>
@@ -249,7 +249,7 @@ function pPericias() {
       const bonus = bonus0 + (C.ef.pericia[nome] || 0) + (mestre ? 2 : 0) + discreta;
       return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados + (mestre ? 1 : 0)}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
         <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados + (mestre ? 1 : 0)}d20${mestre ? " · Mestre" : ""}</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
-    }).join("")}</div><p class="sub">${banco.modo === "edicao" ? "Toque na perícia para ver o que ela faz" : "Toque na perícia para rolar (1d20 a mais a cada 20 pontos do atributo, fica o maior)"}. A caixa marca o treino (Modo Edição). • exige treino.</p>`;
+    }).join("")}</div><p class="sub ajuda">${banco.modo === "edicao" ? "Toque na perícia para ver o que ela faz" : "Toque na perícia para rolar (1d20 a mais a cada 20 pontos do atributo, fica o maior)"}. A caixa marca o treino (Modo Edição). • exige treino.</p>`;
   h += secao("Perícia de ataque treinada") + `<div>${R.PERICIAS_ATAQUE.map(([nn]) => `<span class="chip ${S.pericia_ataque === nn ? "on" : ""}" data-a="per-atk" data-n="${nn}">${nn}</span>`).join("")}</div>`;
   h += secao("Atributo da Prevalência") + `<div>${R.ATRIBUTOS.map((k) => `<span class="chip ${S.prevalencia_attr === k ? "on" : ""}" data-a="prev-attr" data-k="${k}">${k}</span>`).join("")}</div>`;
   return h;
@@ -269,7 +269,7 @@ function pGrimorio() {
     return `<div class="item" data-a="ver-enc" data-i="${i}"><span class="check ${x.equipado ? "on" : ""}" data-a="equipar" data-i="${i}"></span>
       <div class="tx"><b>${esc(e.nome)}</b><small>${e.dominio} · nv ${x.versoes.join(", ")} · ${esc(top.mana)}${custoEnc(e, top)[0] != null && custoEnc(e, top)[0] !== R.custoMana(top) ? ` (Matrícula: ${custoEnc(e, top)[0]})` : ""} · esp ${custoEnc(e)[1]}${conj ? "" : ` · ${NO} sem ${e.dominio === "Magia" ? "cajado" : "selo"} nv ${top.nivel}`}</small></div>
       <button class="passos" style="border:0;background:none;padding:0" data-a="conjurar" data-f="${esc(e.nome)}" data-v="${top.nivel}"><span class="botao prim" style="min-height:38px;padding:6px 12px">🎲</span></button></div>`;
-  }).join("")}</div><p class="sub">Marque a caixa para equipar. Toque no nome para ver a descrição.</p>`;
+  }).join("")}</div><p class="sub ajuda">Marque a caixa para equipar. Toque no nome para ver a descrição.</p>`;
   return h;
 }
 function descEnc(nome, destaque) {
@@ -311,7 +311,7 @@ function pTalentos() {
     ${cam ? cam[2].map((t, k) => `<div class="item" data-a="meta-etapa" data-k="${k}"><span class="check ${mt.etapas[k] ? "on" : ""}"></span><div class="tx"><b>Etapa ${k + 1} · ${R.ETAPAS_META[k]}</b><small>${esc(t)}</small></div></div>`).join("") : ""}
     <div class="item" data-a="meta-notas"><div class="tx"><b>Anotações</b><small>${esc(mt.notas || "toque para escrever")}</small></div></div></div>
     ${cam && mt.etapas.every(Boolean) ? `<div class="linhabts"><button class="botao prim" data-a="meta-concluir">✦ Concluir a Meta</button></div>` : ""}
-    <p class="sub">Cada Meta concluída dá 1 talento extra; a primeira dá também +5 pontos em um atributo.${rec.talentos ? ` Você já tem ${rec.talentos} talento(s) de Meta (M1…)${rec.pontos ? " e os +5 pontos na distribuição" : ""}.` : ""}
+    <p class="sub ajuda">Cada Meta concluída dá 1 talento extra; a primeira dá também +5 pontos em um atributo.${rec.talentos ? ` Você já tem ${rec.talentos} talento(s) de Meta (M1…)${rec.pontos ? " e os +5 pontos na distribuição" : ""}.` : ""}
     <span class="so-ed"> · <a href="#" data-a="meta-n" data-d="1" style="color:var(--vinho)">+1 concluída</a> · <a href="#" data-a="meta-n" data-d="-1" style="color:var(--vinho)">−1</a> · <a href="#" data-a="meta-perder" style="color:var(--vinho)">perder a Meta (subiu de Andar)</a></span></p>`;
   h += secao("Vínculos") + `<div class="lista">${[["grupo", "Com o grupo"], ["mundo", "Com o mundo"]].map(([k, r]) =>
     `<div class="item" data-a="editar-vinc" data-k="${k}"><div class="tx"><b>${r}</b><small>${esc(S.vinculos[k] || "toque para escrever")}</small></div></div>`).join("")}</div>`;

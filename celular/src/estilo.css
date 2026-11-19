@@ -303,7 +303,7 @@ html.trilha .topo .avatar~.nome{padding-left:0;background:none}
 html.trilha .topo .nome b{font-family:var(--tit);letter-spacing:.02em;color:#f8f2e4}
 html.trilha .topo .nome small{color:#c9d4de}
 html.trilha .nivel,html.trilha .icone{background:var(--fundo2);border-color:var(--ouro);color:var(--ouro2)}
-html.trilha .pagina{margin-top:12px;background:var(--perg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg opacity='.08' fill='%231f3d5c'%3E%3Cpath d='M50 4 L56 50 L50 96 L44 50Z'/%3E%3Cpath d='M4 50 L50 44 L96 50 L50 56Z'/%3E%3Cpath d='M50 50 L70 30 L54 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 70 L46 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L70 70 L50 54Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 30 L50 46Z' opacity='.7'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%231f3d5c' stroke-opacity='.12' stroke-width='1.5'/%3E%3C/svg%3E") right 6px top 110px/96px 96px no-repeat}
+html.trilha .pagina{margin-top:12px;background:var(--perg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg opacity='.08' fill='%231f3d5c'%3E%3Cpath d='M50 4 L56 50 L50 96 L44 50Z'/%3E%3Cpath d='M4 50 L50 44 L96 50 L50 56Z'/%3E%3Cpath d='M50 50 L70 30 L54 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 70 L46 50Z' opacity='.7'/%3E%3Cpath d='M50 50 L70 70 L50 54Z' opacity='.7'/%3E%3Cpath d='M50 50 L30 30 L50 46Z' opacity='.7'/%3E%3C/g%3E%3Ccircle cx='50' cy='50' r='30' fill='none' stroke='%231f3d5c' stroke-opacity='.12' stroke-width='1.5'/%3E%3C/svg%3E") right 6px bottom 96px/96px 96px no-repeat}
 html.trilha .nav{background:var(--fundo);border-top:2px solid var(--vinho)}
 html.trilha .nav button{color:#b8c6d4}
 html.trilha .nav button.on{color:var(--ouro2)}
@@ -377,3 +377,31 @@ html.layout-mesa .pagina{padding-bottom:150px}
 .fav.t-uso{border-left:4px solid var(--c-tal)}
 .fav.esgotado{opacity:.5}
 .botao.grande{width:100%;padding:14px;font-size:16px}
+
+/* abas novas: barra de baixo com ícones de traço, sub-abas presas no alto, blocos que abrem e fecham */
+.nav{grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.nav button{position:relative;gap:3px;font-size:11px;letter-spacing:.02em}
+.nav button svg{display:block}
+.nav button.on svg{stroke-width:2.1}
+.nav button .ponto{position:absolute;top:6px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:#e2563c;box-shadow:0 0 0 2px var(--fundo)}
+.nav button .ponto[hidden]{display:none}
+.subabas{position:sticky;top:var(--topo-h,62px);z-index:15;display:flex;align-items:center;gap:8px;margin:-14px -14px 12px;border-radius:14px 14px 0 0;padding:8px 14px;background:var(--perg);border-bottom:1px solid var(--linha)}
+.seg{flex:1;min-width:0;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:3px;border-radius:12px;background:var(--perg2)}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:1 0 auto;border:0;background:transparent;color:var(--tinta2);font:inherit;font-size:13.5px;padding:7px 10px;border-radius:9px;white-space:nowrap;min-height:34px}
+.seg button.on{background:var(--campo);color:var(--vinho);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg-tit{padding:7px 10px;font-family:var(--tit);color:var(--vinho)}
+.modo-pill{flex:none;border:1px solid var(--ouro);background:var(--campo);color:var(--tinta);font:inherit;font-size:12.5px;padding:7px 10px;border-radius:999px;min-height:34px;white-space:nowrap}
+.modo-pill.ed{background:var(--vinho);border-color:var(--vinho);color:#fff}
+.faixa-modo{display:none}
+.bloco{margin-bottom:6px}
+.bloco-cab{cursor:pointer;-webkit-user-select:none;user-select:none}
+.bloco-cab .chev{order:5;flex:none;width:9px;height:9px;border-right:2px solid var(--tinta2);border-bottom:2px solid var(--tinta2);transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s;margin:0 4px 0 2px}
+.bloco.fechado .bloco-cab .chev{transform:rotate(-45deg)}
+.bloco.fechado .bloco-corpo{display:none}
+.bloco.fechado .bloco-cab{margin-bottom:4px}
+.ajuda-bt{order:4;flex:none;width:24px;height:24px;border-radius:50%;border:1px solid var(--ouro);background:transparent;color:var(--tinta2);font:inherit;font-size:13px;letter-spacing:0;line-height:1;padding:0}
+.ajuda-bt.on{background:var(--ouro);color:#fff}
+.ajuda-txt{margin:-4px 2px 10px;padding:9px 12px;border-radius:10px;background:var(--perg2);color:var(--tinta2);font-size:13.5px;line-height:1.45}
+.ajuda-txt[hidden]{display:none}
+.item.apagado{opacity:.55}

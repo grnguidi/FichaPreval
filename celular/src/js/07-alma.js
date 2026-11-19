@@ -22,7 +22,7 @@ function pAlma() {
       <div class="linhabts">${x.tipo === "Ativo" ? `<button class="botao prim" data-a="hab-usar" data-i="${i}">${x.tabela && x.tabela.startsWith("Dano") ? "🎲 Usar e rolar" : "✓ Usar"}</button>` : ""}<button class="botao leve so-ed" data-a="hab-editar" data-i="${i}">✎ Editar</button></div></div>`;
   }).join("") : `<div class="vazio-msg">Nenhuma habilidade ainda.</div>`)
     + `<div class="linhabts so-ed"><button class="botao prim" data-a="hab-editar" data-i="-1" ${al.habilidades.length >= 6 ? "disabled" : ""}>＋ Habilidade</button></div>
-    <p class="sub">Toda Alma começa com 1 passiva e 1 ativa; novas ativas nos níveis 10, 20 e 30. A Alma nunca cura. O valor vem da Tabela de valores do livro, no nível da alma com os ajustes da habilidade.</p>`;
+    <p class="sub ajuda">Toda Alma começa com 1 passiva e 1 ativa; novas ativas nos níveis 10, 20 e 30. A Alma nunca cura. O valor vem da Tabela de valores do livro, no nível da alma com os ajustes da habilidade.</p>`;
   return h;
 }
 A["alma-ident"] = () => {

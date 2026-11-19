@@ -5,7 +5,7 @@ const hojeTxt = () => { const d = new Date(); return `${String(d.getDate()).padS
 function pNotas() {
   const ns = S.anotacoes || [];
   let h = secao("Anotações", `${ns.length} anotaç${ns.length === 1 ? "ão" : "ões"}`)
-    + `<p class="sub">Pistas, nomes, lugares, combinados com o mestre. Ficam guardadas na ficha.</p>
+    + `<p class="sub ajuda">Pistas, nomes, lugares, combinados com o mestre. Ficam guardadas na ficha.</p>
       <button class="botao prim" data-a="nota-nova" style="width:100%;margin:4px 0 12px">✍ Nova anotação</button>`;
   if (!ns.length) h += `<p class="vazio">Escreva aqui o que o grupo descobriu na trilha.</p>`;
   h += ns.map((n) => `<div class="cartao nota" data-a="nota-abrir" data-id="${esc(n.id)}">

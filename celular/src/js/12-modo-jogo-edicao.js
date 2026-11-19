@@ -5,7 +5,12 @@ A["modo"] = () => {
   banco.modo = banco.modo === "edicao" ? "jogo" : "edicao"; gravarLocal(); fecharFolha(); render();
   toast(banco.modo === "edicao" ? "<b>Modo Edição</b>: suba de nível, escolha talentos, armas e encantamentos." : "<b>Modo Jogo</b>: a ficha fica pronta para a mesa.");
 };
-A["aba"] = (el) => { aba = el.dataset.aba; render(); window.scrollTo(0, 0); };
+A["aba"] = (el) => {
+  const a = el.dataset.aba;
+  if (a === "combate" && banco.layout && aba !== "combate") irPara("combate", "turno");   // Layout de mesa: o Combate abre no Turno
+  else irPara(a, el.dataset.sub);
+  gravarLocal(); render(); window.scrollTo(0, 0);
+};
 A["nivel"] = (el) => {
   const n0 = nivel(), n1 = Math.max(1, Math.min(30, n0 + int(el.dataset.d)));
   if (n1 === n0) return;
