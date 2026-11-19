@@ -41,20 +41,20 @@ TEMAS = {
         MESA_CAMPO="#1d2721", MESA_BORDA="#36463b", MESA_ATIVO="#243128", MESA_TXT="#8a998a", ALERTA="#e8907c",
         C_VIDA="#80352d", C_MANA="#34516e", C_VIGOR="#476532", C_MOV="#33605e", C_CA="#5b554a", C_ATK="#86403a",
         C_DEF="#3d5679", C_PER="#8c6232", C_TAL="#33605e", C_DIN="#476532", C_ATR="#2f3d33"),
-    # "Diário de trilha": as cores da carroça Conestoga — lona creme, caixa azul-prússia, rodas vermelhas e latão.
-    # Enfeites: trilha tracejada, rodas e marcos de estrada.
-    "trilha": dict(
-        FUNDO="#1f3d5c", FUNDO2="#2a4d70", PERG="#efe6d2", PERG2="#e2d5b8", CAMPO="#f8f2e4",
-        TINTA="#2b2620", TINTA2="#5f5546", OURO="#c99a3e", OURO2="#e6c77f", VINHO="#a63c26", VINHO_BG="#a63c26", VERDE="#4f6b3a",
-        FAIXA="#f8f2e4", LINHA="#d9ccb0", ROSA="#f3e0d6", AGUA="#dfe7ee",
-        MESA_CAMPO="#2a4d70", MESA_BORDA="#4a6d90", MESA_ATIVO="#335a80", MESA_TXT="#c9d4de", ALERTA="#f2b49f",
-        C_VIDA="#9a3d2c", C_MANA="#2f5d8a", C_VIGOR="#4f6b3a", C_MOV="#3d6e74", C_CA="#6b6253", C_ATK="#a63c26",
-        C_DEF="#2f5d8a", C_PER="#8a6420", C_TAL="#4f6b3a", C_DIN="#4f6b3a", C_ATR="#1f3d5c"),
+    # "Vitral gótico": roxo profundo, lilás e verde-claro, com dourado e chumbo.
+    # Enfeites: faixa de vitral sob o cabeçalho e uma rosácea ao lado do título.
+    "gotico": dict(
+        FUNDO="#4a2c6b", FUNDO2="#5c3a82", PERG="#f3eef6", PERG2="#e6dcee", CAMPO="#fbf9fd",
+        TINTA="#2a1f33", TINTA2="#5f5370", OURO="#b8955a", OURO2="#e6d29e", VINHO="#6a3d9a", VINHO_BG="#6a3d9a", VERDE="#4e8a4a",
+        FAIXA="#fbf9fd", LINHA="#d8cbe4", ROSA="#f3e3ec", AGUA="#e3f1df",
+        MESA_CAMPO="#5c3a82", MESA_BORDA="#7d5aa6", MESA_ATIVO="#674292", MESA_TXT="#dccbf0", ALERTA="#f6b8cf",
+        C_VIDA="#a3334f", C_MANA="#5b4fae", C_VIGOR="#4e8a4a", C_MOV="#3f8a7a", C_CA="#6f6678", C_ATK="#a3334f",
+        C_DEF="#5b4fae", C_PER="#8a5a9e", C_TAL="#4e8a4a", C_DIN="#4e8a4a", C_ATR="#4a2c6b"),
 }
 NOTURNO = False
 TEMA = "diurno"
-ORDEM_TEMAS = ["diurno", "noturno", "trilha"]
-ROTULO_TEMA = {"diurno": "☀ Modo diurno", "noturno": "☾ Modo noturno", "trilha": "🛞 Diário de trilha"}
+ORDEM_TEMAS = ["diurno", "noturno", "gotico"]
+ROTULO_TEMA = {"diurno": "☀ Modo diurno", "noturno": "☾ Modo noturno", "gotico": "✥ Vitral gótico"}
 
 
 def proximo_tema():
@@ -63,32 +63,40 @@ def proximo_tema():
 
 def aplicar_tema(nome):
     global NOTURNO, TEMA
-    nome = "trilha" if nome == "vitral" else nome     # o tema Vitral virou o Diário de trilha
+    nome = "gotico" if nome in ("vitral", "trilha") else nome     # Vitral e Diário de trilha viraram o Vitral gótico
     nome = nome if nome in TEMAS else "diurno"
     NOTURNO, TEMA = nome == "noturno", nome
     globals().update(TEMAS[nome])
 
 
-def desenhar_roda(cv, cx, cy, r, cor="#e6c77f", cubo="#c99a3e"):
-    """Roda de carroça: aro, 12 raios e cubo."""
+VIDROS_GOTICOS = ["#b79ad6", "#a8d89a", "#7a4fae", "#e2cf9a", "#dccbf0", "#8fc17f"]
+CHUMBO = "#2a1a3d"
+
+
+def desenhar_rosacea(cv, cx, cy, r):
+    """Rosácea (janela redonda de catedral): 8 vidros coloridos, chumbo entre eles e um miolo claro."""
     import math
-    cv.create_oval(cx - r, cy - r, cx + r, cy + r, outline=cor, width=max(2, int(r * 0.16)))
-    for k in range(12):
-        a = k * math.pi / 6
-        cv.create_line(cx + math.cos(a) * r * 0.2, cy + math.sin(a) * r * 0.2, cx + math.cos(a) * r * 0.88, cy + math.sin(a) * r * 0.88,
-                       fill=cor, width=max(1, int(r * 0.07)))
-    cv.create_oval(cx - r * 0.22, cy - r * 0.22, cx + r * 0.22, cy + r * 0.22, fill=cubo, outline=cor)
+    for k in range(8):
+        cv.create_arc(cx - r, cy - r, cx + r, cy + r, start=k * 45, extent=45, style="pieslice",
+                      fill=VIDROS_GOTICOS[k % 4], outline=CHUMBO, width=max(1, int(r * 0.07)))
+    for k in range(8):
+        a = k * math.pi / 4
+        x, y = cx + math.cos(a) * r * 0.52, cy + math.sin(a) * r * 0.52
+        cv.create_oval(x - r * 0.17, y - r * 0.17, x + r * 0.17, y + r * 0.17, outline=CHUMBO)
+    cv.create_oval(cx - r, cy - r, cx + r, cy + r, outline=CHUMBO, width=max(2, int(r * 0.13)))
+    cv.create_oval(cx - r * 0.24, cy - r * 0.24, cx + r * 0.24, cy + r * 0.24, fill="#f6f1fa", outline=CHUMBO, width=max(1, int(r * 0.07)))
 
 
-def desenhar_trilha(cv, largura, altura=20):
-    """Faixa do tema Diário de trilha: uma trilha tracejada em vermelho com marcos de estrada a cada trecho."""
+def desenhar_vitral(cv, largura, altura=10):
+    """Faixa de vitral do tema Vitral gótico: vidros lilás, verde-claro, roxo e dourado separados por chumbo."""
     cv.delete("all")
-    y = altura - 6
-    cv.create_line(0, y, largura, y, fill="#a63c26", width=2, dash=(7, 5))
-    for x in range(40, int(largura), 220):
-        cv.create_rectangle(x - 4, y - 12, x + 4, y, fill="#1f3d5c", outline="")
-        cv.create_oval(x - 4, y - 16, x + 4, y - 8, fill="#1f3d5c", outline="")
-        cv.create_line(x - 2, y - 7, x + 2, y - 7, fill="#e6c77f")
+    x, i = 0, 0
+    while x < largura:
+        cv.create_rectangle(x, 0, x + 16, altura, fill=VIDROS_GOTICOS[i % 6], outline="")
+        cv.create_line(x, 0, x, altura, fill=CHUMBO, width=2)
+        x, i = x + 16, i + 1
+    cv.create_line(0, 0, largura, 0, fill=CHUMBO, width=2)
+    cv.create_line(0, altura - 1, largura, altura - 1, fill=CHUMBO, width=2)
 
 
 aplicar_tema("diurno")
@@ -499,7 +507,7 @@ class App(tk.Tk):
         ms.add_command(label="Inimigos, anotações e combate (painel do mestre)…", command=self.abrir_painel_mestre)
         m.add_cascade(label="Mestre", menu=ms)
         ex = tk.Menu(m, tearoff=0)
-        ex.add_command(label="Trocar tema (diurno, noturno, Diário de trilha)", command=self.alternar_tema, accelerator="Ctrl+T")
+        ex.add_command(label="Trocar tema (diurno, noturno, Vitral gótico)", command=self.alternar_tema, accelerator="Ctrl+T")
         m.add_cascade(label="Exibir", menu=ex)
         self.bind("<Control-t>", lambda e: self.alternar_tema())
         aj = tk.Menu(m, tearoff=0)
@@ -519,10 +527,10 @@ class App(tk.Tk):
         ban.pack(fill="x")
         tit = tk.Frame(ban, bg=FUNDO)
         tit.pack(side="left", anchor="n")
-        if TEMA == "trilha":
-            rd = tk.Canvas(ban, width=48, height=48, bg=FUNDO, highlightthickness=0)
+        if TEMA == "gotico":
+            rd = tk.Canvas(ban, width=50, height=50, bg=FUNDO, highlightthickness=0)
             rd.pack(side="left", anchor="n", padx=(0, 12), before=tit)
-            desenhar_roda(rd, 24, 24, 21)
+            desenhar_rosacea(rd, 25, 25, 22)
         tk.Label(tit, text="Conestoga connection", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
         tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.3", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
@@ -569,11 +577,11 @@ class App(tk.Tk):
         self.lbl_pontos_topo_sub = Rot(pts, bg=FUNDO, fg=MESA_TXT, size=9, bold=False, italic=True, anchor="e")
         self.lbl_pontos_topo_sub.pack(anchor="e")
         tk.Frame(self, height=1, bg=OURO).pack(fill="x")
-        if TEMA == "trilha":   # enfeite do tema: a trilha com os marcos de estrada
-            vt = tk.Canvas(self, height=20, bg=PERG, highlightthickness=0)
+        if TEMA == "gotico":   # enfeite do tema: a faixa de vitral sob o cabeçalho
+            vt = tk.Canvas(self, height=10, bg=PERG, highlightthickness=0)
             vt.pack(fill="x")
-            vt.bind("<Configure>", lambda e: desenhar_trilha(vt, e.width))
-            desenhar_trilha(vt, 1400)
+            vt.bind("<Configure>", lambda e: desenhar_vitral(vt, e.width))
+            desenhar_vitral(vt, 1400)
 
         self.nb = ttk.Notebook(self)
         self.nb.pack(fill="both", expand=True, padx=12, pady=(4, 12))

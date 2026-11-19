@@ -23,9 +23,9 @@ function render() {
 }
 function aplicarTema() {
   const h = document.documentElement;
-  if (banco.tema === "vitral") banco.tema = "trilha";   // o tema Vitral virou o Diário de trilha
-  h.classList.toggle("noite", banco.tema === "noite"); h.classList.toggle("trilha", banco.tema === "trilha");
+  if (banco.tema === "vitral" || banco.tema === "trilha") banco.tema = "gotico";   // Vitral e Diário de trilha viraram o Vitral gótico
+  h.classList.toggle("noite", banco.tema === "noite"); h.classList.toggle("gotico", banco.tema === "gotico");
   const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute("content", banco.tema === "trilha" ? "#1f3d5c" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
+  if (m) m.setAttribute("content", banco.tema === "gotico" ? "#4a2c6b" : banco.tema === "noite" ? "#0d120f" : "#1b2520");
 }
 

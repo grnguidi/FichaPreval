@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Exporta a ficha aberta para PDF (reportlab), no visual Diário de trilha: as cores da carroça Conestoga
-(lona creme, caixa azul-prússia, rodas vermelhas, latão), com trilhas tracejadas, rodas e marcos de enfeite."""
+"""Exporta a ficha aberta para PDF (reportlab), no visual Vitral gótico: roxo profundo, lilás e verde-claro,
+com dourado e chumbo; enfeites de vitral, rosáceas e janelas em arco."""
 import math
 import os
 
@@ -13,80 +13,96 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (Flowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
 
-PERG = colors.HexColor("#efe6d2")      # lona
-PERG2 = colors.HexColor("#e2d5b8")
-CAMPO = colors.HexColor("#f8f2e4")
-ZEBRA = colors.HexColor("#efe4cc")
-TINTA = colors.HexColor("#2b2620")
-TINTA2 = colors.HexColor("#5f5546")
-OURO = colors.HexColor("#c99a3e")      # latão
-OURO2 = colors.HexColor("#e6c77f")
-VINHO = colors.HexColor("#a63c26")     # vermelho das rodas: títulos de seção
-AZUL = colors.HexColor("#1f3d5c")      # azul-prússia da caixa
-VERDE = colors.HexColor("#4f6b3a")
-MUSGO = AZUL                           # nome antigo, usado na moldura da foto
-FAIXA = colors.HexColor("#f8f2e4")
-C = {k: colors.HexColor(v) for k, v in dict(VIDA="#9a3d2c", MANA="#2f5d8a", VIGOR="#4f6b3a", MOV="#3d6e74", CA="#6b6253",
-                                            ATK="#a63c26", DEF="#2f5d8a", PER="#8a6420", TAL="#4f6b3a", ATR="#1f3d5c",
-                                            DIN="#4f6b3a").items()}
+PERG = colors.HexColor("#f3eef6")
+PERG2 = colors.HexColor("#e6dcee")
+CAMPO = colors.HexColor("#fbf9fd")
+ZEBRA = colors.HexColor("#efe8f4")
+TINTA = colors.HexColor("#2a1f33")
+TINTA2 = colors.HexColor("#5f5370")
+OURO = colors.HexColor("#b8955a")
+OURO2 = colors.HexColor("#e6d29e")
+VINHO = colors.HexColor("#6a3d9a")     # roxo dos títulos de seção
+AZUL = colors.HexColor("#4a2c6b")      # roxo profundo (nome antigo mantido: faixas e títulos)
+VERDE = colors.HexColor("#4e8a4a")
+LILAS = colors.HexColor("#b79ad6")
+CHUMBO = colors.HexColor("#2a1a3d")
+MUSGO = CHUMBO                         # moldura da foto
+FAIXA = colors.HexColor("#fbf9fd")
+VIDROS = [colors.HexColor(x) for x in ("#b79ad6", "#a8d89a", "#7a4fae", "#e2cf9a", "#dccbf0", "#8fc17f")]
+C = {k: colors.HexColor(v) for k, v in dict(VIDA="#a3334f", MANA="#5b4fae", VIGOR="#4e8a4a", MOV="#3f8a7a", CA="#6f6678",
+                                            ATK="#a3334f", DEF="#5b4fae", PER="#8a5a9e", TAL="#4e8a4a", ATR="#4a2c6b",
+                                            DIN="#4e8a4a").items()}
 
 
-# ---------------------------------------------------------------- enfeites: trilha, rodas e marcos
-def _roda(c, cx, cy, r, cor=None, aro=None):
-    """Roda de carroça: aro grosso, 12 raios e cubo."""
-    cor = cor or VINHO
+# ---------------------------------------------------------------- enfeites: vitrais, rosáceas e janelas em arco
+def _rosacea(c, cx, cy, r):
+    """Rosácea: 8 vidros coloridos com chumbo e um miolo claro."""
     c.saveState()
-    c.setStrokeColor(cor)
-    c.setLineWidth(max(0.8, r * 0.16))
+    c.setStrokeColor(CHUMBO)
+    c.setLineWidth(max(0.4, r * 0.06))
+    for k in range(8):
+        c.setFillColor(VIDROS[k % 4])
+        p = c.beginPath()
+        p.moveTo(cx, cy)
+        p.arcTo(cx - r, cy - r, cx + r, cy + r, k * 45, 45)
+        p.close()
+        c.drawPath(p, stroke=1, fill=1)
+    for k in range(8):
+        a = k * math.pi / 4
+        c.circle(cx + math.cos(a) * r * 0.52, cy + math.sin(a) * r * 0.52, r * 0.17, stroke=1, fill=0)
+    c.setLineWidth(max(0.8, r * 0.13))
     c.circle(cx, cy, r, stroke=1, fill=0)
-    c.setLineWidth(max(0.5, r * 0.07))
-    for k in range(12):
-        a = k * math.pi / 6
-        c.line(cx + math.cos(a) * r * 0.2, cy + math.sin(a) * r * 0.2, cx + math.cos(a) * r * 0.9, cy + math.sin(a) * r * 0.9)
-    c.setFillColor(aro or OURO)
-    c.circle(cx, cy, r * 0.22, stroke=1, fill=1)
+    c.setLineWidth(max(0.4, r * 0.06))
+    c.setFillColor(colors.HexColor("#f6f1fa"))
+    c.circle(cx, cy, r * 0.24, stroke=1, fill=1)
     c.restoreState()
 
 
-def _trilha(c, x0, x1, y, cor=None, larg=1.0):
-    """Trilha tracejada."""
+def _roda(c, cx, cy, r, cor=None, aro=None):     # nome antigo: agora é uma rosácea
+    _rosacea(c, cx, cy, r)
+
+
+def _faixa_vitral(c, x, y, larg, alt=6.5 * mm):
+    """Faixa do alto: vidros coloridos separados por chumbo."""
+    n = max(6, int(larg / (5 * mm)))
+    w = larg / n
     c.saveState()
-    c.setStrokeColor(cor or VINHO)
-    c.setLineWidth(larg)
-    c.setDash(5, 3.5)
-    c.line(x0, y, x1, y)
+    c.setStrokeColor(CHUMBO)
+    c.setLineWidth(1.1)
+    for i in range(n):
+        c.setFillColor(VIDROS[i % 6])
+        c.rect(x + i * w, y, w, alt, stroke=1, fill=1)
+    c.setLineWidth(1.6)
+    c.rect(x, y, larg, alt, stroke=1, fill=0)
     c.restoreState()
 
 
-def _marco(c, x, y, h=7 * mm):
-    """Marco de estrada: um poste de pedra com o topo redondo, em azul-prússia."""
-    w = h * 0.42
+def _lanceta(c, x, y, w=4.2 * mm, h=9 * mm):
+    """Janela em arco ogival (lanceta), com dois vidros e chumbo."""
     c.saveState()
-    c.setFillColor(AZUL)
+    c.setStrokeColor(CHUMBO)
+    c.setLineWidth(0.8)
     p = c.beginPath()
-    p.moveTo(x - w / 2, y)
-    p.lineTo(x - w / 2, y + h - w / 2)
-    p.arcTo(x - w / 2, y + h - w, x + w / 2, y + h, 180, -180)
-    p.lineTo(x + w / 2, y)
+    p.moveTo(x, y)
+    p.lineTo(x, y + h * 0.6)
+    p.curveTo(x, y + h * 0.9, x + w * 0.35, y + h, x + w / 2, y + h)
+    p.curveTo(x + w * 0.65, y + h, x + w, y + h * 0.9, x + w, y + h * 0.6)
+    p.lineTo(x + w, y)
     p.close()
-    c.drawPath(p, stroke=0, fill=1)
-    c.setStrokeColor(OURO2)
-    c.setLineWidth(0.5)
-    c.line(x - w * 0.25, y + h * 0.45, x + w * 0.25, y + h * 0.45)
+    c.setFillColor(LILAS)
+    c.drawPath(p, stroke=1, fill=1)
+    c.setFillColor(VIDROS[1])
+    c.rect(x + w / 2, y, w / 2, h * 0.45, stroke=1, fill=1)
+    c.line(x + w / 2, y + h * 0.45, x + w / 2, y + h * 0.98)
+    c.line(x, y + h * 0.45, x + w, y + h * 0.45)
     c.restoreState()
 
 
-def _faixa_trilha(c, x, y, larg, alt=6.5 * mm):
-    """Faixa do alto: azul-prússia, com uma trilha tracejada em latão e um fio vermelho embaixo."""
+def _filete(c, x0, x1, y, cor=None, larg=1.0):
     c.saveState()
-    c.setFillColor(AZUL)
-    c.rect(x, y, larg, alt, stroke=0, fill=1)
-    c.restoreState()
-    _trilha(c, x + 3 * mm, x + larg - 3 * mm, y + alt / 2, OURO2, 1.0)
-    c.saveState()
-    c.setStrokeColor(VINHO)
-    c.setLineWidth(1.2)
-    c.line(x, y, x + larg, y)
+    c.setStrokeColor(cor or LILAS)
+    c.setLineWidth(larg)
+    c.line(x0, y, x1, y)
     c.restoreState()
 
 
@@ -114,7 +130,7 @@ def _foto(c, txt, x, y, lado):
 
 
 class Secao(Flowable):
-    """Título de seção: uma roda pequena, o título em vermelho e uma trilha tracejada embaixo."""
+    """Título de seção: uma rosácea pequena, o título em roxo e um filete lilás embaixo."""
 
     def __init__(self, texto, fonte, largura):
         super().__init__()
@@ -126,14 +142,14 @@ class Secao(Flowable):
 
     def draw(self):
         c = self.canv
-        _roda(c, 2.8 * mm, 8, 2.6 * mm, AZUL, OURO)
+        _rosacea(c, 2.8 * mm, 8, 2.6 * mm)
         c.setFillColor(VINHO)
         t = c.beginText(8 * mm, 5)
         t.setFont(self.fonte, 11.5)
         t.setCharSpace(1.4)
         t.textOut(self.texto)
         c.drawText(t)
-        _trilha(c, 0, self.width, 1, VINHO, 0.8)
+        _filete(c, 0, self.width, 1, LILAS, 1.1)
 
 
 def _fontes():
@@ -384,17 +400,18 @@ def gerar_pdf(caminho, app):
         canv.rect(9 * mm, 9 * mm, A4[0] - 18 * mm, A4[1] - 18 * mm)
         canv.setLineWidth(0.4)
         canv.rect(10.5 * mm, 10.5 * mm, A4[0] - 21 * mm, A4[1] - 21 * mm)
-        # faixa da trilha no alto; embaixo, a trilha segue com um marco em cada canto
-        _faixa_trilha(canv, 10.5 * mm, A4[1] - 10.5 * mm - 6.5 * mm, A4[0] - 21 * mm)
-        _trilha(canv, 18 * mm, A4[0] - 18 * mm, 15 * mm, VINHO, 0.9)
-        _marco(canv, 15.5 * mm, 13 * mm)
-        _marco(canv, A4[0] - 15.5 * mm, 13 * mm)
+        # faixa de vitral no alto; embaixo, uma fileira de janelas em arco em cada canto
+        _faixa_vitral(canv, 10.5 * mm, A4[1] - 10.5 * mm - 6.5 * mm, A4[0] - 21 * mm)
+        for i in range(5):
+            _lanceta(canv, 13 * mm + i * 5.2 * mm, 11.5 * mm)
+            _lanceta(canv, A4[0] - 13 * mm - 4.2 * mm - i * 5.2 * mm, 11.5 * mm)
+        _filete(canv, 40 * mm, A4[0] - 40 * mm, 12 * mm, LILAS, 0.8)
         if doc.page == 1:
-            _roda(canv, 25 * mm, A4[1] - 33 * mm, 7.5 * mm)
+            _rosacea(canv, 25 * mm, A4[1] - 33 * mm, 8 * mm)
             if not _foto(canv, st.get("foto"), A4[0] - 15 * mm - 32 * mm, A4[1] - 20.5 * mm - 32 * mm, 32 * mm):
-                _roda(canv, A4[0] - 25 * mm, A4[1] - 33 * mm, 7.5 * mm)
-            _trilha(canv, A4[0] / 2 - 46 * mm, A4[0] / 2 - 8 * mm, A4[1] - 40.4 * mm, OURO, 1.0)
-            _trilha(canv, A4[0] / 2 + 8 * mm, A4[0] / 2 + 46 * mm, A4[1] - 40.4 * mm, OURO, 1.0)
+                _rosacea(canv, A4[0] - 25 * mm, A4[1] - 33 * mm, 8 * mm)
+            _filete(canv, A4[0] / 2 - 46 * mm, A4[0] / 2 - 8 * mm, A4[1] - 40.4 * mm, OURO, 0.9)
+            _filete(canv, A4[0] / 2 + 8 * mm, A4[0] / 2 + 46 * mm, A4[1] - 40.4 * mm, OURO, 0.9)
         canv.setFont(FI, 8)
         canv.setFillColor(TINTA2)
         canv.drawCentredString(A4[0] / 2, 5.5 * mm, L(f"{idt.get('nome') or 'Sonhador'} · Prevalecentes · página {doc.page}"))
