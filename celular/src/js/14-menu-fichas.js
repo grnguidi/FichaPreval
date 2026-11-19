@@ -15,11 +15,11 @@ A["menu"] = () => {
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="imprimir"><div class="tx"><b>🖨 Imprimir / salvar PDF</b><small>A ficha inteira em folhas A4</small></div></div>` : ""}
     <div class="item" data-a="layout" role="switch" aria-checked="${banco.layout ? "true" : "false"}"><div class="tx"><b>⚔ Layout de mesa</b><small>Combate abre no Turno, vitais sempre à vista e o dado flutuante</small></div><span class="switch ${banco.layout ? "on" : ""}"><i></i></span></div>
-    <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Tema: diurno, noturno ou Vitral gótico (roxo, lilás e verde-claro)</small></div></div>
+    <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Catedral (dia) ou Vigília (noite, com os vitrais acesos)</small></div></div>
     ${S ? `<div class="item" data-a="excluir"><div class="tx"><b class="erro">Excluir esta ficha do aparelho</b></div></div>` : ""}</div>`);
 };
-const TEMAS_ROT = { dia: "☀ Modo diurno", noite: "☾ Modo noturno", gotico: "✥ Vitral gótico" };
-const proximoTema = () => ({ dia: "noite", noite: "gotico", gotico: "dia" }[banco.tema] || "noite");
+const TEMAS_ROT = { dia: "☀ Tema Catedral", noite: "☾ Tema Vigília" };
+const proximoTema = () => (banco.tema === "noite" ? "dia" : "noite");
 A["tema"] = () => { banco.tema = proximoTema(); gravarLocal(); fecharFolha(); render(); };
 A["lista"] = () => { fecharFolha(); S = null; banco.atual = null; gravarLocal(); render(); };
 A["abrir"] = (el) => abrirFicha(el.dataset.id);

@@ -107,7 +107,7 @@ A["trazer-ficha"] = () => { location.href = PAGINA_APP + "#mesa=" + encodeURICom
 
 function telaInicial() {
   const ids = Object.keys(banco.fichas);
-  return `<div class="capa"><div class="orn">❦</div><h1>Conestoga connection</h1><p class="sub">Ficha de Prevalecentes · edição 3.3</p></div>
+  return `<div class="capa"><div class="orn" aria-hidden="true">❦</div><h1>Conestoga connection</h1><p class="sub">Ficha de Prevalecentes · edição 3.3</p></div>
     ${avisoIos()}
     ${secao("Suas fichas")}
     ${ids.length ? `<div class="lista">${ids.map((id) => { const f = banco.fichas[id]; return `<div class="item" data-a="abrir" data-id="${id}"><div class="tx"><b>${esc(f.identidade.nome || "Sem nome")}</b><small>Nível ${f.identidade.nivel} · ${esc(f.identidade.especie || "—")}${f.sem_alma ? " · sem alma" : ""}</small></div>${mesaAlvo && !sessao.ativa ? `<button class="botao prim" data-a="enviar-mesa" data-id="${id}" style="min-height:36px">Enviar</button>` : `<span class="sub">›</span>`}</div>`; }).join("")}</div>`
@@ -128,8 +128,13 @@ function pFicha() {
       <div class="passos"><button data-a="vital" data-chave="${chave}" data-d="-1" data-max="${max}">−</button><button data-a="vital" data-chave="${chave}" data-d="1" data-max="${max}">+</button></div></div>`;
   };
   const falta = Math.max(0, C.nVida - (v.rolagens || []).length);
-  let h = `<div class="retrato">${S.foto ? `<img src="${S.foto}" alt="Foto do personagem" data-a="foto">` : `<button class="botao leve so-ed" data-a="foto">📷 Foto do personagem</button>`}
-    ${S.foto ? `<div class="so-ed"><button class="chip-acao" data-a="foto">Trocar foto</button><button class="chip-acao" data-a="foto-tirar">Tirar</button></div>` : ""}</div>`;
+  // fachada: a foto (ou uma rosácea) entre lancetas, o nome em fraktur e a espécie com o nível em romano
+  let h = `<div class="fachada" aria-hidden="${S.foto ? "false" : "true"}"><i class="lanc"></i><i class="lanc alta"></i>
+      <div class="fach-centro">${S.foto ? `<img src="${S.foto}" alt="Foto do personagem" data-a="foto">` : `<span class="rosa-g"></span>`}</div>
+      <i class="lanc alta"></i><i class="lanc"></i></div>
+    <div class="fach-nome">${esc(S.identidade.nome || "Sonhador sem nome")}</div>
+    <div class="fach-sub">${esc(S.identidade.especie || "")}${S.identidade.especie ? " · " : ""}Nível ${romano(C.nv)}</div>
+    <div class="fach-bts so-ed">${S.foto ? `<button class="chip-acao" data-a="foto">Trocar foto</button><button class="chip-acao" data-a="foto-tirar">Tirar</button>` : `<button class="botao leve" data-a="foto">📷 Foto do personagem</button>`}</div>`;
   h += secao("Vigor do corpo") + `<div class="vitais">${vital("VIDA", "var(--c-vida)", "atual", d.vida)}${vital("MANA", "var(--c-mana)", "mana_atual", d.mana)}${vital("VIGOR", "var(--c-vigor)", "vigor_atual", d.vigor)}</div>
     <p class="sub" style="margin:8px 2px">Vigor recupera ${d.vigor_regen}/turno · Dados de vida: ${C.nVida}d12 ${v.modo === "media" ? "(média 7)" : `(rolados: ${Math.min(v.rolagens.length, C.nVida)})`}
     <span class="so-ed">· <a href="#" data-a="modo-vida" style="color:var(--vinho)">${v.modo === "media" ? "usar rolagem" : "usar média"}</a>

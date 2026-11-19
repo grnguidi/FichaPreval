@@ -21,6 +21,7 @@ A["dados"] = () => {
   `<button class="botao prim" data-a="fechar">Fechar</button>`);
 };
 function mostrarDado(rot, total, partes) {
+  girarRosacea();
   const t = $("#dd-t"); if (t) { t.textContent = total; $("#dd-p").textContent = `${rot}: ${txtPartes(partes)}`; }
   HIST_DADOS.unshift(`${esc(rot)} → <b>${total}</b> <span class="sub">${esc(txtPartes(partes))}</span>`); HIST_DADOS.length = Math.min(HIST_DADOS.length, 30);
   if ($("#dd-h")) $("#dd-h").innerHTML = HIST_DADOS.join("<br>");

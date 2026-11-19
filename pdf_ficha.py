@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Exporta a ficha aberta para PDF (reportlab), no visual Vitral gótico: roxo profundo, lilás e verde-claro,
+"""Exporta a ficha aberta para PDF (reportlab), no visual Catedral: roxo profundo, lilás e verde-claro,
 com dourado e chumbo; enfeites de vitral, rosáceas e janelas em arco."""
 import math
 import os
+import sys
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -13,15 +14,15 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (Flowable, KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle)
 
-PERG = colors.HexColor("#f3eef6")
-PERG2 = colors.HexColor("#e6dcee")
-CAMPO = colors.HexColor("#fbf9fd")
-ZEBRA = colors.HexColor("#efe8f4")
+PERG = colors.HexColor("#f2eee8")      # pedra clara (tema Catedral)
+PERG2 = colors.HexColor("#e2dad0")
+CAMPO = colors.HexColor("#faf8f4")
+ZEBRA = colors.HexColor("#ece6f0")
 TINTA = colors.HexColor("#2a1f33")
 TINTA2 = colors.HexColor("#5f5370")
 OURO = colors.HexColor("#b8955a")
 OURO2 = colors.HexColor("#e6d29e")
-VINHO = colors.HexColor("#6a3d9a")     # roxo dos títulos de seção
+VINHO = colors.HexColor("#5e3591")     # roxo dos títulos de seção
 AZUL = colors.HexColor("#4a2c6b")      # roxo profundo (nome antigo mantido: faixas e títulos)
 VERDE = colors.HexColor("#4e8a4a")
 LILAS = colors.HexColor("#b79ad6")
@@ -49,9 +50,13 @@ def _rosacea(c, cx, cy, r):
         c.drawPath(p, stroke=1, fill=1)
     for k in range(8):
         a = k * math.pi / 4
-        c.circle(cx + math.cos(a) * r * 0.52, cy + math.sin(a) * r * 0.52, r * 0.17, stroke=1, fill=0)
+        c.setFillColor(VIDROS[4])
+        c.circle(cx + math.cos(a + math.pi / 8) * r * 0.52, cy + math.sin(a + math.pi / 8) * r * 0.52, r * 0.17, stroke=1, fill=1)
     c.setLineWidth(max(0.8, r * 0.13))
     c.circle(cx, cy, r, stroke=1, fill=0)
+    c.setStrokeColor(OURO2)
+    c.setLineWidth(max(0.3, r * 0.05))
+    c.circle(cx, cy, r * 0.93, stroke=1, fill=0)
     c.setLineWidth(max(0.4, r * 0.06))
     c.setFillColor(colors.HexColor("#f6f1fa"))
     c.circle(cx, cy, r * 0.24, stroke=1, fill=1)
@@ -98,6 +103,19 @@ def _lanceta(c, x, y, w=4.2 * mm, h=9 * mm):
     c.restoreState()
 
 
+def _quadrifolio(c, cx, cy, r):
+    """Quadrifólio: quatro lóbulos lilás com miolo verde-claro."""
+    c.saveState()
+    c.setStrokeColor(CHUMBO)
+    c.setLineWidth(0.5)
+    c.setFillColor(LILAS)
+    for dx, dy in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+        c.circle(cx + dx * r * 0.5, cy + dy * r * 0.5, r * 0.48, stroke=1, fill=1)
+    c.setFillColor(VIDROS[1])
+    c.circle(cx, cy, r * 0.3, stroke=1, fill=1)
+    c.restoreState()
+
+
 def _filete(c, x0, x1, y, cor=None, larg=1.0):
     c.saveState()
     c.setStrokeColor(cor or LILAS)
@@ -129,8 +147,29 @@ def _foto(c, txt, x, y, lado):
         return False
 
 
+FRAK = ""   # letra gótica embutida (KaTeX Fraktur); só é usada quando cobre todas as letras do texto
+_FRAK_LETRAS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,;:'-!?()&")
+
+
+def _frak():
+    global FRAK
+    if not FRAK:
+        base = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
+        arq = os.path.join(base, "fontes", "KaTeX_Fraktur-Bold.ttf")
+        try:
+            pdfmetrics.registerFont(TTFont("Fraktur", arq))
+            FRAK = "Fraktur"
+        except Exception:
+            FRAK = "-"
+    return FRAK if FRAK != "-" else ""
+
+
+def frak_ok(txt):
+    return bool(_frak()) and bool(txt) and all(ch in _FRAK_LETRAS for ch in txt)
+
+
 class Secao(Flowable):
-    """Título de seção: uma rosácea pequena, o título em roxo e um filete lilás embaixo."""
+    """Título de seção: quadrifólio de vitral, capitular gótica em roxo, o resto em versalete e fio duplo dourado."""
 
     def __init__(self, texto, fonte, largura):
         super().__init__()
@@ -142,14 +181,21 @@ class Secao(Flowable):
 
     def draw(self):
         c = self.canv
-        _rosacea(c, 2.8 * mm, 8, 2.6 * mm)
+        _quadrifolio(c, 2.8 * mm, 8.5, 2.4 * mm)
         c.setFillColor(VINHO)
         t = c.beginText(8 * mm, 5)
+        cap, resto = self.texto[:1], self.texto[1:]
+        if frak_ok(cap):
+            t.setFont(FRAK, 16)
+            t.textOut(cap)
+        else:
+            resto = self.texto
         t.setFont(self.fonte, 11.5)
         t.setCharSpace(1.4)
-        t.textOut(self.texto)
+        t.textOut(resto)
         c.drawText(t)
-        _filete(c, 0, self.width, 1, LILAS, 1.1)
+        _filete(c, 0, self.width, 2.2, OURO, 0.7)
+        _filete(c, 0, self.width, 0.4, OURO, 0.7)
 
 
 def _fontes():
@@ -232,8 +278,11 @@ def gerar_pdf(caminho, app):
         return t
 
     e = []
-    e.append(Paragraph(L("Prevalecentes"), s_tit))
-    e.append(Paragraph(L("Ficha do Sonhador · edição 3.3"), s_sub))
+    nome = idt.get("nome") or "Sonhador"
+    if frak_ok(nome):
+        s_tit = ParagraphStyle("T", parent=s_tit, fontName=FRAK, fontSize=30, leading=32)
+    e.append(Paragraph(L(nome), s_tit))
+    e.append(Paragraph(L("Conestoga connection · Ficha do Sonhador · edição 3.3"), s_sub))
     e.append(Spacer(1, 22))
     import foto as _F
     tem_foto = _F.valida(st.get("foto"))      # com foto, a identificação encolhe para dar lugar a ela
@@ -395,10 +444,12 @@ def gerar_pdf(caminho, app):
         canv.saveState()
         canv.setFillColor(PERG)
         canv.rect(0, 0, A4[0], A4[1], stroke=0, fill=1)
-        canv.setStrokeColor(OURO)
-        canv.setLineWidth(1.2)
+        # a página é uma janela: moldura de chumbo por fora, dourada por dentro
+        canv.setStrokeColor(CHUMBO)
+        canv.setLineWidth(2.2)
         canv.rect(9 * mm, 9 * mm, A4[0] - 18 * mm, A4[1] - 18 * mm)
-        canv.setLineWidth(0.4)
+        canv.setStrokeColor(OURO)
+        canv.setLineWidth(0.6)
         canv.rect(10.5 * mm, 10.5 * mm, A4[0] - 21 * mm, A4[1] - 21 * mm)
         # faixa de vitral no alto; embaixo, uma fileira de janelas em arco em cada canto
         _faixa_vitral(canv, 10.5 * mm, A4[1] - 10.5 * mm - 6.5 * mm, A4[0] - 21 * mm)
@@ -410,11 +461,14 @@ def gerar_pdf(caminho, app):
             _rosacea(canv, 25 * mm, A4[1] - 33 * mm, 8 * mm)
             if not _foto(canv, st.get("foto"), A4[0] - 15 * mm - 32 * mm, A4[1] - 20.5 * mm - 32 * mm, 32 * mm):
                 _rosacea(canv, A4[0] - 25 * mm, A4[1] - 33 * mm, 8 * mm)
+            for k in range(2):   # lancetas ao lado do título
+                _lanceta(canv, A4[0] / 2 - 62 * mm + k * 5.2 * mm, A4[1] - 36 * mm)
+                _lanceta(canv, A4[0] / 2 + 52.6 * mm + k * 5.2 * mm, A4[1] - 36 * mm)
             _filete(canv, A4[0] / 2 - 46 * mm, A4[0] / 2 - 8 * mm, A4[1] - 40.4 * mm, OURO, 0.9)
             _filete(canv, A4[0] / 2 + 8 * mm, A4[0] / 2 + 46 * mm, A4[1] - 40.4 * mm, OURO, 0.9)
         canv.setFont(FI, 8)
         canv.setFillColor(TINTA2)
-        canv.drawCentredString(A4[0] / 2, 5.5 * mm, L(f"{idt.get('nome') or 'Sonhador'} · Prevalecentes · página {doc.page}"))
+        canv.drawCentredString(A4[0] / 2, 5.5 * mm, L(f"{idt.get('nome') or 'Sonhador'} · Conestoga connection · página {doc.page}"))
         canv.restoreState()
 
     doc = SimpleDocTemplate(caminho, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=21 * mm, bottomMargin=19 * mm,

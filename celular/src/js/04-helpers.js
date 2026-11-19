@@ -1,5 +1,8 @@
 // ------------------------------------------------------------------ interface: helpers
-function secao(t, extra = "") { return `<div class="secao">${esc(t)}${extra ? `<span class="extra">${extra}</span>` : ""}</div>`; }
+// título com capitular gótica: a primeira letra em fraktur, o resto em versalete
+function capitular(t) { const s = String(t || ""); return s ? `<span class="tit"><span class="cap">${esc(s[0])}</span>${esc(s.slice(1))}</span>` : ""; }
+function secao(t, extra = "") { return `<div class="secao">${capitular(t)}${extra ? `<span class="extra">${extra}</span>` : ""}</div>`; }
+function romano(n) { n = Math.max(1, Math.min(3999, int(n, 1))); const t = [[1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"], [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"]]; let s = ""; for (const [v, r] of t) while (n >= v) { s += r; n -= v; } return s; }
 function caixa(t, v, sub, cor = "var(--c-atr)") { return `<div class="cartao caixa"><div class="faixa" style="background:${cor}">${esc(t)}</div><b>${v}</b><small>${sub || "&nbsp;"}</small></div>`; }
 let timerToast;
 function toast(msg, ms) { const t = $("#toast"); t.innerHTML = msg; t.classList.add("on"); clearTimeout(timerToast); timerToast = setTimeout(() => t.classList.remove("on"), ms || (msg.includes("<hr>") ? 6000 : 3200)); }

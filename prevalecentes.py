@@ -25,36 +25,28 @@ OK, NO = "✓", "✗"
 META_SLOTS = [f"meta{i}" for i in range(1, 6)]   # talento extra de cada Meta de Vida concluída
 
 # ---------------------------------------------------------------- paletas
-# "Biblioteca élfica": verde-floresta profundo, pergaminho, couro e ouro velho.
+# "Catedral" (diurno): pedra clara, roxo profundo, lilás e verde-claro, dourado e chumbo.
+# "Vigília" (noturno): pedra quase preta, vitrais acesos e dourado quente.
 TEMAS = {
     "diurno": dict(
-        FUNDO="#1b2520", FUNDO2="#26342c", PERG="#f2e9d3", PERG2="#e6d7b4", CAMPO="#fbf7ea",
-        TINTA="#2d2015", TINTA2="#7d6a54", OURO="#b39552", OURO2="#dcc387", VINHO="#7c2626", VINHO_BG="#7c2626", VERDE="#4a6d33",
-        FAIXA="#f6efdc", LINHA="#ddcda6", ROSA="#f1dcd6", AGUA="#d7e7e3",
-        MESA_CAMPO="#2f3f35", MESA_BORDA="#4b5d50", MESA_ATIVO="#34463b", MESA_TXT="#9fae9f", ALERTA="#f0a08c",
-        C_VIDA="#9a3d33", C_MANA="#3f6283", C_VIGOR="#567a3b", C_MOV="#3d7471", C_CA="#6f675a", C_ATK="#a2463e",
-        C_DEF="#4a6893", C_PER="#b07a3c", C_TAL="#3d7471", C_DIN="#567a3b", C_ATR="#3b4a3f"),
-    "noturno": dict(
-        FUNDO="#0d120f", FUNDO2="#18211b", PERG="#1b231e", PERG2="#2a342d", CAMPO="#232c26",
-        TINTA="#e8dec5", TINTA2="#a3977f", OURO="#8f7542", OURO2="#d6bd82", VINHO="#dd8274", VINHO_BG="#a5423a", VERDE="#8dbb68",
-        FAIXA="#f3ead4", LINHA="#36423a", ROSA="#33262a", AGUA="#1f302c",
-        MESA_CAMPO="#1d2721", MESA_BORDA="#36463b", MESA_ATIVO="#243128", MESA_TXT="#8a998a", ALERTA="#e8907c",
-        C_VIDA="#80352d", C_MANA="#34516e", C_VIGOR="#476532", C_MOV="#33605e", C_CA="#5b554a", C_ATK="#86403a",
-        C_DEF="#3d5679", C_PER="#8c6232", C_TAL="#33605e", C_DIN="#476532", C_ATR="#2f3d33"),
-    # "Vitral gótico": roxo profundo, lilás e verde-claro, com dourado e chumbo.
-    # Enfeites: faixa de vitral sob o cabeçalho e uma rosácea ao lado do título.
-    "gotico": dict(
-        FUNDO="#4a2c6b", FUNDO2="#5c3a82", PERG="#f3eef6", PERG2="#e6dcee", CAMPO="#fbf9fd",
-        TINTA="#2a1f33", TINTA2="#5f5370", OURO="#b8955a", OURO2="#e6d29e", VINHO="#6a3d9a", VINHO_BG="#6a3d9a", VERDE="#4e8a4a",
-        FAIXA="#fbf9fd", LINHA="#d8cbe4", ROSA="#f3e3ec", AGUA="#e3f1df",
-        MESA_CAMPO="#5c3a82", MESA_BORDA="#7d5aa6", MESA_ATIVO="#674292", MESA_TXT="#dccbf0", ALERTA="#f6b8cf",
+        FUNDO="#2a1a3d", FUNDO2="#3d2758", PERG="#ebe5dc", PERG2="#ddd4c8", CAMPO="#f6f2ec",
+        TINTA="#2a1f33", TINTA2="#5d5266", OURO="#b8955a", OURO2="#e6d29e", VINHO="#5e3591", VINHO_BG="#5e3591", VERDE="#4e8a4a",
+        FAIXA="#f6f2ec", LINHA="#cfc4b8", ROSA="#f1e2e8", AGUA="#e3efdf",
+        MESA_CAMPO="#3d2758", MESA_BORDA="#6a4f8e", MESA_ATIVO="#4a3068", MESA_TXT="#dccbf0", ALERTA="#f6b8cf",
         C_VIDA="#a3334f", C_MANA="#5b4fae", C_VIGOR="#4e8a4a", C_MOV="#3f8a7a", C_CA="#6f6678", C_ATK="#a3334f",
-        C_DEF="#5b4fae", C_PER="#8a5a9e", C_TAL="#4e8a4a", C_DIN="#4e8a4a", C_ATR="#4a2c6b"),
+        C_DEF="#5b4fae", C_PER="#8a5a9e", C_TAL="#4e8a4a", C_DIN="#4e8a4a", C_ATR="#3d2758"),
+    "noturno": dict(
+        FUNDO="#08070b", FUNDO2="#17131d", PERG="#121016", PERG2="#1d1924", CAMPO="#19151f",
+        TINTA="#ece4f4", TINTA2="#b3a6c4", OURO="#a88c4c", OURO2="#f0d98c", VINHO="#d2b8ff", VINHO_BG="#5e3591", VERDE="#9fe08c",
+        FAIXA="#f6f1fa", LINHA="#2f2838", ROSA="#2c1a24", AGUA="#16241a",
+        MESA_CAMPO="#17131d", MESA_BORDA="#3a3046", MESA_ATIVO="#231c2c", MESA_TXT="#c9a8f0", ALERTA="#ff8fab",
+        C_VIDA="#c2405e", C_MANA="#6d5fd0", C_VIGOR="#5aa04f", C_MOV="#3f9a88", C_CA="#6f6678", C_ATK="#c2405e",
+        C_DEF="#6d5fd0", C_PER="#a06ab8", C_TAL="#5aa04f", C_DIN="#5aa04f", C_ATR="#3d2758"),
 }
 NOTURNO = False
 TEMA = "diurno"
-ORDEM_TEMAS = ["diurno", "noturno", "gotico"]
-ROTULO_TEMA = {"diurno": "☀ Modo diurno", "noturno": "☾ Modo noturno", "gotico": "✥ Vitral gótico"}
+ORDEM_TEMAS = ["diurno", "noturno"]
+ROTULO_TEMA = {"diurno": "☀ Tema Catedral", "noturno": "☾ Tema Vigília"}
 
 
 def proximo_tema():
@@ -63,39 +55,49 @@ def proximo_tema():
 
 def aplicar_tema(nome):
     global NOTURNO, TEMA
-    nome = "gotico" if nome in ("vitral", "trilha") else nome     # Vitral e Diário de trilha viraram o Vitral gótico
-    nome = nome if nome in TEMAS else "diurno"
+    nome = nome if nome in TEMAS else "diurno"     # temas antigos (gótico, vitral, trilha) viram a Catedral
     NOTURNO, TEMA = nome == "noturno", nome
     globals().update(TEMAS[nome])
 
 
-VIDROS_GOTICOS = ["#b79ad6", "#a8d89a", "#7a4fae", "#e2cf9a", "#dccbf0", "#8fc17f"]
-CHUMBO = "#2a1a3d"
+VIDROS_DIA = ["#b79ad6", "#a8d89a", "#7a4fae", "#e2cf9a", "#dccbf0", "#8fc17f"]
+VIDROS_NOITE = ["#c9a8f0", "#b6f0a4", "#9a62e0", "#f0d98c", "#e6d6ff", "#9fe08c"]
+
+
+def vidros():
+    return VIDROS_NOITE if NOTURNO else VIDROS_DIA
+
+
+def chumbo():
+    return "#000000" if NOTURNO else "#2a1a3d"
 
 
 def desenhar_rosacea(cv, cx, cy, r):
     """Rosácea (janela redonda de catedral): 8 vidros coloridos, chumbo entre eles e um miolo claro."""
     import math
+    V, CHUMBO = vidros(), chumbo()
     for k in range(8):
         cv.create_arc(cx - r, cy - r, cx + r, cy + r, start=k * 45, extent=45, style="pieslice",
-                      fill=VIDROS_GOTICOS[k % 4], outline=CHUMBO, width=max(1, int(r * 0.07)))
+                      fill=V[k % 4], outline=CHUMBO, width=max(1, int(r * 0.07)))
     for k in range(8):
         a = k * math.pi / 4
         x, y = cx + math.cos(a) * r * 0.52, cy + math.sin(a) * r * 0.52
-        cv.create_oval(x - r * 0.17, y - r * 0.17, x + r * 0.17, y + r * 0.17, outline=CHUMBO)
+        cv.create_oval(x - r * 0.17, y - r * 0.17, x + r * 0.17, y + r * 0.17, fill=V[4], outline=CHUMBO, width=max(1, int(r * 0.05)))
     cv.create_oval(cx - r, cy - r, cx + r, cy + r, outline=CHUMBO, width=max(2, int(r * 0.13)))
-    cv.create_oval(cx - r * 0.24, cy - r * 0.24, cx + r * 0.24, cy + r * 0.24, fill="#f6f1fa", outline=CHUMBO, width=max(1, int(r * 0.07)))
+    cv.create_oval(cx - r, cy - r, cx + r, cy + r, outline=OURO2, width=max(1, int(r * 0.05)))
+    cv.create_oval(cx - r * 0.24, cy - r * 0.24, cx + r * 0.24, cy + r * 0.24, fill="#fff6e0" if NOTURNO else "#f6f1fa", outline=OURO2, width=max(1, int(r * 0.07)))
 
 
 def desenhar_vitral(cv, largura, altura=10):
-    """Faixa de vitral do tema Vitral gótico: vidros lilás, verde-claro, roxo e dourado separados por chumbo."""
+    """Faixa de vitral sob o cabeçalho: vidros lilás, verde-claro, roxo e dourado separados por chumbo."""
     cv.delete("all")
+    V, CHUMBO = vidros(), chumbo()
     x, i = 0, 0
     while x < largura:
-        cv.create_rectangle(x, 0, x + 16, altura, fill=VIDROS_GOTICOS[i % 6], outline="")
+        cv.create_rectangle(x, 0, x + 16, altura, fill=V[i % 6], outline="")
         cv.create_line(x, 0, x, altura, fill=CHUMBO, width=2)
         x, i = x + 16, i + 1
-    cv.create_line(0, 0, largura, 0, fill=CHUMBO, width=2)
+    cv.create_line(0, 0, largura, 0, fill=OURO2, width=2)
     cv.create_line(0, altura - 1, largura, altura - 1, fill=CHUMBO, width=2)
 
 
@@ -123,6 +125,7 @@ def gravar_pref(**kw):
 
 FONTE = "Georgia"
 FONTE_TIT = "Georgia"
+FONTE_FRAK = ""   # letra gótica, se houver uma instalada
 
 
 
@@ -327,7 +330,7 @@ class App(tk.Tk):
 
     # ============================================================ estilo
     def _estilo(self):
-        global FONTE, FONTE_TIT
+        global FONTE, FONTE_TIT, FONTE_FRAK
         fams = set(tkfont.families(self))
         for f in ("Palatino Linotype", "Book Antiqua", "Constantia", "Georgia", "Garamond", "Cambria", "Times New Roman"):
             if f in fams:
@@ -338,6 +341,7 @@ class App(tk.Tk):
             if f in fams:
                 FONTE_TIT = f
                 break
+        FONTE_FRAK = next((f for f in ("UnifrakturMaguntia", "Old English Text MT", "UnifrakturCook", "Fraktur") if f in fams), "")
         self.configure(background=FUNDO)
         for nome in ("TkDefaultFont", "TkTextFont", "TkMenuFont", "TkHeadingFont"):
             try:
@@ -507,7 +511,7 @@ class App(tk.Tk):
         ms.add_command(label="Inimigos, anotações e combate (painel do mestre)…", command=self.abrir_painel_mestre)
         m.add_cascade(label="Mestre", menu=ms)
         ex = tk.Menu(m, tearoff=0)
-        ex.add_command(label="Trocar tema (diurno, noturno, Vitral gótico)", command=self.alternar_tema, accelerator="Ctrl+T")
+        ex.add_command(label="Trocar tema (Catedral ou Vigília)", command=self.alternar_tema, accelerator="Ctrl+T")
         m.add_cascade(label="Exibir", menu=ex)
         self.bind("<Control-t>", lambda e: self.alternar_tema())
         aj = tk.Menu(m, tearoff=0)
@@ -527,11 +531,10 @@ class App(tk.Tk):
         ban.pack(fill="x")
         tit = tk.Frame(ban, bg=FUNDO)
         tit.pack(side="left", anchor="n")
-        if TEMA == "gotico":
-            rd = tk.Canvas(ban, width=50, height=50, bg=FUNDO, highlightthickness=0)
-            rd.pack(side="left", anchor="n", padx=(0, 12), before=tit)
-            desenhar_rosacea(rd, 25, 25, 22)
-        tk.Label(tit, text="Conestoga connection", bg=FUNDO, fg=OURO2, font=(FONTE_TIT, 22, "bold")).pack(anchor="w")
+        rd = tk.Canvas(ban, width=58, height=58, bg=FUNDO, highlightthickness=0)   # rosácea da fachada
+        rd.pack(side="left", anchor="n", padx=(0, 12), before=tit)
+        desenhar_rosacea(rd, 29, 29, 26)
+        tk.Label(tit, text="Conestoga connection", bg=FUNDO, fg=OURO2, font=(FONTE_FRAK, 24) if FONTE_FRAK else (FONTE_TIT, 22, "bold")).pack(anchor="w")
         tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.3", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
         self.lbl_modo.pack(anchor="w", pady=(4, 0))
@@ -577,7 +580,7 @@ class App(tk.Tk):
         self.lbl_pontos_topo_sub = Rot(pts, bg=FUNDO, fg=MESA_TXT, size=9, bold=False, italic=True, anchor="e")
         self.lbl_pontos_topo_sub.pack(anchor="e")
         tk.Frame(self, height=1, bg=OURO).pack(fill="x")
-        if TEMA == "gotico":   # enfeite do tema: a faixa de vitral sob o cabeçalho
+        if True:   # a faixa de vitral sob o cabeçalho
             vt = tk.Canvas(self, height=10, bg=PERG, highlightthickness=0)
             vt.pack(fill="x")
             vt.bind("<Configure>", lambda e: desenhar_vitral(vt, e.width))

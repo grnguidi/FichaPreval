@@ -66,7 +66,7 @@ function blocoHtml(s, chave) {
   if (!s.titulo) return corpo;
   const k = `${chave}:${s.titulo}`, fechado = !!(banco.fechados || {})[k];
   return `<section class="bloco ${fechado ? "fechado" : ""}">
-    <div class="secao bloco-cab" data-a="bloco" data-k="${esc(k)}" role="button" aria-expanded="${fechado ? "false" : "true"}">${esc(s.titulo)}${s.extra ? `<span class="extra">${s.extra}</span>` : ""}
+    <div class="secao bloco-cab" data-a="bloco" data-k="${esc(k)}" role="button" aria-expanded="${fechado ? "false" : "true"}">${capitular(s.titulo)}${s.extra ? `<span class="extra">${s.extra}</span>` : ""}
       ${ajuda.length ? `<button class="ajuda-bt" data-a="ajuda" aria-label="O que é isto?">?</button>` : ""}<span class="chev" aria-hidden="true"></span></div>
     ${ajuda.length ? `<div class="ajuda-txt" hidden>${ajuda.map((n) => n.innerHTML).join("<br>")}</div>` : ""}
     <div class="bloco-corpo">${corpo}</div></section>`;
@@ -164,3 +164,10 @@ function barraSub() {
 A["sub"] = (el) => { banco.subs = banco.subs || {}; banco.subs[aba] = el.dataset.s; gravarLocal(); render(); window.scrollTo(0, 0); };
 function medirTopo() { const t = document.querySelector(".topo"); if (t) document.documentElement.style.setProperty("--topo-h", t.offsetHeight + "px"); }
 window.addEventListener("resize", medirTopo);
+
+// a rosácea do cabeçalho dá uma volta a cada rolagem
+let timerRosa;
+function girarRosacea() {
+  const h = document.documentElement; h.classList.remove("rolando"); void h.offsetWidth; h.classList.add("rolando");
+  clearTimeout(timerRosa); timerRosa = setTimeout(() => h.classList.remove("rolando"), 1300);
+}
