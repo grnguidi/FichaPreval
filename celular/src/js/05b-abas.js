@@ -161,7 +161,7 @@ function barraSub() {
   return `<div class="subabas" id="subabas"><div class="seg" role="tablist">${subs.length ? subs.map(([k, r]) => `<button role="tab" aria-selected="${k === s}" class="${k === s ? "on" : ""}" data-a="sub" data-s="${k}">${r}</button>`).join("") : `<b class="seg-tit">${a.rot}</b>`}</div>
     <button class="modo-pill ${ed ? "ed" : ""}" data-a="modo" aria-label="${ed ? "Voltar ao Modo Jogo" : "Editar a ficha"}">${ed ? "⚔ Jogar" : "✎ Editar"}</button></div>`;
 }
-A["sub"] = (el) => { banco.subs = banco.subs || {}; banco.subs[aba] = el.dataset.s; gravarLocal(); render(); window.scrollTo(0, 0); };
+A["sub"] = (el) => { banco.subs = banco.subs || {}; banco.subs[aba] = el.dataset.s; gravarLocal(); render(); window.scrollTo(0, 0); mostrarSubAtiva(); };
 function medirTopo() { const t = document.querySelector(".topo"); if (t) document.documentElement.style.setProperty("--topo-h", t.offsetHeight + "px"); }
 window.addEventListener("resize", medirTopo);
 
