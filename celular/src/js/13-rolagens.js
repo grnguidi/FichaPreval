@@ -9,17 +9,20 @@ function registrarDiario(entrada) {   // o diário fica guardado com a ficha (ú
 }
 const rng = (f) => 1 + Math.floor(Math.random() * f);
 function txtAtaque(at, rot = "Acerto") {
+  if (at.fisico) return txtAtaqueFisico(at, rot);
   let t = `${rot}: <b style="font-size:20px">${at.total}</b> <span class="sub">[d20 ${at.d20.join(" e ")}${at.d20.length > 1 ? " → maior" : ""} ${at.bonus >= 0 ? "+" : ""}${at.bonus}]</span>`;
   if (at.desastre) t += `<br><b class="erro">DESASTRE</b>: erra sempre; o alvo pode atacar você como ação livre.`;
   else if (at.garantido) t += `<br><b class="ok">20 NATURAL</b>: acerto garantido e crítico (dobra os dados).`;
   else if (at.critico) t += `<br><b class="ok">CRÍTICO</b>: dobra os dados de dano (o acerto ainda compara com a CA).`;
   return t;
 }
-const txtDano = (tot, partes, rot = "Dano") => `${rot}: <b style="font-size:20px">${tot}</b> <span class="sub">(${partes.map(([t, v]) => v.length ? `${t}[${v.join(", ")}]` : t).join(" ")})</span>`;
+const txtDano = (tot, partes, rot = "Dano") => tot === null ? txtDanoFisico(partes, rot) : `${rot}: <b style="font-size:20px">${tot}</b> <span class="sub">(${partes.map(([t, v]) => v.length ? `${t}[${v.join(", ")}]` : t).join(" ")})</span>`;
 function mostrarRolagem(titulo, linhas) {
   girarRosacea();
+  const pegue = fisico() ? resumoDados() : (pedidoDados = [], "");
+  if (pegue) { titulo += " · dados físicos"; linhas = [pegue].concat(linhas); }
   registrarDiario({ titulo, linhas });
-  compartilharRolagem(titulo, linhas);
+  if (!pegue) compartilharRolagem(titulo, linhas);   // no modo físico não há resultado para mandar ao grupo
   folha(titulo, `<div class="desc" style="font-size:16px;line-height:1.7">${linhas.join("<br>")}</div>`,
     `${desfazer.length ? `<button class="botao leve" data-a="desfazer">↺ Desfazer custo</button>` : ""}<button class="botao prim" data-a="fechar">OK</button>`);
 }
@@ -101,7 +104,7 @@ function atacar(i, o = {}) {
     const golpes = Math.max(1, int(o.golpes, 1)), ataques = [];
     for (let g = 0; g < golpes; g++) {
       if (g === 0 || !o.umAcerto) {
-        const a = R.rolarAtaque(bonus, atk.vant || o.vant === 1, ep.margem, rng, o.vant === -1);
+        const a = Dados.ataque(bonus, atk.vant || o.vant === 1, ep.margem, o.vant === -1);
         if (o.critico && !a.desastre) a.critico = true;
         ataques.push(a);
       } else ataques.push(ataques[0]);
@@ -124,17 +127,17 @@ function atacar(i, o = {}) {
       const pre = golpes > 1 ? `<b>#${g + 1}</b> ` : "";
       if (golpes > 1 && (g === 0 || !o.umAcerto)) linhas.push(pre + txtAtaque(a));
       if (a.desastre) return;
-      const [tot, partes] = R.rolarExpr(ep.dano, rng, a.critico, mult);
+      const [tot, partes] = Dados.expr(ep.dano, a.critico, mult);
       soma += tot;
       linhas.push(pre + txtDano(tot, partes) + ` · ${esc(lD.tipo)}` + (nvD !== nv ? ` · dano de nível ${nvD}` : "") + (a.critico && mult > 2 ? ` · crítico ×${mult}` : ""));
       for (const [x, tipo, cnd] of ep.extras) {
-        const [t2, p2] = R.rolarExpr(x, rng, a.critico, mult);
+        const [t2, p2] = Dados.expr(x, a.critico, mult);
         soma += t2;
         linhas.push(pre + txtDano(t2, p2, `+ ${esc(tipo)}`) + (cnd ? ` <span class="sub">(${esc(cnd)})</span>` : ""));
       }
       for (const [x, tipo, alvo] of C.eq.dados) {   // dados de sets e talismãs
         if (!(alvo === "arma" || alvo === "tudo" || (Array.isArray(alvo) && alvo.includes(w.grupo)))) continue;
-        const [t2, p2] = R.rolarExpr(x, rng, a.critico, mult);
+        const [t2, p2] = Dados.expr(x, a.critico, mult);
         soma += t2;
         linhas.push(pre + txtDano(t2, p2, `+ ${esc(tipo)}`) + ` <span class="sub">(set ou talismã)</span>`);
       }
@@ -144,11 +147,15 @@ function atacar(i, o = {}) {
     if (!at.desastre) linhas.push(...linhasSet(at.critico));
     if (furiaNivel) linhas.push(`<span class="sub">Fúria: +${furiaNivel} nível de dano por ter perdido ${furiaNivel * 25}% da vida${furiaNivel >= 2 ? "; a partir de 50% você tem o dobro de movimento e −2 de CA" : ""}.</span>`);
     if (w.grupo === "Adaga" && !at.desastre) linhas.push(`<span class="sub">Cada acerto deixa 1 acúmulo de Sangria no alvo (Ataque de Saque como primeiro ataque, 2; limite 4 + 1 a cada 20 de Destreza).</span> <button class="botao leve mini" data-a="recurso" data-i="${i}" data-n="Acúmulos de Sangria" data-d="1">＋1 Sangria</button>`);
-    if (golpes > 1 && !at.desastre) linhas.push(`Dano somado se todos acertarem: <b>${soma}</b> <span class="sub">— desconte os que errarem a CA do alvo.</span>`);
+    if (golpes > 1 && !at.desastre && !fisico()) linhas.push(`Dano somado se todos acertarem: <b>${soma}</b> <span class="sub">— desconte os que errarem a CA do alvo.</span>`);
     if (o.municao) linhas.push(gastarMunicao(i, o.municaoTipo || "", int(o.municao)));
     else {
       const nm = recursoMunicao(w.grupo, "flecha"), r = S.recursos[`${i}:${w.grupo}`] || {};
       if (nm && int(r[nm]) > 0) linhas.push(gastarMunicao(i, "flecha", 1));
+    }
+    if (fisico()) {   // o app não sabe se saiu crítico: um toque reafia a arma
+      linhas.push(`<button class="botao leve mini" data-a="foi-critico" data-i="${i}">Tirei crítico (reafiar a arma)</button>`
+        + (ep.voraz ? ` <span class="sub">Voraz: no crítico, role <b>1d10</b> e recupere essa Vida.</span>` : ""));
     }
     if (!at.desastre) {
       if (ep.voraz && at.critico) {
@@ -174,13 +181,14 @@ function atacar(i, o = {}) {
 }
 A["rolar-arma"] = (el) => atacar(int(el.dataset.i), { acao: "Comum" });
 A["rolar-ini"] = () => {
+  if (fisico()) { pedirDados(C.d.iniciativa_dados, 20); mostrarRolagem("⏳ Iniciativa", [`Iniciativa: role ${qtosD20(C.d.iniciativa_dados)} <b>${sinal(C.d.iniciativa_bonus)}</b>.`]); return; }
   const d = [...Array(C.d.iniciativa_dados)].map(() => rng(20)), b = C.d.iniciativa_bonus;
   mostrarRolagem("⏳ Iniciativa", [`Iniciativa: <b style="font-size:20px">${Math.max(...d) + b}</b> <span class="sub">[d20 ${d.join(", ")} → ${Math.max(...d)} +${b}]</span>`]);
 };
 A["rolar-per"] = (el) => {
   if (banco.modo === "edicao" && !el.dataset.rolar) return infoPericia(el);
-  const r = R.rolarPericia(int(el.dataset.b), int(el.dataset.d, 1), rng);
-  mostrarRolagem(`🎲 ${esc(el.dataset.n)}`, [`${esc(el.dataset.n)}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${r.bonus}]</span>`,
+  const r = Dados.teste(int(el.dataset.b), int(el.dataset.d, 1));
+  mostrarRolagem(`🎲 ${esc(el.dataset.n)}`, [txtTeste(esc(el.dataset.n), r, "pericia"),
     `<span class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</span>`]);
 };
 A["esc-props"] = (el) => {
@@ -259,7 +267,7 @@ A["conjurar"] = (el, ev) => {
   if (C.eq.mana_pct && manaC != null) manaC = Math.max(1, Math.round(manaC * (100 - C.eq.mana_pct) / 100));   // Pergaminho do Oculto
   pagar("mana_atual", C.d.mana, manaC, "Mana", (custo) => {
     const acImpl = impl ? (R.ACERTO_ARMA[impl] || 0) : 0;   // "+ acerto do cajado" (Magias) ou do selo (Feitiços)
-    const at = R.rolarAtaque(C.d.bc[k] + C.d.n3 + acImpl, R.vantagem(C.a[k]), 20, rng);
+    const at = Dados.ataque(C.d.bc[k] + C.d.n3 + acImpl, R.vantagem(C.a[k]), 20);
     const linhas = [txtAtaque(at, per), `DT para o alvo resistir: <b>${k === "INT" ? C.d.dt_feiticaria : C.d.dt_desejo}</b>`];
     if (acImpl) linhas.push(`<span class="sub">Inclui +${acImpl} de acerto do ${k === "INT" ? "cajado" : "selo"} nv ${impl}.</span>`);
     const avisoAcao = marcarAcao(v.acao);
@@ -269,13 +277,13 @@ A["conjurar"] = (el, ev) => {
     if (expr && conds.length && expr.replace(/\s+/g, " ") === conds[0][0]) expr = null;
     const [arc, extraC] = R.arcanoEscala(C.a.ARC, talentos());
     if (!at.desastre) for (const [ce, cn] of conds) {
-      const escl = R.escalarArcano(ce, arc, cn, extraC), [tot, partes] = R.rolarExpr(escl, rng, at.critico);
+      const escl = R.escalarArcano(ce, arc, cn, extraC), [tot, partes] = Dados.expr(escl, at.critico);
       linhas.push(txtDano(tot, partes, cn) + " pontos" + (escl !== ce ? ` <span class="sub">· ${ce} → ${escl} por ${arc} de Arcano${arc !== R.cap(C.a.ARC) ? " (Mente Arcana +10)" : ""}${extraC && cn !== "Morte" ? " + 1 cópia (Senhor das Condições)" : ""}</span>` : ""));
     }
     if (!at.desastre) linhas.push(...linhasSet(at.critico));
     if (expr && !at.desastre) {
       const extra = k === "INT" ? C.d.dados_extra_magia : C.d.dados_extra_feitico;
-      const [tot, partes] = R.rolarExpr(R.danoComDados(expr, extra), rng, at.critico);
+      const [tot, partes] = Dados.expr(R.danoComDados(expr, extra), at.critico);
       linhas.push(txtDano(tot, partes, "Dados do encantamento") + (extra ? ` · +${extra} dado por ${k}` : ""));
     } else if (!expr && !conds.length) linhas.push(`<span class="sub">Este encantamento não tem dados na descrição.</span>`);
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
@@ -284,7 +292,7 @@ A["conjurar"] = (el, ev) => {
     if (!at.desastre) {
       for (const [x, tipo, alvo] of C.eq.dados) {
         if (!(alvo === "mag" || alvo === "tudo")) continue;
-        const [t2, p2] = R.rolarExpr(x, rng, at.critico);
+        const [t2, p2] = Dados.expr(x, at.critico);
         linhas.push(txtDano(t2, p2, `+ ${esc(tipo)}`) + ` <span class="sub">(set ou talismã)</span>`);
       }
       if (C.eq.dano_mag) linhas.push(`+<b>${C.eq.dano_mag}</b> de dano fixo <span class="sub">(sets e talismãs)</span>`);

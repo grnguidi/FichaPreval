@@ -59,7 +59,7 @@ function estourar(i) {
   const faces = Math.max(...[...String(l.dano).matchAll(/\d+d(\d+)/g)].map((m) => +m[1]), 4), chave = `${i}:${w.grupo}`;
   const n = int((S.recursos[chave] || {})["Acúmulos de Sangria"]);
   if (!n) { toast("Sem acúmulos de Sangria no alvo. Ajuste o contador da Adaga (＋ a cada acerto) antes de Estourar."); return; }
-  const [tot, partes] = R.rolarExpr(`${2 * n}d${faces}`, rng);
+  const [tot, partes] = Dados.expr(`${2 * n}d${faces}`);
   mudar((s) => { s.recursos[chave]["Acúmulos de Sangria"] = 0; });
   const aviso = marcarAcao("Bônus");
   mostrarRolagem("💥 Estourar", [txtDano(tot, partes), `<span class="sub">${n} acúmulo(s) × 2 dados de d${faces} (dado-base da adaga nv ${nv}). O dano ignora RD. Execução Silenciosa: com o alvo abaixo de 25% da vida e 5 ou mais acúmulos, é crítico automático (dobre o resultado).</span>`].concat(aviso ? [`<span class="erro">${aviso}</span>`] : []));

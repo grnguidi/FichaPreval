@@ -104,8 +104,8 @@ function defesa(n, k, tn) {
 function bonusDefesa(n, k, tn) { return defesa(n, k, tn).b; }
 A["rolar-def"] = (el) => {
   const [n, k, tn] = R.PERICIAS_DEFESA.find((x) => x[0] === el.dataset.n), b = bonusDefesa(n, k, tn);
-  const r = R.rolarDefesa(b, defesa(n, k, tn).vant, rng);
-  mostrarRolagem(`🛡 ${n}`, [`${n}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${b}]</span>`,
+  const r = Dados.teste(b, defesa(n, k, tn).vant ? 2 : 1);
+  mostrarRolagem(`🛡 ${n}`, [txtTeste(n, r, "resist"),
     `<span class="sub">Compare com a DT do efeito ou da habilidade do inimigo.</span>`]);
 };
 // perícia de ataque: Luta (corpo a corpo), Pontaria (Arco e Besta), Feitiçaria (Magias) e Desejo (Feitiços).
@@ -128,7 +128,7 @@ A["rolar-atk"] = (el) => {
   const [n, atrs] = R.PERICIAS_ATAQUE.find((x) => x[0] === el.dataset.n);
   const k = atrs.reduce((m, x) => (C.d.bc[x] > C.d.bc[m] ? x : m), atrs[0]);
   const b = bonusPericiaAtaque(n, k);
-  const at = R.rolarAtaque(b, vantPericiaAtaque(n, k), 20, rng);
+  const at = Dados.ataque(b, vantPericiaAtaque(n, k), 20);
   mostrarRolagem(`🎲 ${n}`, [txtAtaque(at, n), `<span class="sub">Teste de ${n} (${k}) sem arma; os ataques com arma ficam no cartão da arma.</span>`]);
 };
 A["contra"] = () => {
@@ -139,17 +139,19 @@ A["contra"] = () => {
 };
 A["contra-rolar"] = (el) => {
   const k = el.dataset.k, b = C.d.bc[k] + C.d.n3 + (C.tal.has("Contra-encantador") ? 2 : 0), max = C.d.contra_encant;
-  const r = R.rolarDefesa(b, R.vantagem(C.a[k]), rng);
+  const r = Dados.teste(b, R.vantagem(C.a[k]) ? 2 : 1);
   S.contra_usados = int(S.contra_usados) + 1; salvar(); render();
-  mostrarRolagem("✧ Contradomínio", [`${k === "INT" ? "Feitiçaria" : "Desejo"}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${b}]</span>`,
+  mostrarRolagem("✧ Contradomínio", [txtTeste(k === "INT" ? "Feitiçaria" : "Desejo", r, "pericia"),
     `Anula se for maior ou igual à DT do encantamento inimigo.`, S.contra_usados > max ? `<span class="erro">Passou do limite: ${S.contra_usados}/${max} neste combate.</span>` : `<span class="sub">Contra-encantamentos: ${S.contra_usados}/${max} neste combate.</span>`]
     .concat(C.tal.has("Contra-encantador") ? [`<span class="sub">Inclui +2 de Contra-encantador.</span>`] : []));
 };
 A["coord"] = (el) => {
   const k = el.dataset.k || "DES", b = C.d.bc[k] + C.d.n3 + (C.tal.has("Mãos Gêmeas") ? 2 : 0);
   const dt = 8 + Math.max(int(S.armas[0].nivel, 1), int(S.armas[1].nivel, 1));
-  const r = R.rolarDefesa(b, R.vantagem(C.a[k]), rng), ok = r.total >= dt;
-  mostrarRolagem("⚔ Coordenação", [`Coordenação (${k}): <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${b}]</span> contra DT ${dt}`,
+  const r = Dados.teste(b, R.vantagem(C.a[k]) ? 2 : 1), ok = r.total >= dt;
+  const falha = k === "ARC" ? `<b class="erro">Falha</b>: os encantamentos deste turno perdem o último dado de dano (mínimo 1).` : `<b class="erro">Descoordenado</b>: o dano das armas neste turno cai 1 nível (no nível 1, metade).`;
+  if (r.fisico) { mostrarRolagem("⚔ Coordenação", [txtTeste(`Coordenação (${k})`, r) + ` contra DT <b>${dt}</b>`, `Se tirar ${dt} ou mais: <b class="ok">sucesso</b>, luta normalmente. Se não: ${falha}`]); return; }
+  mostrarRolagem("⚔ Coordenação", [txtTeste(`Coordenação (${k})`, r) + ` contra DT ${dt}`,
     ok ? `<b class="ok">Sucesso</b>: luta normalmente neste turno.` : k === "ARC" ? `<b class="erro">Falha</b>: os encantamentos deste turno perdem o último dado de dano (mínimo 1).` : `<b class="erro">Descoordenado</b>: o dano das armas neste turno cai 1 nível (no nível 1, metade).`]);
 };
 A["acoes-livro"] = () => {
@@ -173,8 +175,8 @@ A["acao-livro"] = (el) => {
   else if (teste) {
     const pr = R.PERICIAS.find((x) => x[0] === teste), at = pr[1] || [S.prevalencia_attr || "ARC"];
     const [, b0, dados] = R.periciaFora(C.a, C.nv, at, C.treinadas.has(teste)), b = b0 + (C.ef.pericia[teste] || 0);
-    const r = R.rolarPericia(b, dados, rng);
-    linhas.push(`${teste}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${b}]</span>`);
+    const r = Dados.teste(b, dados);
+    linhas.push(txtTeste(teste, r, "pericia"));
   }
   if (aviso) linhas.push(`<span class="erro">${aviso}</span>`);
   render();

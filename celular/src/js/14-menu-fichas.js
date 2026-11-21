@@ -14,6 +14,7 @@ A["menu"] = () => {
     ${S ? `<div class="item" data-a="ident"><div class="tx"><b>Nome, player e espécie</b></div></div>` : ""}
     ${S ? `<div class="item" data-a="diario"><div class="tx"><b>📜 Diário de rolagens</b><small>Guardado com a ficha</small></div></div>` : ""}
     ${S ? `<div class="item" data-a="imprimir"><div class="tx"><b>🖨 Imprimir / salvar PDF</b><small>A ficha inteira em folhas A4</small></div></div>` : ""}
+    <div class="item" data-a="fisico" role="switch" aria-checked="${banco.dadosFisicos ? "true" : "false"}"><div class="tx"><b>🎲 Dados físicos</b><small>O app diz quantos e quais dados rolar e quanto somar, em vez de rolar</small></div><span class="switch ${banco.dadosFisicos ? "on" : ""}"><i></i></span></div>
     <div class="item" data-a="layout" role="switch" aria-checked="${banco.layout ? "true" : "false"}"><div class="tx"><b>⚔ Layout de mesa</b><small>Combate abre no Turno, vitais sempre à vista e o dado flutuante</small></div><span class="switch ${banco.layout ? "on" : ""}"><i></i></span></div>
     <div class="item" data-a="tema"><div class="tx"><b>${TEMAS_ROT[proximoTema()]}</b><small>Catedral (dia), Vigília (noite)${(banco.paletas || []).length ? " ou a sua paleta" : ""}</small></div></div>
     <div class="item" data-a="paletas"><div class="tx"><b>🎨 Minha paleta</b><small>Escolha as cores do seu app (vale para todas as fichas deste aparelho)</small></div></div>

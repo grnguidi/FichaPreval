@@ -17,6 +17,7 @@ import regras as R
 import foto as F
 import sessao
 import paleta as PAL
+import dados_fisicos as DF
 from ponte_sessao import PonteSessao
 from regras_texto import REGRAS_TXT
 from dados_prevalecentes import DADOS as _DADOS_EMBUTIDOS
@@ -538,6 +539,7 @@ class App(tk.Tk):
         ex = tk.Menu(m, tearoff=0)
         ex.add_command(label="Trocar tema (Catedral, Vigília ou a sua paleta)", command=self.alternar_tema, accelerator=f"{MOD_TXT}+T")
         ex.add_command(label="🎨 Minha paleta…", command=self.editar_paleta)
+        ex.add_command(label="🎲 Dados físicos (ligar/desligar)", command=self.alternar_fisico)
         m.add_cascade(label="Exibir", menu=ex)
         self.bind(f"<{MOD}-t>", lambda e: self.alternar_tema())
         aj = tk.Menu(m, tearoff=0)
@@ -2737,9 +2739,40 @@ class App(tk.Tk):
         var.set(str(atual - custo))
         return True, f"{rotulo}: −{custo} (restam {atual - custo})"
 
-    def _txt_ataque(self, at):
+    # ---- dados físicos: o app diz o que rolar em vez de rolar (Exibir › Dados físicos)
+    def fisico(self):
+        return bool(ler_pref().get("dados_fisicos"))
+
+    def _pedido(self):
+        if not hasattr(self, "_ped"):
+            self._ped = DF.Pedido()
+        return self._ped
+
+    def d_ataque(self, bonus, vant, margem=20, desv=False):
+        if self.fisico():
+            return DF.ataque(self._pedido(), bonus, vant, margem, desv)
+        return R.rolar_ataque(bonus, vant, margem, self._rng, desvantagem=desv)
+
+    def d_teste(self, bonus, nd20=1):
+        if self.fisico():
+            return DF.teste(self._pedido(), bonus, nd20)
+        return R.rolar_pericia(bonus, nd20, self._rng)
+
+    def d_expr(self, e, dobrar=False, mult=2):
+        if self.fisico():
+            return DF.expr(self._pedido(), e, mult)
+        return R.rolar_expr(e, self._rng, dobrar=dobrar, mult=mult)
+
+    def alternar_fisico(self):
+        gravar_pref(dados_fisicos=not self.fisico())
+        messagebox.showinfo(APP_NOME, "Dados físicos ligados: o app diz quantos e quais dados rolar e quanto somar." if self.fisico()
+                            else "Dados físicos desligados: o app volta a rolar.")
+
+    def _txt_ataque(self, at, rot="Acerto"):
+        if at.get("fisico"):
+            return DF.txt_ataque(at, rot, self.talentos_escolhidos())
         d20 = " e ".join(map(str, at["d20"])) + (" (fica o maior)" if len(at["d20"]) > 1 else "")
-        txt = f"Acerto: {at['total']}  [d20 {d20} {'+' if at['bonus'] >= 0 else ''}{at['bonus']}]"
+        txt = f"{rot}: {at['total']}  [d20 {d20} {'+' if at['bonus'] >= 0 else ''}{at['bonus']}]"
         if at["desastre"]:
             txt += "  — DESASTRE: erra sempre; o alvo pode atacar você como ação livre."
         elif at["garantido"]:
@@ -2749,6 +2782,8 @@ class App(tk.Tk):
         return txt
 
     def _txt_dano(self, total, partes):
+        if total is None:
+            return DF.txt_dano(partes)
         detalhe = " ".join(f"{t}[{', '.join(map(str, v))}]" if v else t for t, v, _ in partes)
         return f"Dano: {total}  ({detalhe})"
 
@@ -2783,7 +2818,7 @@ class App(tk.Tk):
         ataques = []   # um teste de acerto por disparo, ou um só para todos ("única jogada de acerto")
         for g in range(golpes):
             if g == 0 or not o.get("um_acerto"):
-                at_g = R.rolar_ataque(bonus, vant_atk or o.get("vant") == 1, ep["margem"], self._rng, desvantagem=o.get("vant") == -1)
+                at_g = self.d_ataque(bonus, vant_atk or o.get("vant") == 1, ep["margem"], o.get("vant") == -1)
                 if o.get("critico") and not at_g["desastre"]:
                     at_g["critico"] = True
             ataques.append(at_g)
@@ -2803,23 +2838,23 @@ class App(tk.Tk):
         for g, at_g in enumerate(ataques):
             pre = f"#{g + 1}  " if golpes > 1 else ""
             if g == 0 or not o.get("um_acerto"):
-                linhas.append(pre + self._txt_ataque(at_g))
+                linhas.append(pre + self._txt_ataque(at_g, per))
             if at_g["desastre"]:
                 continue
-            total, partes = R.rolar_expr(ep["dano"], self._rng, dobrar=at_g["critico"], mult=mult)
-            soma += total
+            total, partes = self.d_expr(ep["dano"], at_g["critico"], mult)
+            soma += total or 0
             linhas.append(pre + self._txt_dano(total, partes) + f"  · {linha_dano['tipo']}" + (f"  · dano de nível {nv_dano}" if nv_dano != nv else "")
                           + (f"  · crítico ×{mult}" if at_g["critico"] and mult > 2 else ""))
             if furia_dano:
                 soma += furia_dano
                 linhas.append(pre + f"+{furia_dano} de dano fixo (Fúria)")
             for x, tipo, cnd in ep["extras"]:
-                t2, p2 = R.rolar_expr(x, self._rng, dobrar=at_g["critico"], mult=mult)
-                soma += t2
+                t2, p2 = self.d_expr(x, at_g["critico"], mult)
+                soma += t2 or 0
                 linhas.append(pre + self._txt_dano(t2, p2).replace("Dano:", f"+ {tipo}:") + (f"  ({cnd})" if cnd else ""))
         if not at["desastre"]:
             linhas += self._linhas_set(at["critico"])
-        if golpes > 1 and not at["desastre"]:
+        if golpes > 1 and not at["desastre"] and not self.fisico():
             linhas.append(f"Dano somado dos que acertarem — todos: {soma}. Desconte os disparos que errarem a CA do alvo.")
         if o.get("critico"):
             linhas.append("Crítico garantido por esta ação.")
@@ -2831,6 +2866,8 @@ class App(tk.Tk):
             n_m = self._recurso_municao(arma["nome"], "flecha")
             if n_m and to_int(self.recursos.get(self._chave_recurso(i), {}).get(n_m), 0) > 0:
                 linhas.append(self._gastar_municao(i, "flecha", 1))
+        if self.fisico() and ep["voraz"]:
+            linhas.append("Voraz: no crítico, role 1d10 e recupere essa Vida.")
         if not at["desastre"]:
             if ep["voraz"] and at["critico"]:
                 cura, _ = R.rolar_expr("1d10", self._rng)
@@ -2849,20 +2886,27 @@ class App(tk.Tk):
         if maestria:
             linhas.append("Inclui +1 de Maestria nesta arma.")
         if at["critico"]:
-            linhas.append(f"Desgaste: o crítico reafiou a arma ({ep['desgaste']}/{ep['desgaste']}).")
+            linhas.append(f"Afiação: o crítico reafiou a arma ({lim}/{lim}).")
         elif dg["desgastada"]:
             linhas.append("Desgaste: a arma desgastou — não pode ser usada no próximo turno.")
         else:
-            linhas.append(f"Desgaste: restam {ep['desgaste'] - dg['usados']} turno(s) afiado(s).")
+            linhas.append(f"Afiação: restam {lim - dg['usados']} turno(s) afiado(s) (vale para os outros ataques deste turno).")
         aviso = self.marcar_acao(o.get("acao") or "Comum")
         if aviso:
             linhas.append(aviso)
         self.registrar(f"⚔ {o.get('rotulo') or arma['nome']} nv {nv}", linhas, destaque=at["critico"] or at["desastre"])
+        if self.fisico() and messagebox.askyesno(APP_NOME, f"Dados físicos: tirou crítico ({ep['margem']} a 20 no d20)?\n\nSim reafia a arma."):
+            dg.update(usados=0, desgastada=False)
+            self.registrar("✓ Crítico", [f"{arma['nome']}: arma reafiada pelo crítico ({lim}/{lim})."])
         self.recalc()
 
     def rolar_iniciativa(self):
         self.recalc()
         n, b = self.d["iniciativa_dados"], self.d["iniciativa_bonus"]
+        if self.fisico():
+            self._pedido().pedir(n, 20)
+            self.registrar("⏳ Iniciativa", [f"Iniciativa: role {DF.qtos_d20(n)} {DF.sinal(b)}."])
+            return
         d = [self._rng(20) for _ in range(n)]
         self.registrar("⏳ Iniciativa", [f"Iniciativa: {max(d) + b}  [d20 {', '.join(map(str, d))} → {max(d)} +{b}]"])
 
@@ -2913,7 +2957,7 @@ class App(tk.Tk):
             return
         ac_impl = R.ACERTO_ARMA.get(self._nivel_impl(e["dominio"]), 0)   # acerto do cajado/selo (como o da arma)
         bonus = self.d["bc"][k] + self.nivel() // 3 + ac_impl
-        at = R.rolar_ataque(bonus, R.vantagem(self.a[k]), 20, self._rng)
+        at = self.d_ataque(bonus, R.vantagem(self.a[k]), 20)
         if ac_impl:
             avisos.insert(0, f"Inclui +{ac_impl} de acerto do {'cajado' if k == 'INT' else 'selo'}.")
         aviso = self.marcar_acao(v.get("acao"))
@@ -2930,7 +2974,7 @@ class App(tk.Tk):
                 break
             arc, extra_c = R.arcano_escala(self.a["ARC"], self.talentos_escolhidos())
             esc = R.escalar_arcano(ce, arc, cn, extra_c)
-            total, partes = R.rolar_expr(esc, self._rng, dobrar=at["critico"])
+            total, partes = self.d_expr(esc, at["critico"])
             linhas.append(self._txt_dano(total, partes).replace("Dano:", f"{cn}:") + " pontos"
                           + (f"  · {ce} → {esc} por {arc} de Arcano" if esc != ce else "")
                           + (" (Mente Arcana +10)" if arc != R.cap(self.a["ARC"]) else "") + (" + 1 cópia (Senhor das Condições)" if extra_c and cn != "Morte" else ""))
@@ -2938,7 +2982,7 @@ class App(tk.Tk):
             linhas += self._linhas_set(at["critico"])
         if expr and not at["desastre"]:
             extra = self.d["dados_extra_magia"] if k == "INT" else self.d["dados_extra_feitico"]
-            total, partes = R.rolar_expr(R.dano_com_dados(expr, extra), self._rng, dobrar=at["critico"])
+            total, partes = self.d_expr(R.dano_com_dados(expr, extra), at["critico"])
             linhas.append(self._txt_dano(total, partes).replace("Dano:", "Dados do encantamento:") + (f"  · +{extra} dado por {k}" if extra else ""))
         elif not expr and not conds:
             linhas.append("Este encantamento não tem dados na descrição.")
@@ -2954,9 +2998,8 @@ class App(tk.Tk):
         if not pinfo or "calc" not in pinfo:
             return
         bonus, dados = pinfo["calc"]
-        r = R.rolar_pericia(bonus, dados, self._rng)
-        d20 = ", ".join(map(str, r["d20"])) + (" → fica o maior" if len(r["d20"]) > 1 else "")
-        self.registrar(f"🎲 {nome}", [f"{nome}: {r['total']}  [d20 {d20} +{bonus}]",
+        r = self.d_teste(bonus, dados)
+        self.registrar(f"🎲 {nome}", [self._txt_d20(nome, dict(r, bonus=bonus)),
                                       "DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80"])
 
     def descansar(self, tipo):
@@ -3079,9 +3122,12 @@ class App(tk.Tk):
         """Mostra a rolagem no diário e guarda na ficha (as 100 mais recentes, no mesmo formato do celular)."""
         import datetime
         import html
+        pegue = self._pedido().resumo() if self.fisico() else (self._pedido().resumo() and "")
+        if pegue:
+            titulo, linhas = titulo + " · dados físicos", [pegue] + list(linhas)
         self.abrir_diario()
         js = self.janela_sessao
-        if js is not None and not self._carregando and hasattr(js, "compartilhar"):
+        if js is not None and not self._carregando and hasattr(js, "compartilhar") and not pegue:
             try:
                 js.compartilhar(titulo, linhas, destaque)   # Rolagens do grupo (só rolagens; o jogador pode ocultar)
             except Exception:
@@ -3259,16 +3305,18 @@ class App(tk.Tk):
     def alma_recup(self):
         self.alma["restantes"].set("")
 
-    def _txt_d20(self, nome, r):
+    def _txt_d20(self, nome, r, tipo="pericia"):
+        if r.get("fisico"):
+            return DF.txt_teste(nome, r, tipo, self.talentos_escolhidos())
         return f"{nome}: {r['total']}  [d20 {', '.join(map(str, r['d20']))}{' → maior' if len(r['d20']) > 1 else ''} +{r['bonus']}]"
 
     def rolar_defesa(self, n):
         self.recalc()
         _, k, tn = next(x for x in R.PERICIAS_DEFESA if x[0] == n)
         b, vant = self.defesa(n, k, tn)
-        r = R.rolar_defesa(b, vant, self._rng)
+        r = self.d_teste(b, 2 if vant else 1)
         r.setdefault("bonus", b)
-        self.registrar(f"🛡 {n}", [self._txt_d20(n, dict(r, bonus=b)), "Compare com a DT do efeito ou da habilidade do inimigo."])
+        self.registrar(f"🛡 {n}", [self._txt_d20(n, dict(r, bonus=b), "resist"), "Compare com a DT do efeito ou da habilidade do inimigo."])
 
     def info_atributo(self, k):
         """O que o atributo representa e o que o valor atual dá na ficha (clique no nome do atributo)."""
@@ -3345,8 +3393,8 @@ class App(tk.Tk):
         atrs = next(x[1] for x in R.PERICIAS_ATAQUE if x[0] == n)
         k = max(atrs, key=lambda x: self.d["bc"][x])
         b = self.bonus_pericia_ataque(n, k)
-        at = R.rolar_ataque(b, self.vant_pericia_ataque(n, k), 20, self._rng)
-        self.registrar(f"🎲 {n}", [f"{n}: " + self._txt_ataque(at).split(": ", 1)[1],
+        at = self.d_ataque(b, self.vant_pericia_ataque(n, k), 20)
+        self.registrar(f"🎲 {n}", [self._txt_ataque(at, n),
                                    f"Teste de {n} ({k}) sem arma; os ataques com arma ficam nos botões das armas."])
 
     def contradominio(self):
@@ -3365,7 +3413,7 @@ class App(tk.Tk):
         talento = "Contra-encantador" in self.talentos_escolhidos()
         b = self.d["bc"][k] + self.nivel() // 3 + (2 if talento else 0)
         mx = self.d["contra_encant"]
-        r = R.rolar_defesa(b, R.vantagem(self.a[k]), self._rng)
+        r = self.d_teste(b, 2 if R.vantagem(self.a[k]) else 1)
         self.contra_usados += 1
         linhas = [self._txt_d20("Feitiçaria" if k == "INT" else "Desejo", dict(r, bonus=b)),
                   "Anula se for maior ou igual à DT do encantamento inimigo.",
@@ -3380,7 +3428,12 @@ class App(tk.Tk):
         self.recalc()
         b = self.d["bc"][k] + self.nivel() // 3 + (2 if "Mãos Gêmeas" in self.talentos_escolhidos() else 0)
         dt = 8 + max(to_int(ui["nivel"].get(), 1) for ui in self.armas_ui)
-        r = R.rolar_defesa(b, R.vantagem(self.a[k]), self._rng)
+        r = self.d_teste(b, 2 if R.vantagem(self.a[k]) else 1)
+        if r.get("fisico"):
+            self.registrar("⚔ Coordenação", [self._txt_d20(f"Coordenação ({k})", dict(r, bonus=b)) + f" contra DT {dt}",
+                                             f"Se tirar {dt} ou mais: sucesso. Se não: " + ("os encantamentos deste turno perdem o último dado de dano."
+                                                                                           if k == "ARC" else "o dano das armas neste turno cai 1 nível.")])
+            return
         ok = r["total"] >= dt
         self.registrar("⚔ Coordenação", [self._txt_d20(f"Coordenação ({k})", dict(r, bonus=b)) + f" contra DT {dt}",
                                          "Sucesso: luta normalmente neste turno." if ok else
@@ -3438,7 +3491,7 @@ class App(tk.Tk):
             pinfo = self.per.get(teste)
             if pinfo and "calc" in pinfo:
                 b, dados = pinfo["calc"]
-                r = R.rolar_pericia(b, dados, self._rng)
+                r = self.d_teste(b, dados)
                 linhas.append(self._txt_d20(teste, dict(r, bonus=b)))
         aviso = self.marcar_acao(tipo)
         if aviso:
@@ -3493,10 +3546,14 @@ class App(tk.Tk):
         """Pontos de condição dos sets equipados ao acertar. Os números dos sets são fixos: o Arcano não escala."""
         out = []
         for c in R.condicoes_de_set(self.sets_ativos()[1]):
-            if c["critico"] and not critico:
+            if c["critico"] and not critico and not self.fisico():
                 continue
             dado = isinstance(c["pontos"], str)          # 3.3: os sets aplicam 1d6 de condição
-            n = R.rolar_expr(c["pontos"], self._rng)[0] if dado else c["pontos"]
+            n = self.d_expr(c["pontos"])[0] if dado else c["pontos"]
+            if n is None:
+                out.append(f"Set {c['set']}: role {c['pontos']} pontos de {c['condicao']} se acertar{' (só no crítico)' if c['critico'] else ''}"
+                           f" — valor fixo, o Arcano não escala sets{'; ' + c['nota'] if c['nota'] else ''}.")
+                continue
             out.append(f"Set {c['set']}: +{n}{' (' + c['pontos'] + ')' if dado else ''} pontos de {c['condicao']} se acertar{' (crítico)' if c['critico'] else ''}"
                        f" — valor fixo, o Arcano não escala sets{'; ' + c['nota'] if c['nota'] else ''}.")
         return out
@@ -3813,7 +3870,7 @@ class App(tk.Tk):
         self.alma["restantes"].set(str(rest - 1))
         inf, linhas = self.info_hab(h), []
         if (h.get("tabela") or "").startswith("Dano"):
-            total, partes = R.rolar_expr(re.sub(r"\s*\(.*\)", "", inf["valor"]), self._rng)
+            total, partes = self.d_expr(re.sub(r"\s*\(.*\)", "", inf["valor"]))
             linhas.append(self._txt_dano(total, partes) + ("  (com desvantagem)" if "desvantagem" in inf["valor"] else "")
                           + (" em cada alvo" if "múltiplos" in h["tabela"] else ""))
         elif h.get("tabela"):

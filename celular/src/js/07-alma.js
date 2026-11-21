@@ -68,7 +68,7 @@ A["hab-usar"] = (el) => {
   const inf = infoHab(x), linhas = [];
   S.alma.restantes = String(rest - 1);
   if (x.tabela && x.tabela.startsWith("Dano")) {
-    const expr = inf.valor.replace(/\s*\(.*\)/, ""), [tot2, partes] = R.rolarExpr(expr, rng);
+    const expr = inf.valor.replace(/\s*\(.*\)/, ""), [tot2, partes] = Dados.expr(expr);
     linhas.push(txtDano(tot2, partes) + (inf.valor.includes("desvantagem") ? ` <span class="sub">(com desvantagem)</span>` : "") + (x.tabela.includes("múltiplos") ? " em cada alvo" : ""));
   } else if (x.tabela) linhas.push(`${esc(x.tabela)}: <b>${esc(inf.valor)}</b>`);
   if ((x.cats || []).some((c) => c !== "Interlúdio")) linhas.push(`DT: <b>${inf.dt}</b>`);
