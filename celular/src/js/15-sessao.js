@@ -171,7 +171,6 @@ function receberEvento(ev) {
   } else if (ev.tipo === "vez") {
     sessao.meusTurnos += 1;
     const cura = S ? novoTurno(true) : "";
-    for (const dg of Object.values(S ? S.desgaste : {})) if (dg.desgastada && sessao.meusTurnos >= (dg.em || 0) + 2) Object.assign(dg, { usados: 0, desgastada: false, contado: -1 });
     if (S) { salvar(); render(); }
     vibrar([150, 80, 150, 80, 300]);
     return "⚔ <b>É a sua vez!</b>" + (cura ? "<br>" + cura : "");

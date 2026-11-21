@@ -35,6 +35,9 @@ function curaDoTurno() {
 }
 function novoTurno(silencioso) {
   S.turno = {}; recarregarUsos("turno");
+  // afiação: conta turnos (não ataques); a arma desgastada volta depois de passar um turno inteiro parada
+  S.turnos_n = int(S.turnos_n) + 1;
+  for (const dg of Object.values(S.desgaste || {})) if (dg.desgastada && S.turnos_n >= int(dg.em) + 2) Object.assign(dg, { usados: 0, desgastada: false, contado: -1 });
   const cura = curaDoTurno();
   salvar();
   if (!silencioso) { render(); toast("Novo turno: ações e usos por turno renovados." + (cura ? "<br>" + cura : "")); }
@@ -100,11 +103,22 @@ A["rolar-def"] = (el) => {
   mostrarRolagem(`🛡 ${n}`, [`${n}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${b}]</span>`,
     `<span class="sub">Compare com a DT do efeito ou da habilidade do inimigo.</span>`]);
 };
+// perícia de ataque: Luta (corpo a corpo), Pontaria (Arco e Besta), Feitiçaria (Magias) e Desejo (Feitiços).
+// O mesmo bônus vale no teste sem arma e no ataque com a arma (que soma ainda o acerto da arma).
+const periciaDaArma = (grupo) => (["Arco", "Besta Pesada"].includes(grupo) ? "Pontaria" : "Luta");
+function bonusPericiaAtaque(n, k) {
+  const fis = n === "Luta" || n === "Pontaria";
+  return C.d.bc[k] + C.d.n3 + (fis ? C.ef.acerto + int(C.eq.acerto) : 0) + (n === "Pontaria" ? int(C.eq.acerto_dist) : 0)
+    + int((C.ef.pericia || {})[n]) + (C.escolha.pericia_mestre.includes(n) ? 2 : 0);
+}
+const vantPericiaAtaque = (n, k) => R.vantagem(C.a[k]) || C.escolha.pericia_mestre.includes(n);
+// afiação: turnos afiados da arma (Reforçada +1; Afiação Duradoura +1)
+const limiteAfiacao = (ep) => ep.desgaste + (C.tal.has("Afiação Duradoura") ? 1 : 0);
 A["rolar-atk"] = (el) => {
   const [n, atrs] = R.PERICIAS_ATAQUE.find((x) => x[0] === el.dataset.n);
   const k = atrs.reduce((m, x) => (C.d.bc[x] > C.d.bc[m] ? x : m), atrs[0]);
-  const b = C.d.bc[k] + C.d.n3 + (n === "Luta" || n === "Pontaria" ? C.ef.acerto : 0);
-  const at = R.rolarAtaque(b, R.vantagem(C.a[k]), 20, rng);
+  const b = bonusPericiaAtaque(n, k);
+  const at = R.rolarAtaque(b, vantPericiaAtaque(n, k), 20, rng);
   mostrarRolagem(`🎲 ${n}`, [txtAtaque(at, n), `<span class="sub">Teste de ${n} (${k}) sem arma; os ataques com arma ficam no cartão da arma.</span>`]);
 };
 A["contra"] = () => {

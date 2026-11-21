@@ -327,6 +327,7 @@ class App(tk.Tk):
         self.efeitos_mestre = []
         self.desgaste = {}         # arma (0/1) -> {"usados", "desgastada", "em", "contado"}: turnos afiados
         self.meus_turnos = 0       # turnos que o mestre passou para este jogador (sessão)
+        self.turnos_n = 0          # turnos contados pelo app (Novo turno ou a vez na sessão): base da afiação
         self.descansos_curtos = 0  # desde o último descanso longo (máx. 2)
         self.janela_sessao = None
         # mesa: turno, usos, recursos de arma, dinheiro, diário, Metas e Alma (mesmo formato do celular)
@@ -1987,7 +1988,7 @@ class App(tk.Tk):
         for i, b in enumerate(self.bt_rolar_arma):
             g = self.armas_ui[i]["grupo"].get()
             dg = self.desgaste.get(i, {})
-            lim = 4 if "Reforçada" in [R.nome_prop(x) for x in R.ler_props(self.armas_ui[i]["props"].get())] else R.DESGASTE_TURNOS
+            lim = (4 if "Reforçada" in [R.nome_prop(x) for x in R.ler_props(self.armas_ui[i]["props"].get())] else R.DESGASTE_TURNOS) + self._afiacao_extra()
             st = (" · DESGASTADA" if dg.get("desgastada") else f" · afiada {lim - dg.get('usados', 0)}/{lim}")
             b.configure(text=f"🎲 {g} nv {self.armas_ui[i]['nivel'].get()}{st}" if g else f"🎲 Arma {i + 1} (vazia)")
             b.state(["!disabled"] if g else ["disabled"])
@@ -2234,9 +2235,9 @@ class App(tk.Tk):
             ui["l_dano"].configure(text=ep["dano"] + "".join(f" + {x} {t}" for x, t, cnd in ep["extras"] if not cnd)
                                    + (f"  (+{extra} dado por {k})" if extra else ""))
             ui["l_tipo"].configure(text=l["tipo"])
-            acerto = (d["bc"][k] + nivel // 3 + R.ACERTO_ARMA.get(nv, 0) + self.ef["acerto"] + (1 if g in self.esc["maestria"] else 0)
-                      + ep["acerto"])
-            ui["l_acerto"].configure(text=f"1d20 +{acerto}" + (" (2d20, maior)" if R.vantagem(a[k]) else "") + f"  [{k}]")
+            per = R.pericia_da_arma(g)
+            acerto = self.bonus_pericia_ataque(per, k) + R.ACERTO_ARMA.get(nv, 0) + (1 if g in self.esc["maestria"] else 0) + ep["acerto"]
+            ui["l_acerto"].configure(text=f"1d20 +{acerto}" + (" (2d20, maior)" if self.vant_pericia_ataque(per, k) else "") + f"  [{per} · {k}]")
             ui["l_crit"].configure(text=f"{ep['margem']}" + (" ×3" if ep["mult"] == 3 else ""))
             extra_p = self.esc["dominio"].get(g, 0)
             ui["l_props_max"].configure(text=f"{len(props)}/{l['propriedades'] + extra_p}" + (f" (+{extra_p} Domínio)" if extra_p else ""))
@@ -2610,7 +2611,8 @@ class App(tk.Tk):
         if tipo == "condicao":
             return list(R.CONDICOES)
         if tipo == "pericia":
-            return sorted(self.pericias_treinadas()) or [n for n, _, _ in R.PERICIAS]
+            ops = sorted(self.pericias_treinadas()) + ([self.v_per_ataque.get()] if self.v_per_ataque.get() else [])   # a de ataque também
+            return ops or [n for n, _, _ in R.PERICIAS]
         return []
 
     def escolhas_talentos(self):
@@ -2734,7 +2736,9 @@ class App(tk.Tk):
         maestria = 1 if arma["nome"] in self.esc["maestria"] else 0
         props = R.ler_props(ui["props"].get())
         ep = R.efeito_props(props, R.dano_com_dados(linha_dano["dano"], R.cap(self.a[k]) // 30), to_int(linha["critico"], 20))
-        bonus = self.d["bc"][k] + self.nivel() // 3 + R.ACERTO_ARMA.get(nv, 0) + ef["acerto"] + maestria + ep["acerto"]
+        per = R.pericia_da_arma(arma["nome"])
+        bonus = self.bonus_pericia_ataque(per, k) + R.ACERTO_ARMA.get(nv, 0) + maestria + ep["acerto"]
+        lim = ep["desgaste"] + self._afiacao_extra()
         dg = self.desgaste.setdefault(i, {"usados": 0, "desgastada": False, "em": 0, "contado": -1})
         if dg["desgastada"]:
             if not messagebox.askyesno(APP_NOME, f"{arma['nome']} está desgastada: não pode ser usada por um turno.\n\n"
@@ -2749,19 +2753,19 @@ class App(tk.Tk):
         ataques = []   # um teste de acerto por disparo, ou um só para todos ("única jogada de acerto")
         for g in range(golpes):
             if g == 0 or not o.get("um_acerto"):
-                at_g = R.rolar_ataque(bonus, R.vantagem(self.a[k]) or o.get("vant") == 1, ep["margem"], self._rng, desvantagem=o.get("vant") == -1)
+                at_g = R.rolar_ataque(bonus, self.vant_pericia_ataque(per, k) or o.get("vant") == 1, ep["margem"], self._rng, desvantagem=o.get("vant") == -1)
                 if o.get("critico") and not at_g["desastre"]:
                     at_g["critico"] = True
             ataques.append(at_g)
         at = dict(ataques[0], critico=any(x["critico"] for x in ataques), desastre=all(x["desastre"] for x in ataques))
         mult = max(ep["mult"], int(o.get("mult") or 0))
-        # desgaste: conta 1 turno afiado por turno em que atacou (na sessão, pelo turno do mestre; fora dela, por ataque)
-        turno = self.meus_turnos if self.janela_sessao is not None and self.meus_turnos else None
-        if at["critico"] or turno is None or dg["contado"] != turno:
-            dg["usados"], gastou = R.desgaste_apos_ataque(dg["usados"], at["critico"], ep["desgaste"])
-            dg["contado"] = turno if turno is not None else -1
+        # afiação: gasta 1 por TURNO em que a arma ataca (vários ataques no mesmo turno contam uma vez); o crítico reafia
+        turno = self.turnos_n
+        if at["critico"] or dg["contado"] != turno:
+            dg["usados"], gastou = R.desgaste_apos_ataque(dg["usados"], at["critico"], lim)
+            dg["contado"] = turno
             if gastou:
-                dg.update(desgastada=True, em=self.meus_turnos)
+                dg.update(desgastada=True, em=turno)
         linhas = []
         if golpes > 1:
             linhas.append(f"{golpes} disparos/golpes, " + ("uma só jogada de acerto para todos." if o.get("um_acerto") else "um teste de acerto para cada."))
@@ -3182,6 +3186,11 @@ class App(tk.Tk):
     def novo_turno(self, silencioso=False):
         self.turno = {}
         self.recarregar_usos("turno")
+        # afiação: conta turnos (não ataques); a arma desgastada volta depois de passar um turno inteiro parada
+        self.turnos_n += 1
+        for dg in self.desgaste.values():
+            if dg.get("desgastada") and self.turnos_n >= dg.get("em", 0) + 2:
+                dg.update(usados=0, desgastada=False, contado=-1)
         if not silencioso:
             self.registrar("↻ Novo turno", ["Ações e usos por turno renovados."])
 
@@ -3269,12 +3278,27 @@ class App(tk.Tk):
         if pi:
             ttk.Button(bf, text="🎲 Rolar", command=lambda: (w.destroy(), self.rolar_pericia(n))).pack(side="left")
 
+    # perícia de ataque: Luta (corpo a corpo), Pontaria (Arco e Besta), Feitiçaria e Desejo. O mesmo bônus vale no teste
+    # sem arma e no ataque com a arma (que soma ainda o acerto da arma, a Maestria e as propriedades).
+    def bonus_pericia_ataque(self, n, k):
+        fis = n in ("Luta", "Pontaria")
+        eq = getattr(self, "eq", {}) or {}
+        return (self.d["bc"][k] + self.nivel() // 3 + ((self.ef["acerto"] + eq.get("acerto", 0)) if fis else 0)
+                + (eq.get("acerto_dist", 0) if n == "Pontaria" else 0) + self.ef["pericia"].get(n, 0)
+                + (2 if n in self.esc["pericia_mestre"] else 0))
+
+    def vant_pericia_ataque(self, n, k):
+        return R.vantagem(self.a[k]) or n in self.esc["pericia_mestre"]
+
+    def _afiacao_extra(self):
+        return 1 if "Afiação Duradoura" in self.talentos_escolhidos() else 0
+
     def rolar_pericia_ataque(self, n):
         self.recalc()
         atrs = next(x[1] for x in R.PERICIAS_ATAQUE if x[0] == n)
         k = max(atrs, key=lambda x: self.d["bc"][x])
-        b = self.d["bc"][k] + self.nivel() // 3 + (self.ef["acerto"] if n in ("Luta", "Pontaria") else 0)
-        at = R.rolar_ataque(b, R.vantagem(self.a[k]), 20, self._rng)
+        b = self.bonus_pericia_ataque(n, k)
+        at = R.rolar_ataque(b, self.vant_pericia_ataque(n, k), 20, self._rng)
         self.registrar(f"🎲 {n}", [f"{n}: " + self._txt_ataque(at).split(": ", 1)[1],
                                    f"Teste de {n} ({k}) sem arma; os ataques com arma ficam nos botões das armas."])
 
@@ -4421,7 +4445,7 @@ class App(tk.Tk):
             "acoes_extras_tipos": list(self.acoes_extras_tipos), "turno": dict(self.turno), "usos": dict(self.usos),
             "contra_usados": self.contra_usados, "recursos": {k: dict(v) for k, v in self.recursos.items()},
             "diario": list(self.diario_lista), "meta": dict(self.meta, notas=g(self.v_metas)),
-            "desgaste": {str(k): v for k, v in self.desgaste.items()}, "descansos_curtos": self.descansos_curtos,
+            "desgaste": {str(k): v for k, v in self.desgaste.items()}, "turnos_n": self.turnos_n, "descansos_curtos": self.descansos_curtos,
             "condicoes": {n: {k: g(c[k]) for k in ("max", "atual", "notas")} for n, c in self.cond.items()},
             "portao": {n: [g(v) for v in vs] for n, vs in self.portao.items()}, "cicatrizes": g(self.v_cicatrizes),
             "vinculos": {"grupo": g(self.v_vinc_grupo), "mundo": g(self.v_vinc_mundo), "metas": g(self.v_metas)},
@@ -4489,6 +4513,7 @@ class App(tk.Tk):
             for it, iv in zip(self.inv, s.get("inventario", []) + [{}] * 30):
                 it["item"].set(iv.get("item", "")); it["carga"].set(iv.get("carga", "")); it["qtd"].set(iv.get("qtd", ""))
             self.desgaste = {int(k): dict(v) for k, v in (s.get("desgaste") or {}).items() if str(k) in ("0", "1")}
+            self.turnos_n = to_int(s.get("turnos_n"), 0)
             self.descansos_curtos = to_int(s.get("descansos_curtos"), 0)
             self.v_dinheiro.set(s.get("dinheiro", ""))
             if s.get("dinheiro_c") is None:   # ficha antiga: lê o dinheiro escrito à mão

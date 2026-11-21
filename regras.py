@@ -571,7 +571,12 @@ def pocao_espiritual_dados(nivel, curva_vit):
     return max(2, nivel // 2 + curva_vit // 2)
 
 
-DESGASTE_TURNOS = 3   # turnos afiados; o crítico reinicia; ao acabar a arma fica 1 turno sem uso
+DESGASTE_TURNOS = 3   # turnos de uso afiados (não ataques); o crítico reinicia; ao acabar a arma fica 1 turno sem uso
+
+
+def pericia_da_arma(grupo):
+    """Perícia de ataque da arma: Pontaria para Arco e Besta Pesada, Luta para as de corpo a corpo."""
+    return "Pontaria" if grupo in ("Arco", "Besta Pesada") else "Luta"
 
 
 def desgaste_apos_ataque(usados, critico, limite=DESGASTE_TURNOS):

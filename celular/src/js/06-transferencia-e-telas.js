@@ -163,11 +163,11 @@ function linhaArma(i) {
   if (!ar) return h + "</div>";
   const nv = int(w.nivel, 1), l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0], k = R.atributoAtaque(ar, C.a);
   const props = R.lerProps(w.props), ep = efeitoArma(w, nv);
-  const extra = Math.floor(R.cap(C.a[k]) / 30), acerto = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + (C.escolha.maestria.includes(w.grupo) ? 1 : 0) + ep.acerto;
+  const extra = Math.floor(R.cap(C.a[k]) / 30), per = periciaDaArma(w.grupo), acerto = bonusPericiaAtaque(per, k) + (R.ACERTO_ARMA[nv] || 0) + (C.escolha.maestria.includes(w.grupo) ? 1 : 0) + ep.acerto;
   const dom = C.escolha.dominio[w.grupo] || 0, pmax = l.propriedades + dom, prob = R.problemasProps(props, pmax);
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : "—";
   const falta = statusArma(C, w.grupo, nv, props);
-  h += `<dl><div><dt>Dano</dt><dd>${esc(ep.dano + ep.extras.filter((x) => !x[2]).map((x) => ` + ${x[0]} ${x[1]}`).join(""))}</dd></div><div><dt>Ataque</dt><dd>1d20 +${acerto}${R.vantagem(C.a[k]) ? " (vant.)" : ""}</dd></div>
+  h += `<dl><div><dt>Dano</dt><dd>${esc(ep.dano + ep.extras.filter((x) => !x[2]).map((x) => ` + ${x[0]} ${x[1]}`).join(""))}</dd></div><div><dt>${per}</dt><dd>1d20 +${acerto}${vantPericiaAtaque(per, k) ? " (vant.)" : ""}</dd></div>
     <div><dt>Crítico</dt><dd>${ep.margem}${ep.mult === 3 ? " ×3" : ""}</dd></div><div><dt>Tipo</dt><dd>${esc(l.tipo)}</dd></div><div><dt>DT</dt><dd>${10 + C.d.bc[k] + C.d.n3}</dd></div>
     <div><dt>Vigor/atk</dt><dd>${vig}</dd></div></dl>
     <button class="sel ${props.length ? "" : "vazio"}" style="margin-top:6px;font-size:14px" data-a="esc-props" data-i="${i}">Propriedades ${props.length}/${pmax}${dom ? ` (+${dom} Domínio)` : ""}: ${esc(props.join(", ") || "nenhuma")}</button>
@@ -176,7 +176,7 @@ function linhaArma(i) {
     ${falta.length ? `<div class="erro" style="font-size:13.5px;margin-top:4px">${NO} falta: ${esc(falta.join(", "))}</div>` : ""}
     ${(() => { const dg = S.desgaste[i] || {}; return dg.desgastada
       ? `<div class="erro" style="font-size:13.5px;margin-top:4px">Desgastada: sem uso por um turno. <a href="#" data-a="reafiar" data-i="${i}">Já passou</a></div>`
-      : `<div class="sub">Afiada: ${ep.desgaste - int(dg.usados)}/${ep.desgaste} turnos · o crítico reafia</div>`; })()}
+      : `<div class="sub">Afiada: ${limiteAfiacao(ep) - int(dg.usados)}/${limiteAfiacao(ep)} turnos de uso · o crítico reafia</div>`; })()}
     ${(R.RECURSOS_ARMA[w.grupo] || []).length ? `<div class="recursos">${R.RECURSOS_ARMA[w.grupo].map(([n, mx]) => { const v = int(((S.recursos[`${i}:${w.grupo}`]) || {})[n]);
       return `<span class="recurso"><button data-a="recurso" data-i="${i}" data-n="${esc(n)}" data-d="-1" aria-label="menos">−</button><b>${esc(n)}</b> ${v}${mx ? `/${mx}` : ""}<button data-a="recurso" data-i="${i}" data-n="${esc(n)}" data-d="1" aria-label="mais">+</button></span>`; }).join("")}</div>` : ""}
     <div class="linhabts"><button class="botao prim" data-a="rolar-arma" data-i="${i}">🎲 Atacar</button></div>

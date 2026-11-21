@@ -17177,7 +17177,7 @@
    "categoria": "Talentos de Estilo de Arma",
    "nivel": 16,
    "requisito": "Furor Controlado",
-   "descricao": "Rugido de Titã dura até o fim do seu próximo turno completo e você pode usálo duas vezes por combate."
+   "descricao": "Rugido de Titã dura até o fim do seu próximo turno completo e você pode usá-lo duas vezes por combate."
   },
   {
    "nome": "Chuva Precisa",
@@ -17275,7 +17275,7 @@
    "categoria": "Talentos de Defesa",
    "nivel": 6,
    "requisito": "Escudeiro",
-   "descricao": "Ao causar um Parry, o contraataque também deixa o alvo Abalado por 1 turno."
+   "descricao": "Ao causar um Parry, o contra-ataque também deixa o alvo Abalado por 1 turno."
   },
   {
    "nome": "Pele Grossa",
@@ -17366,7 +17366,7 @@
    "categoria": "Talentos de Encantamento",
    "nivel": 4,
    "requisito": "",
-   "descricao": "Você recebe +1 contraencantamento e +2 nos testes de Contradomínio."
+   "descricao": "Você recebe +1 contra-encantamento e +2 nos testes de Contradomínio."
   },
   {
    "nome": "Reserva Arcana",
@@ -17436,7 +17436,7 @@
    "categoria": "Talentos de Encantamento",
    "nivel": 14,
    "requisito": "Contra-encantador",
-   "descricao": "Você recebe +2 contraencantamentos. Ao anular com sucesso um encantamento, você recupera metade da mana gasta no teste."
+   "descricao": "Você recebe +2 contra-encantamentos. Ao anular com sucesso um encantamento, você recupera metade da mana gasta no teste."
   },
   {
    "nome": "Ritual Veloz",
@@ -18670,7 +18670,7 @@
   {
    "familia": "Chave da Primeira Pedra",
    "nome": "Chave da Primeira Pedra",
-   "efeito": "Enquanto estiver em sua Base, encantamentos você pode equipados trocar seus também em descansos curtos.",
+   "efeito": "Enquanto estiver em sua Base, você pode trocar seus encantamentos equipados também em descansos curtos.",
    "bonus": {}
   },
   {
@@ -19418,7 +19418,7 @@
   {
    "familia": "Selo da Réplica Voraz",
    "nome": "Selo da Réplica Voraz",
-   "efeito": "Você recebe +2 contra-encantamentos. Ao anular com sucesso um encantamento inimigo, você o absorve: nos 3 turnos seguintes, pode conjurá-lo uma vez como ação livre, sem custo de mana e sem têlo aprendido, usando seu Desejo ou Feitiçaria. Se você falhar em um teste de contradomínio, o encantamento causa o dobro do dano e tem o dobro da duração sobre você.",
+   "efeito": "Você recebe +2 contra-encantamentos. Ao anular com sucesso um encantamento inimigo, você o absorve: nos 3 turnos seguintes, pode conjurá-lo uma vez como ação livre, sem custo de mana e sem tê-lo aprendido, usando seu Desejo ou Feitiçaria. Se você falhar em um teste de contradomínio, o encantamento causa o dobro do dano e tem o dobro da duração sobre você.",
    "bonus": {}
   },
   {
@@ -19622,7 +19622,13 @@
   {
    "familia": "Símbolo do Arcano",
    "nome": "Símbolo do Arcano +3",
-   "efeito": "+4d4 de dano em magias elementais MEDALHÃO DO VÍRUS FRENÉTICO: Uma peça de escamas de um ser que busca ser, um dia, iluminado. Ao ser equipado, o talismã não pode ser removido até que você limpe a Morte dele ao menos uma vez. Ele se ativa automaticamente no início de todo combate. No início de cada turno seu em combate, você recebe 15 de Morte, ignorando resistências e imunidades. Essa Morte persiste ao fim do combate, soma-se a qualquer outra Morte que você tenha e só zera ao ser limpa pelo talismã ou em um descanso longo. Com 60 ou mais de Morte, você pode, como ação livre, limpar toda a Morte causada pelo talismã e, por 2 turnos, receber +15 de dano, físico ou de encantamento, uma vez por turno, no primeiro golpe que acertar, e ficar imune à Abalado, Amedrontado e Aterrorizado, sem receber Morte do talismã durante esse período. Após os 2 turnos, você perde todos os efeitos e volta a receber Morte por turno.",
+   "efeito": "+4d4 de dano em magias elementais",
+   "bonus": {}
+  },
+  {
+   "familia": "Medalhão do Vírus Frenético",
+   "nome": "Medalhão do Vírus Frenético",
+   "efeito": "Uma peça de escamas de um ser que busca ser, um dia, iluminado. Ao ser equipado, o talismã não pode ser removido até que você limpe a Morte dele ao menos uma vez. Ele se ativa automaticamente no início de todo combate. No início de cada turno seu em combate, você recebe 15 de Morte, ignorando resistências e imunidades. Essa Morte persiste ao fim do combate, soma-se a qualquer outra Morte que você tenha e só zera ao ser limpa pelo talismã ou em um descanso longo. Com 60 ou mais de Morte, você pode, como ação livre, limpar toda a Morte causada pelo talismã e, por 2 turnos, receber +15 de dano, físico ou de encantamento, uma vez por turno, no primeiro golpe que acertar, e ficar imune à Abalado, Amedrontado e Aterrorizado, sem receber Morte do talismã durante esse período. Após os 2 turnos, você perde todos os efeitos e volta a receber Morte por turno.",
    "bonus": {}
   },
   {

@@ -76,7 +76,8 @@ As fórmulas usadas estão em **Ajuda > Regras usadas nos cálculos**.
 - **Ações do livro** (Agarrar, Derrubar, Esconder, Provocar, Golpe de Oportunidade…) com a rolagem certa.
 - **Ações das armas** como botões: "Usar" marca a ação do turno e "Rolar" ataca com os ajustes lidos do texto (níveis de dano, vantagem/desvantagem, crítico garantido, multiplicador, teste do alvo com a DT). Ações de vários disparos (Chuva de Flechas, Rajada Tripla, Combustão…) rolam cada disparo e descontam a munição. Há contadores da mecânica de cada arma (Momentum, Cartuchos, Flechas, Melodias…).
 - **Defesas e Contradomínio:** rolar Fortitude, Reflexo, Vontade e Astúcia; Contradomínio com limite por combate (+2 com Contra-encantador); Coordenação do Uso duplo contra DT 8 + maior nível de arma.
-- **Desgaste de armas:** 3 turnos afiados, o crítico reafia; a arma desgastada fica um turno parada.
+- **Afiação das armas:** 3 turnos de uso (cada turno em que a arma ataca gasta 1, não importa quantos ataques; o turno é contado pelo Novo turno ou pela vez na sessão). O crítico reafia; a arma desgastada fica um turno parada e volta sozinha. Reforçada e Afiação Duradoura dão +1 turno cada.
+- **Acerto das armas pela perícia de ataque:** Luta para as armas corpo a corpo, Pontaria para Arco e Besta Pesada. O cartão da arma mostra a perícia, e o bônus é o mesmo do teste da perícia (bônus de combate, nível ÷ 3, talentos, sets e talismãs, Mestre das Perícias) somado ao acerto da arma, à Maestria e às propriedades.
 - **Usos limitados:** talentos e talismãs "1x por combate/descanso" e os usos da Alma, recarregados no turno, no fim do combate e nos descansos.
 - Descanso curto e longo (Vida, Mana, Vigor e barras de condição) e Poção Espiritual.
 

@@ -16,7 +16,7 @@ function novoEstado() {
     condicoes: Object.fromEntries(R.CONDICOES.map((n) => [n, { max: "100", atual: "", notas: "" }])),
     portao: { Sucessos: [false, false, false, false, false], Falhas: [false, false, false, false, false] }, cicatrizes: "",
     vinculos: { grupo: "", mundo: "", metas: "" }, receitas: "",
-    manual: {}, talentos_ativos: [], talentos_escolha: {}, desgaste: {}, descansos_curtos: 0,
+    manual: {}, talentos_ativos: [], talentos_escolha: {}, desgaste: {}, turnos_n: 0, descansos_curtos: 0,
     acoes_extras_tipos: [], turno: {}, usos: {}, contra_usados: 0, recursos: {}, dinheiro_c: 0, diario: [],
     meta: { caminho: "", mentor: "", etapas: [false, false, false], concluidas: 0, notas: "" },
   };

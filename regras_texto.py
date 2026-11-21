@@ -54,7 +54,7 @@ Portão da Morte (3.3): 5 sucessos salvam; a morte vem com 3 falhas + 1 a cada 4
 Terreno difícil (3.3): cada 1,5 m nele custa 3 m do movimento (soma com outros custos, como a Zona de Controle do Bastão). Empurrões, puxões e Posicionar não são afetados.
 Poções (Alquimia): não restauram Vida (só vida temporária); Mana e Vigor sem limite por combate (o freio é a ação, a Carga e o preço); Elixires: 1 por descanso longo.
 Itens diversos: sem limite de quantidade; quem limita é a Carga.
-Desgaste: 3 turnos afiados por arma (turnos em que atacou); o crítico reinicia; ao acabar, a arma fica 1 turno sem uso.
+Afiação: 3 turnos de uso por arma (cada turno em que ela ataca conta 1, não importa quantos ataques); o crítico reafia; ao acabar, a arma fica 1 turno sem uso. Reforçada e Afiação Duradoura dão +1 cada.
 Arcano nas condições: a cada 20 de ARC, uma cópia dos dados de condição do encantamento; a cada 15, +1 dado um tamanho
 abaixo (d12→d10→d8→d6→d4). Morte só recebe os dados inferiores. Valores fixos não copiam.
 Condições: barra de 100 por condição. Pontos de inimigo: teste de Fortitude (Veneno, Podridão, Sangramento, Congelamento)

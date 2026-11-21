@@ -73,8 +73,8 @@ function atacar(i, o = {}) {
   const [lD, nvD] = R.linhaDanoNivel(ar.tabela, nv, C.ef.dano_nivel + int(o.delta) + furiaNivel);
   const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0, props = R.lerProps(w.props);
   const ep = R.efeitoProps(props, R.danoComDados(lD.dano, Math.floor(R.cap(C.a[k]) / 30)), int(l.critico, 20));
-  const dist = ["Arco", "Besta Pesada"].includes(w.grupo), acEq = C.eq.acerto + (dist ? C.eq.acerto_dist : 0);
-  const bonus = C.d.bc[k] + C.d.n3 + (R.ACERTO_ARMA[nv] || 0) + C.ef.acerto + acEq + maestria + ep.acerto;
+  const per = periciaDaArma(w.grupo), lim = limiteAfiacao(ep);
+  const bonus = bonusPericiaAtaque(per, k) + (R.ACERTO_ARMA[nv] || 0) + maestria + ep.acerto;
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : 0;
   const dg = S.desgaste[i] = Object.assign({ usados: 0, desgastada: false, em: 0, contado: -1 }, S.desgaste[i] || {});
   if (dg.desgastada) {
@@ -87,21 +87,22 @@ function atacar(i, o = {}) {
     const golpes = Math.max(1, int(o.golpes, 1)), ataques = [];
     for (let g = 0; g < golpes; g++) {
       if (g === 0 || !o.umAcerto) {
-        const a = R.rolarAtaque(bonus, R.vantagem(C.a[k]) || o.vant === 1, ep.margem, rng, o.vant === -1);
+        const a = R.rolarAtaque(bonus, vantPericiaAtaque(per, k) || o.vant === 1, ep.margem, rng, o.vant === -1);
         if (o.critico && !a.desastre) a.critico = true;
         ataques.push(a);
       } else ataques.push(ataques[0]);
     }
     const at = Object.assign({}, ataques[0], { critico: ataques.some((a) => a.critico), desastre: ataques.every((a) => a.desastre) });
     const linhas = golpes > 1 ? [`<span class="sub">${golpes} disparos/golpes, ${o.umAcerto ? "uma só jogada de acerto para todos" : "um teste de acerto para cada"}.</span>`] : [];
-    if (golpes === 1) linhas.push(txtAtaque(at));
+    if (golpes === 1) linhas.push(txtAtaque(at, per));
     if (o.critico) linhas.push(`<span class="ok">Crítico garantido por esta ação.</span>`);
     if (o.acerto) linhas.push(`<span class="ok">Acerto garantido por esta ação.</span>`);
-    const turno = sessao.ativa && sessao.meusTurnos ? sessao.meusTurnos : null;
-    if (at.critico || turno === null || dg.contado !== turno) {
-      const [u, gastou] = R.desgasteAposAtaque(int(dg.usados), at.critico, ep.desgaste);
-      dg.usados = u; dg.contado = turno === null ? -1 : turno;
-      if (gastou) { dg.desgastada = true; dg.em = sessao.meusTurnos || 0; }
+    // afiação: gasta 1 por TURNO em que a arma ataca (vários ataques no mesmo turno contam uma vez); o crítico reafia
+    const turno = int(S.turnos_n);
+    if (at.critico || dg.contado !== turno) {
+      const [u, gastou] = R.desgasteAposAtaque(int(dg.usados), at.critico, lim);
+      dg.usados = u; dg.contado = turno;
+      if (gastou) { dg.desgastada = true; dg.em = turno; }
     }
     const mult = Math.max(ep.mult, int(o.mult) || 0);
     let soma = 0;
@@ -146,10 +147,11 @@ function atacar(i, o = {}) {
     for (const x of o.extra || []) linhas.push(x);
     if (props.length) linhas.push(`<span class="sub">Propriedades: ${esc(props.join(", "))}</span>`);
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
-    if (acEq) linhas.push(`<span class="sub">Inclui +${acEq} de acerto de sets e talismãs.</span>`);
+    { const acEq = int(C.eq.acerto) + (per === "Pontaria" ? int(C.eq.acerto_dist) : 0), mp = C.escolha.pericia_mestre.includes(per);
+      linhas.push(`<span class="sub">Teste de ${per}${acEq ? ` · inclui +${acEq} de sets e talismãs` : ""}${mp ? " · Mestre das Perícias +2 e vantagem" : ""}.</span>`); }
     if (C.ef.acerto) linhas.push(`<span class="sub">Inclui +${C.ef.acerto} de acerto de talento situacional.</span>`);
     if (maestria) linhas.push(`<span class="sub">Inclui +1 de Maestria nesta arma.</span>`);
-    linhas.push(`<span class="sub">${at.critico ? `Desgaste: o crítico reafiou a arma.` : dg.desgastada ? `<b class="erro">A arma desgastou</b>: sem uso no próximo turno.` : `Desgaste: restam ${ep.desgaste - dg.usados} turno(s) afiado(s).`}</span>`);
+    linhas.push(`<span class="sub">${at.critico ? `Desgaste: o crítico reafiou a arma.` : dg.desgastada ? `<b class="erro">A arma desgastou</b>: sem uso no próximo turno.` : `Afiação: restam ${lim - dg.usados} turno(s) afiado(s) (vale para os outros ataques deste turno).`}</span>`);
     const aviso = marcarAcao(o.acao || "Comum");
     if (aviso) linhas.push(`<span class="erro">${aviso}</span>`);
     salvar(); render();

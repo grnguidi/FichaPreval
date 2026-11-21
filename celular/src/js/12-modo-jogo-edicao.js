@@ -65,7 +65,7 @@ function opcoesEscolha(sl) {
     return (tipo === "escola_ou_mana" ? [R.MATRICULA_MANA2] : []).concat(con, todas.filter((c) => !con.includes(c)));
   }
   if (tipo === "condicao") return R.CONDICOES.slice();
-  if (tipo === "pericia") return S.pericias.length ? S.pericias.slice().sort() : R.PERICIAS.map((p) => p[0]);
+  if (tipo === "pericia") { const l = S.pericias.slice().sort(); if (S.pericia_ataque) l.push(S.pericia_ataque); return l.length ? l : R.PERICIAS.map((p) => p[0]); }   // a perícia de ataque treinada também vale
   return [];
 }
 A["tal-escolha"] = (el, ev) => {

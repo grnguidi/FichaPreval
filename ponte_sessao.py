@@ -195,10 +195,7 @@ class PonteSessao:
         """Começo do meu turno: conta para o desgaste (a arma desgastada volta depois de um turno parada)."""
         a = self.app
         a.meus_turnos += 1
-        for dg in a.desgaste.values():
-            if dg.get("desgastada") and a.meus_turnos >= dg.get("em", 0) + 2:
-                dg.update(usados=0, desgastada=False, contado=-1)
-        a.novo_turno(silencioso=True)   # ações e usos por turno renovados
+        a.novo_turno(silencioso=True)   # ações e usos por turno renovados; conta o turno para a afiação
         a.recalc()
 
     def combate(self, inicio):
