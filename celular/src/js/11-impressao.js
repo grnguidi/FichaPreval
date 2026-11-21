@@ -17,7 +17,7 @@ function folhaImpressao() {
   const per = R.PERICIAS.map(([n, ats, tr]) => { const x = ats || [S.prevalencia_attr || "ARC"]; const [, b, dd] = R.periciaFora(C.a, C.nv, x, C.treinadas.has(n)); return [esc(n) + (tr ? " •" : ""), C.treinadas.has(n) ? "✔" : "", `+${b + (C.ef.pericia[n] || 0)}`, `${dd}d20`]; });
   const meio = Math.ceil(per.length / 2);   // duas colunas lado a lado, em ordem alfabética de cima para baixo
   h += sec("Perícias") + t(["Perícia", "T", "Bônus", "Dados", "Perícia", "T", "Bônus", "Dados"], per.slice(0, meio).map((l, i) => l.concat(per[i + meio] || ["", "", "", ""])));
-  h += sec("Ataque e defesa") + t(["Perícia", "Bônus"], R.PERICIAS_ATAQUE.map(([n, ats]) => [n + (S.pericia_ataque === n ? " (treinada)" : ""), ats.map((k) => `+${d.bc[k] + d.n3}`).join(" / ")])
+  h += sec("Ataque e defesa") + t(["Perícia", "Bônus"], R.PERICIAS_ATAQUE.map(([n, ats]) => [n + (S.pericia_ataque === n ? " (treinada)" : ""), ats.map((k) => `+${bonusPericiaAtaque(n, k)}`).join(" / ")])
     .concat(R.PERICIAS_DEFESA.map(([n, k, tn]) => [n, `+${bonusDefesa(n, k, tn)}`]))) + `<p class="linha">DT Feitiçaria ${d.dt_feiticaria} · DT Desejo ${d.dt_desejo} · Resistências: ${d.resistencias.join(", ") || "—"}</p>`;
   h += sec("Armas e proteção") + t(["Arma", "Nível", "Dano", "Crítico", "Propriedades"], S.armas.filter((w) => ARMAS[w.grupo]).map((w) => { const e = efeitoArma(w, int(w.nivel, 1)); return [esc(w.grupo), w.nivel, esc(e.dano), e.margem, esc(w.props || "—")]; }))
     + `<p class="linha">Armadura: ${esc(S.equip.armadura || "—")} · Escudo: ${esc(S.equip.escudo || "—")} · Talismãs: ${S.talismas.filter((x) => x.nome).map((x) => esc(x.nome)).join(", ") || "—"}</p>`;

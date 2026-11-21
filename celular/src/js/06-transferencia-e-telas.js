@@ -162,12 +162,12 @@ function linhaArma(i) {
     ${ar ? `<button class="sel" style="width:96px" data-a="esc-nivel-arma" data-i="${i}">Nv ${int(w.nivel, 1)}</button>` : ""}</div>`;
   if (!ar) return h + "</div>";
   const nv = int(w.nivel, 1), l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0], k = R.atributoAtaque(ar, C.a);
-  const props = R.lerProps(w.props), ep = efeitoArma(w, nv);
-  const extra = Math.floor(R.cap(C.a[k]) / 30), per = periciaDaArma(w.grupo), acerto = bonusPericiaAtaque(per, k) + (R.ACERTO_ARMA[nv] || 0) + (C.escolha.maestria.includes(w.grupo) ? 1 : 0) + ep.acerto;
+  const props = R.lerProps(w.props), dx = danoArma(i, 0), ep = dx.ep;   // já com os níveis de dano de talentos, sets, talismãs e Fúria
+  const extra = Math.floor(R.cap(C.a[k]) / 30), per = periciaDaArma(w.grupo, k), atk = ataquePericia(per, k, { arma: true, ef: C.escolha.maestria.includes(w.grupo) ? 1 : 0, fora: (R.ACERTO_ARMA[nv] || 0) + ep.acerto }), acerto = atk.b;
   const dom = C.escolha.dominio[w.grupo] || 0, pmax = l.propriedades + dom, prob = R.problemasProps(props, pmax);
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : "—";
   const falta = statusArma(C, w.grupo, nv, props);
-  h += `<dl><div><dt>Dano</dt><dd>${esc(ep.dano + ep.extras.filter((x) => !x[2]).map((x) => ` + ${x[0]} ${x[1]}`).join(""))}</dd></div><div><dt>${per}</dt><dd>1d20 +${acerto}${vantPericiaAtaque(per, k) ? " (vant.)" : ""}</dd></div>
+  h += `<dl><div><dt>Dano</dt><dd>${esc(ep.dano + (dx.furiaDano ? ` + ${dx.furiaDano}` : "") + ep.extras.filter((x) => !x[2]).map((x) => ` + ${x[0]} ${x[1]}`).join(""))}${dx.nvD !== nv ? ` <small>(nível ${dx.nvD})</small>` : ""}</dd></div><div><dt>${per}</dt><dd>1d20 +${acerto}${atk.vant ? " (vant.)" : ""}${atk.teto ? " · teto" : ""}</dd></div>
     <div><dt>Crítico</dt><dd>${ep.margem}${ep.mult === 3 ? " ×3" : ""}</dd></div><div><dt>Tipo</dt><dd>${esc(l.tipo)}</dd></div><div><dt>DT</dt><dd>${10 + C.d.bc[k] + C.d.n3}</dd></div>
     <div><dt>Vigor/atk</dt><dd>${vig}</dd></div></dl>
     <button class="sel ${props.length ? "" : "vazio"}" style="margin-top:6px;font-size:14px" data-a="esc-props" data-i="${i}">Propriedades ${props.length}/${pmax}${dom ? ` (+${dom} Domínio)` : ""}: ${esc(props.join(", ") || "nenhuma")}</button>
@@ -212,10 +212,10 @@ function pCombate() {
     ${ef.length ? `<p class="sub">Talentos em uso: ${ef.join(" · ")}</p>` : ""}`;
   h += cardTurno() + cardUsos();
   h += secao("Defesa") + `<div class="lista">${R.PERICIAS_DEFESA.map(([n, k, tn]) =>
-    `<div class="item" data-a="rolar-def" data-n="${n}"><div class="tx"><b>${n}</b><small>${k}${R.vantagem(C.a[k]) ? " · vantagem" : ""}</small></div><span class="num">+${bonusDefesa(n, k, tn)}</span><span class="sub">🎲</span></div>`).join("")}
+    `<div class="item" data-a="rolar-def" data-n="${n}"><div class="tx"><b>${n}</b><small>${k}${defesa(n, k, tn).vant ? " · vantagem" : ""}</small></div><span class="num">+${bonusDefesa(n, k, tn)}</span><span class="sub">🎲</span></div>`).join("")}
     <div class="item" data-a="contra"><div class="tx"><b>Contradomínio</b><small>anular encantamento · ${S.contra_usados}/${d.contra_encant} neste combate</small></div><span class="sub">🎲</span></div></div>`;
   h += secao("Ataque sem arma") + `<div class="lista">${R.PERICIAS_ATAQUE.map(([n, atrs]) =>
-    `<div class="item" data-a="rolar-atk" data-n="${n}"><div class="tx"><b>${n}</b><small>${atrs.join(" ou ")}</small></div><span class="num">${atrs.map((k) => `+${d.bc[k] + d.n3 + (n === "Luta" || n === "Pontaria" ? C.ef.acerto : 0)}${R.vantagem(C.a[k]) ? "ᵛ" : ""}`).join(" / ")}</span><span class="sub">🎲</span></div>`).join("")}</div>
+    `<div class="item" data-a="rolar-atk" data-n="${n}"><div class="tx"><b>${n}</b><small>${atrs.join(" ou ")}</small></div><span class="num">${atrs.map((k) => `+${bonusPericiaAtaque(n, k)}${vantPericiaAtaque(n, k) ? "ᵛ" : ""}`).join(" / ")}</span><span class="sub">🎲</span></div>`).join("")}</div>
     <p class="sub">ᵛ = vantagem (2d20). DT: Feitiçaria ${d.dt_feiticaria} · Desejo ${d.dt_desejo} · Provocar ${R.dtProvocar(d, C.nv)}</p>`;
   h += secao("Armas") + linhaArma(0) + linhaArma(1);
   const w0 = ARMAS[S.armas[0].grupo], w1 = ARMAS[S.armas[1].grupo];

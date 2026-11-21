@@ -93,7 +93,7 @@
      "dano": "3d6 + 2d4",
      "tipo": "Perfurante",
      "propriedades": 4,
-     "critico": "16",
+     "critico": "17",
      "espaco": 7,
      "vigor": null
     },
@@ -102,7 +102,7 @@
      "dano": "4d6 + 2d4",
      "tipo": "Perfurante",
      "propriedades": 5,
-     "critico": "16",
+     "critico": "17",
      "espaco": 7,
      "vigor": null
     }
@@ -563,7 +563,7 @@
      "dano": "3d8 + 1",
      "tipo": "Cort. ou Perf.",
      "propriedades": 4,
-     "critico": "16",
+     "critico": "17",
      "espaco": 9,
      "vigor": null
     },
@@ -572,7 +572,7 @@
      "dano": "3d10 + 1",
      "tipo": "Cort. ou Perf.",
      "propriedades": 4,
-     "critico": "16",
+     "critico": "17",
      "espaco": 10,
      "vigor": null
     },
@@ -581,7 +581,7 @@
      "dano": "3d10 + 1d8",
      "tipo": "Cort. ou Perf.",
      "propriedades": 5,
-     "critico": "16",
+     "critico": "17",
      "espaco": 10,
      "vigor": null
     }
@@ -1919,7 +1919,7 @@
      "dano": "1d8",
      "tipo": "Impacto",
      "propriedades": 4,
-     "critico": "17",
+     "critico": "18",
      "espaco": 7,
      "vigor": null
     },
@@ -1928,7 +1928,7 @@
      "dano": "1d8 + 2",
      "tipo": "Impacto",
      "propriedades": 5,
-     "critico": "17",
+     "critico": "18",
      "espaco": 7,
      "vigor": null
     }
@@ -2042,7 +2042,7 @@
      "dano": "1d8",
      "tipo": "Impacto",
      "propriedades": 4,
-     "critico": "17",
+     "critico": "18",
      "espaco": 7,
      "vigor": null
     },
@@ -2051,7 +2051,7 @@
      "dano": "1d8 + 2",
      "tipo": "Impacto",
      "propriedades": 5,
-     "critico": "17",
+     "critico": "18",
      "espaco": 7,
      "vigor": null
     }
@@ -9849,7 +9849,7 @@
      "acao": "Comum",
      "distancia": "Você e até 4 aliados",
      "requisitos": "85 Inteligência, Cajado",
-     "descricao": "O grupo vira energia cósmica e voa até 200 quilômetros, em linha reta, levando a bagagem. Os viajantes ficam intangíveis durante o trajeto e chegam sem desgaste. Feitiços A lista de feitiços no glossário não vem especificamente de um grupo de pesquisadores, com algumas exceções. São poderes que se encontram de décadas ou centenas de anos, que procuram aqueles com a vontade interior necessária.",
+     "descricao": "O grupo vira energia cósmica e voa até 200 quilômetros, em linha reta, levando a bagagem. Os viajantes ficam intangíveis durante o trajeto e chegam sem desgaste.",
      "req_attrs": [
       {
        "attr": "INT",
@@ -16449,7 +16449,7 @@
      "acao": "Comum",
      "distancia": "30m",
      "requisitos": "65 Fé, Selo",
-     "descricao": "A lança leva uma corrente de ferro e prende o alvo, causando 7d10+1 de dano Perfurante. Por 3 turnos, ele não pode se afastar mais de 6m de você. TALISMÃS CONHECIDOS",
+     "descricao": "A lança leva uma corrente de ferro e prende o alvo, causando 7d10+1 de dano Perfurante. Por 3 turnos, ele não pode se afastar mais de 6m de você.",
      "req_attrs": [
       {
        "attr": "FE",
@@ -19254,13 +19254,13 @@
   {
    "familia": "Pingente da Dor",
    "nome": "Pingente da Dor +0",
-   "efeito": "Ao sofrer crítico, ganha +2 em Força turno",
+   "efeito": "Ao sofrer crítico, ganha +2 em Força por 1 turno",
    "bonus": {}
   },
   {
    "familia": "Pingente da Dor",
    "nome": "Pingente da Dor +1",
-   "efeito": "+4 por em Força",
+   "efeito": "+4 em Força",
    "bonus": {}
   },
   {
@@ -19484,7 +19484,7 @@
   {
    "familia": "Símbolo da Chaga",
    "nome": "Símbolo da Chaga +0",
-   "efeito": "Ao ser envenenado, ganha +2 em Força por turnos",
+   "efeito": "Ao ser envenenado, ganha +2 em Força por 2 turnos",
    "bonus": {}
   },
   {

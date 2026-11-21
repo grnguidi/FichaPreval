@@ -1780,6 +1780,7 @@ class App(tk.Tk):
         ef["ca"] += eq["ca"]
         ef["mov"] += eq["mov"]
         ef["contra"] += eq["contra"]
+        ef["dano_nivel"] += eq.get("dano_nivel", 0)   # níveis de dano de sets e talismãs
         for k, v in eq["per"].items():
             ef["pericia"][k] = ef["pericia"].get(k, 0) + v
         d["mana"] += eq["mana"]
@@ -1975,14 +1976,13 @@ class App(tk.Tk):
         for n, atrs in R.PERICIAS_ATAQUE:
             partes = []
             for k in atrs:
-                partes.append(f"+{d['bc'][k] + n3}" + (" (vant.)" if R.vantagem(a[k]) else "") + (f" [{k}]" if len(atrs) > 1 else ""))
-            if self.ef["acerto"] and n in ("Luta", "Pontaria"):
-                partes = [x + f" (+{self.ef['acerto']} talento)" for x in partes]
+                b_, v_, _ = self.ataque_pericia(n, k)
+                partes.append(f"+{b_}" + (" (vant.)" if v_ else "") + (f" [{k}]" if len(atrs) > 1 else ""))
             self.l_atk[n].configure(text="  /  ".join(partes))
         bonus_def = {"Fortitude de Ferro", "Reflexos de Gato", "Mente Blindada", "Vontade Inabalável"}
         for n, k, tname in R.PERICIAS_DEFESA:
-            extra = (2 if tname in tal else 0) + self.eq["def"].get(n, 0)
-            self.l_def[n].configure(text=f"+{d['bc'][k] + n3 + extra}" + (" (vant.)" if R.vantagem(a[k]) else ""))
+            b_, v_ = self.defesa(n, k, tname)
+            self.l_def[n].configure(text=f"+{b_}" + (" (vant.)" if v_ else ""))
         self.l_dts.configure(text=f"DT encantamentos/alma/armas: Feitiçaria {d['dt_feiticaria']} • Desejo {d['dt_desejo']}")
         self._recalc_armas(a, nivel, avisos)
         for i, b in enumerate(self.bt_rolar_arma):
@@ -2081,6 +2081,38 @@ class App(tk.Tk):
         return tot
 
     # ============================================================ armas
+    def dano_arma(self, i, delta=0):
+        """Dano da arma i com "delta" níveis a mais (ação da arma, Tiro Carregado…): primeiro sobe o nível na tabela
+        (somando os níveis de talentos, sets, talismãs e da Fúria), depois entram os dados extras do atributo e as
+        propriedades (Pesada sobe o dado, Afiada soma um dado). Ex.: Arco nv 3 + Tiro Carregado (+2) = nível 5 (2d8);
+        com Pesada, 2d10."""
+        ui = self.armas_ui[i]
+        arma = self.armas_por_nome.get(ui["grupo"].get())
+        if not arma:
+            return None
+        nv = to_int(ui["nivel"].get(), 1)
+        k = R.atributo_ataque(arma, self.a)
+        furia_dano = furia_nivel = 0
+        if arma["nome"] == "Machado Grande":   # Fúria (3.3): +1 de dano fixo por acúmulo; +1 nível a cada 25% da vida perdida (máx. +3)
+            furia_dano = to_int(self.recursos.get(self._chave_recurso(i), {}).get("Fúria"), 0)
+            vmax = self.d.get("vida", 0)
+            vat = self._atual(self.v_vida_atual, vmax) if vmax else 0
+            furia_nivel = max(0, min(3, int((1 - vat / vmax) * 100 // 25))) if vmax > 0 else 0
+        bruto = nv + self.ef["dano_nivel"] + delta + furia_nivel
+        nv_dano = max(1, min(10, bruto))
+        linha = self._linha_arma(arma["nome"], nv)
+        linha_dano = self._linha_arma(arma["nome"], nv_dano) or linha
+        props = R.ler_props(ui["props"].get())
+        ep = R.efeito_props(props, R.dano_com_dados(linha_dano["dano"], R.cap(self.a[k]) // 30), to_int(linha["critico"], 20))
+        return {"arma": arma, "nv": nv, "k": k, "linha": linha, "linha_dano": linha_dano, "nv_dano": nv_dano, "props": props,
+                "ep": ep, "furia_dano": furia_dano, "teto10": bruto > 10}
+
+    def texto_dano(self, x):
+        pd = [R.nome_prop(p) for p in x["props"] if R.nome_prop(p) in ("Pesada", "Afiada", "Cruel", "Poderosa")]
+        return (x["ep"]["dano"] + (f" + {x['furia_dano']}" if x["furia_dano"] else "")
+                + (f" · nível {x['nv_dano']}" if x["nv_dano"] != x["nv"] else "") + (f" · {', '.join(pd)}" if pd else "")
+                + (" (o nível de dano para no 10)" if x["teto10"] else ""))
+
     def _linha_arma(self, grupo, nv):
         arma = self.armas_por_nome.get(grupo)
         if not arma:
@@ -2231,13 +2263,16 @@ class App(tk.Tk):
             k = R.atributo_ataque(arma, a)
             extra = R.cap(a[k]) // 30
             props = R.ler_props(ui["props"].get())
-            ep = R.efeito_props(props, R.dano_com_dados(l["dano"], extra), to_int(l["critico"], 20))
-            ui["l_dano"].configure(text=ep["dano"] + "".join(f" + {x} {t}" for x, t, cnd in ep["extras"] if not cnd)
+            dx = self.dano_arma(i, 0)   # já com os níveis de dano de talentos, sets, talismãs e Fúria
+            ep = dx["ep"]
+            ui["l_dano"].configure(text=ep["dano"] + (f" + {dx['furia_dano']}" if dx["furia_dano"] else "")
+                                   + "".join(f" + {x} {t}" for x, t, cnd in ep["extras"] if not cnd)
+                                   + (f"  (nível {dx['nv_dano']})" if dx["nv_dano"] != nv else "")
                                    + (f"  (+{extra} dado por {k})" if extra else ""))
             ui["l_tipo"].configure(text=l["tipo"])
-            per = R.pericia_da_arma(g)
-            acerto = self.bonus_pericia_ataque(per, k) + R.ACERTO_ARMA.get(nv, 0) + (1 if g in self.esc["maestria"] else 0) + ep["acerto"]
-            ui["l_acerto"].configure(text=f"1d20 +{acerto}" + (" (2d20, maior)" if self.vant_pericia_ataque(per, k) else "") + f"  [{per} · {k}]")
+            per = R.pericia_da_arma(g, k)
+            acerto, vant_a, ef_a = self.ataque_pericia(per, k, True, 1 if g in self.esc["maestria"] else 0, R.ACERTO_ARMA.get(nv, 0) + ep["acerto"])
+            ui["l_acerto"].configure(text=f"1d20 +{acerto}" + (" (2d20, maior)" if vant_a else "") + (" · teto" if ef_a > R.TETO_EFEITOS else "") + f"  [{per} · {k}]")
             ui["l_crit"].configure(text=f"{ep['margem']}" + (" ×3" if ep["mult"] == 3 else ""))
             extra_p = self.esc["dominio"].get(g, 0)
             ui["l_props_max"].configure(text=f"{len(props)}/{l['propriedades'] + extra_p}" + (f" (+{extra_p} Domínio)" if extra_p else ""))
@@ -2727,17 +2762,12 @@ class App(tk.Tk):
             messagebox.showinfo(APP_NOME, "Escolha uma arma primeiro (aba Inventário).")
             return
         self.recalc()
-        nv = to_int(ui["nivel"].get(), 1)
-        k = R.atributo_ataque(arma, self.a)
-        ef = self.ef
-        nv_dano = max(1, min(10, nv + ef["dano_nivel"] + int(o.get("delta") or 0)))
-        linha = self._linha_arma(arma["nome"], nv)
-        linha_dano = self._linha_arma(arma["nome"], nv_dano) or linha
+        x = self.dano_arma(i, int(o.get("delta") or 0))
+        nv, k, ef, nv_dano, linha, linha_dano, props, ep = x["nv"], x["k"], self.ef, x["nv_dano"], x["linha"], x["linha_dano"], x["props"], x["ep"]
+        furia_dano = x["furia_dano"]
         maestria = 1 if arma["nome"] in self.esc["maestria"] else 0
-        props = R.ler_props(ui["props"].get())
-        ep = R.efeito_props(props, R.dano_com_dados(linha_dano["dano"], R.cap(self.a[k]) // 30), to_int(linha["critico"], 20))
-        per = R.pericia_da_arma(arma["nome"])
-        bonus = self.bonus_pericia_ataque(per, k) + R.ACERTO_ARMA.get(nv, 0) + maestria + ep["acerto"]
+        per = R.pericia_da_arma(arma["nome"], k)
+        bonus, vant_atk, ef_atk = self.ataque_pericia(per, k, True, maestria, R.ACERTO_ARMA.get(nv, 0) + ep["acerto"])
         lim = ep["desgaste"] + self._afiacao_extra()
         dg = self.desgaste.setdefault(i, {"usados": 0, "desgastada": False, "em": 0, "contado": -1})
         if dg["desgastada"]:
@@ -2753,7 +2783,7 @@ class App(tk.Tk):
         ataques = []   # um teste de acerto por disparo, ou um só para todos ("única jogada de acerto")
         for g in range(golpes):
             if g == 0 or not o.get("um_acerto"):
-                at_g = R.rolar_ataque(bonus, self.vant_pericia_ataque(per, k) or o.get("vant") == 1, ep["margem"], self._rng, desvantagem=o.get("vant") == -1)
+                at_g = R.rolar_ataque(bonus, vant_atk or o.get("vant") == 1, ep["margem"], self._rng, desvantagem=o.get("vant") == -1)
                 if o.get("critico") and not at_g["desastre"]:
                     at_g["critico"] = True
             ataques.append(at_g)
@@ -2780,6 +2810,9 @@ class App(tk.Tk):
             soma += total
             linhas.append(pre + self._txt_dano(total, partes) + f"  · {linha_dano['tipo']}" + (f"  · dano de nível {nv_dano}" if nv_dano != nv else "")
                           + (f"  · crítico ×{mult}" if at_g["critico"] and mult > 2 else ""))
+            if furia_dano:
+                soma += furia_dano
+                linhas.append(pre + f"+{furia_dano} de dano fixo (Fúria)")
             for x, tipo, cnd in ep["extras"]:
                 t2, p2 = R.rolar_expr(x, self._rng, dobrar=at_g["critico"], mult=mult)
                 soma += t2
@@ -3232,8 +3265,8 @@ class App(tk.Tk):
     def rolar_defesa(self, n):
         self.recalc()
         _, k, tn = next(x for x in R.PERICIAS_DEFESA if x[0] == n)
-        b = self.d["bc"][k] + self.nivel() // 3 + (2 if tn in self.talentos_escolhidos() else 0) + self.eq["def"].get(n, 0)
-        r = R.rolar_defesa(b, R.vantagem(self.a[k]), self._rng)
+        b, vant = self.defesa(n, k, tn)
+        r = R.rolar_defesa(b, vant, self._rng)
         r.setdefault("bonus", b)
         self.registrar(f"🛡 {n}", [self._txt_d20(n, dict(r, bonus=b)), "Compare com a DT do efeito ou da habilidade do inimigo."])
 
@@ -3280,15 +3313,29 @@ class App(tk.Tk):
 
     # perícia de ataque: Luta (corpo a corpo), Pontaria (Arco e Besta), Feitiçaria e Desejo. O mesmo bônus vale no teste
     # sem arma e no ataque com a arma (que soma ainda o acerto da arma, a Maestria e as propriedades).
-    def bonus_pericia_ataque(self, n, k):
-        fis = n in ("Luta", "Pontaria")
+    # Teto de combate (3.3): efeitos (talentos, sets, talismãs, Mestre das Perícias, Maestria…) somam no máximo +5 e o
+    # excesso vira vantagem. Fora do teto: Bônus de Combate, nível ÷ 3 e o acerto da arma (com as propriedades). Máx. +25.
+    def ataque_pericia(self, n, k, arma=False, ef_extra=0, fora=0):
+        """Devolve (bônus, vantagem, soma dos efeitos)."""
+        fis = arma or n in ("Luta", "Pontaria")
         eq = getattr(self, "eq", {}) or {}
-        return (self.d["bc"][k] + self.nivel() // 3 + ((self.ef["acerto"] + eq.get("acerto", 0)) if fis else 0)
-                + (eq.get("acerto_dist", 0) if n == "Pontaria" else 0) + self.ef["pericia"].get(n, 0)
-                + (2 if n in self.esc["pericia_mestre"] else 0))
+        mestre = n in self.esc["pericia_mestre"]
+        ef = (((self.ef["acerto"] + eq.get("acerto", 0)) if fis else 0) + (eq.get("acerto_dist", 0) if n == "Pontaria" else 0)
+              + self.ef["pericia"].get(n, 0) + (2 if mestre else 0) + ef_extra)
+        b, extra = R.teto_combate(self.d["bc"][k] + self.nivel() // 3 + fora, ef, R.ATAQUE_MAX)
+        return b, R.vantagem(self.a[k]) or mestre or extra, ef
+
+    def bonus_pericia_ataque(self, n, k):
+        return self.ataque_pericia(n, k)[0]
 
     def vant_pericia_ataque(self, n, k):
-        return R.vantagem(self.a[k]) or n in self.esc["pericia_mestre"]
+        return self.ataque_pericia(n, k)[1]
+
+    def defesa(self, n, k, tn):
+        """Defesa com o teto de combate: efeitos até +5 (o excesso vira vantagem), máximo +20."""
+        ef = (2 if tn in self.talentos_escolhidos() else 0) + self.eq["def"].get(n, 0)
+        b, extra = R.teto_combate(self.d["bc"][k] + self.nivel() // 3, ef, R.RESIST_MAX)
+        return b, R.vantagem(self.a[k]) or extra
 
     def _afiacao_extra(self):
         return 1 if "Afiação Duradoura" in self.talentos_escolhidos() else 0
@@ -3464,7 +3511,9 @@ class App(tk.Tk):
         g = self.armas_ui[i]["grupo"].get()
         n = self._recurso_municao(g, tipo)
         if not n:
-            return f"Gasta {'toda a' if qtd < 0 else qtd} {tipo or 'munição'}{'s' if qtd != 1 else ''}."
+            nome_m = tipo or "munição"
+            plural = (nome_m[:-2] + "ões") if nome_m.endswith("ão") else nome_m + "s"
+            return f"Gasta {'toda a' if qtd < 0 else qtd} {nome_m if qtd == 1 else plural}."
         r = self.recursos.setdefault(self._chave_recurso(i), {})
         tem = to_int(r.get(n), 0)
         gasto = tem if qtd < 0 else qtd
@@ -3557,6 +3606,15 @@ class App(tk.Tk):
             if v is vd and not v.get().startswith("-") and v.get() != "0":
                 v.set("+" + v.get())
             ttk.Combobox(g, values=vals, textvariable=v, width=12, state="readonly").grid(row=1, column=j, sticky="w", padx=(0, 10))
+        # prévia do dano: muda junto com o "Nível de dano"
+        v_prev = tk.StringVar()
+
+        def prever(*_):
+            x = self.dano_arma(i, to_int(vd.get().replace("+", ""), 0))
+            v_prev.set(f"Dano com este ajuste: {self.texto_dano(x)}" if x else "")
+        tk.Label(f, textvariable=v_prev, bg=PERG, fg=VINHO, font=(FONTE, 10, "bold"), anchor="w").pack(anchor="w", pady=(6, 0))
+        vd.trace_add("write", prever)
+        prever()
         vg = tk.StringVar(value=str(p["golpes"]))
         if p["golpes"] > 1:
             tk.Label(g, text="Disparos/golpes", bg=PERG, fg=TINTA2, font=(FONTE, 9)).grid(row=0, column=3, sticky="w")

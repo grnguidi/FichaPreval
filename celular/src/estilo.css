@@ -488,3 +488,4 @@ html.noite .turno-aviso.sua,html.noite .ficha-acao.t-bonus,html.noite .modo-pill
 .pagina.arrastando{transition:none}
 .pagina.saindo{transition:transform .13s ease-in,opacity .13s ease-in}
 @media (prefers-reduced-motion:reduce){.pagina{transition:none}}
+.dano-previsto{margin:8px 0 0;padding:6px 10px;border-left:3px solid var(--vinho);background:var(--campo);border-radius:0 8px 8px 0}

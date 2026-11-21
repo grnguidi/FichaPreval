@@ -96,22 +96,32 @@ A["alma-usar"] = (el, ev) => {
 };
 A["alma-recup"] = (el, ev) => { if (ev) ev.stopPropagation(); mudar((s) => { s.alma.restantes = ""; }); };
 
-function bonusDefesa(n, k, tn) { return C.d.bc[k] + C.d.n3 + (C.tal.has(tn) ? 2 : 0) + ((C.eq.def || {})[n] || 0); }
+// defesa: efeitos (talento +2, sets e talismãs) entram no teto de combate (+5; o excesso vira vantagem; máximo +20)
+function defesa(n, k, tn) {
+  const ef = (C.tal.has(tn) ? 2 : 0) + ((C.eq.def || {})[n] || 0), [b, extra] = R.tetoCombate(C.d.bc[k] + C.d.n3, ef, R.RESIST_MAX);
+  return { b, vant: R.vantagem(C.a[k]) || extra };
+}
+function bonusDefesa(n, k, tn) { return defesa(n, k, tn).b; }
 A["rolar-def"] = (el) => {
   const [n, k, tn] = R.PERICIAS_DEFESA.find((x) => x[0] === el.dataset.n), b = bonusDefesa(n, k, tn);
-  const r = R.rolarDefesa(b, R.vantagem(C.a[k]), rng);
+  const r = R.rolarDefesa(b, defesa(n, k, tn).vant, rng);
   mostrarRolagem(`🛡 ${n}`, [`${n}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} +${b}]</span>`,
     `<span class="sub">Compare com a DT do efeito ou da habilidade do inimigo.</span>`]);
 };
 // perícia de ataque: Luta (corpo a corpo), Pontaria (Arco e Besta), Feitiçaria (Magias) e Desejo (Feitiços).
 // O mesmo bônus vale no teste sem arma e no ataque com a arma (que soma ainda o acerto da arma).
-const periciaDaArma = (grupo) => (["Arco", "Besta Pesada"].includes(grupo) ? "Pontaria" : "Luta");
-function bonusPericiaAtaque(n, k) {
-  const fis = n === "Luta" || n === "Pontaria";
-  return C.d.bc[k] + C.d.n3 + (fis ? C.ef.acerto + int(C.eq.acerto) : 0) + (n === "Pontaria" ? int(C.eq.acerto_dist) : 0)
-    + int((C.ef.pericia || {})[n]) + (C.escolha.pericia_mestre.includes(n) ? 2 : 0);
+// A Lira usa Feitiçaria (Inteligência) ou Desejo (Fé), pelo atributo de ataque.
+const periciaDaArma = (grupo, k) => (["Arco", "Besta Pesada"].includes(grupo) ? "Pontaria" : grupo === "Lira" ? (k === "FE" ? "Desejo" : "Feitiçaria") : "Luta");
+// Teto de combate: efeitos (talentos, sets, talismãs, Mestre das Perícias, Maestria…) somam no máximo +5; o excesso vira
+// vantagem. Fora do teto: Bônus de Combate, nível ÷ 3 e o acerto da arma (com as propriedades). Máximo +25.
+function ataquePericia(n, k, o = {}) {
+  const fis = o.arma || n === "Luta" || n === "Pontaria", mestre = C.escolha.pericia_mestre.includes(n);
+  const ef = (fis ? C.ef.acerto + int(C.eq.acerto) : 0) + (n === "Pontaria" ? int(C.eq.acerto_dist) : 0) + int((C.ef.pericia || {})[n]) + (mestre ? 2 : 0) + int(o.ef);
+  const [b, extra] = R.tetoCombate(C.d.bc[k] + C.d.n3 + int(o.fora), ef, R.ATAQUE_MAX);
+  return { b, vant: R.vantagem(C.a[k]) || mestre || extra, ef, teto: ef > R.TETO_EFEITOS };
 }
-const vantPericiaAtaque = (n, k) => R.vantagem(C.a[k]) || C.escolha.pericia_mestre.includes(n);
+const bonusPericiaAtaque = (n, k) => ataquePericia(n, k).b;
+const vantPericiaAtaque = (n, k) => ataquePericia(n, k).vant;
 // afiação: turnos afiados da arma (Reforçada +1; Afiação Duradoura +1)
 const limiteAfiacao = (ep) => ep.desgaste + (C.tal.has("Afiação Duradoura") ? 1 : 0);
 A["rolar-atk"] = (el) => {
@@ -171,6 +181,11 @@ A["acao-livro"] = (el) => {
   mostrarRolagem(`${tipo === "Reação" ? "↯" : "▸"} ${n} (${tipo})`, linhas);
 };
 A["acao-livro-arma"] = (el) => { fecharFolha(); atacar(int(el.dataset.i), { acao: el.dataset.t, rotulo: el.dataset.n }); };
+// prévia do dano no painel da ação: muda junto com o "Nível de dano" escolhido
+function previaDano(i, delta) {
+  const el = $("#aa-prev"), x = danoArma(i, delta); if (!el || !x) return;
+  el.innerHTML = `Dano com este ajuste: <b>${esc(textoDano(x))}</b>${x.nvD === 10 && x.nv + C.ef.dano_nivel + delta + x.furiaNivel > 10 ? " <span class=\"sub\">(o nível de dano para no 10)</span>" : ""}`;
+}
 A["acao-arma"] = (el, ev) => {
   if (ev) ev.stopPropagation();
   const i = int(el.dataset.i), j = int(el.dataset.j), w = S.armas[i], ar = ARMAS[w.grupo], x = ar.acoes[j], p = R.acaoArma(x.nome, x.texto);
@@ -178,12 +193,14 @@ A["acao-arma"] = (el, ev) => {
   const dt = p.teste ? 10 + C.d.bc[p.dt_attr || R.atributoAtaque(ar, C.a)] + C.d.n3 : 0;
   folha(esc(x.nome), `<p class="meta">${p.acao ? `Gasta: ação ${p.acao}` : "Sem custo de ação definido"}${p.passiva ? " · efeito automático" : ""}</p><div class="desc">${esc(x.texto)}</div>
     ${p.passiva ? "" : `<div class="secao">Ajustes do ataque</div><div class="grade g3">
-      <label class="campo"><span>Nível de dano</span><select id="aa-d">${[-3, -2, -1, 0, 1, 2, 3].map((n) => op(n, n > 0 ? `+${n}` : n, n === Math.max(-3, Math.min(3, p.delta)))).join("")}</select></label>
+      <label class="campo"><span>Nível de dano</span><select id="aa-d" data-i="${i}">${[-3, -2, -1, 0, 1, 2, 3].map((n) => op(n, n > 0 ? `+${n}` : n, n === Math.max(-3, Math.min(3, p.delta)))).join("")}</select></label>
       <label class="campo"><span>Rolagem</span><select id="aa-v">${op(0, "normal", p.vantagem === 0)}${op(1, "vantagem", p.vantagem === 1)}${op(-1, "desvantagem", p.vantagem === -1)}</select></label>
       <label class="campo"><span>Crítico</span><select id="aa-c">${op(0, "normal", !p.critico)}${op(1, "garantido", p.critico)}</select></label>
       ${p.golpes > 1 ? `<label class="campo"><span>Disparos/golpes</span><select id="aa-g">${(p.ate ? [...Array(p.golpes)].map((_, n) => n + 1) : [p.golpes]).map((n) => op(n, n, n === p.golpes)).join("")}</select></label>` : ""}</div>
+      <p class="dano-previsto" id="aa-prev"></p>
       <p class="sub">Os ajustes vêm do texto da ação; confira antes de rolar.${p.mult ? ` Crítico ×${p.mult}.` : ""}${p.golpes > 1 ? ` ${p.golpes} disparos/golpes${p.ate ? " (até)" : ""}, ${p.um_acerto ? "uma jogada de acerto para todos" : "um teste de acerto para cada"}.` : ""}${p.municao ? ` Gasta ${p.municao < 0 ? "todas as" : p.municao} ${p.municao_tipo}(s).` : ""}${p.teste ? ` O alvo faz ${p.teste} contra DT ${dt}.` : ""}</p>`}`,
-  `<button class="botao leve" data-a="acao-arma-usar" data-i="${i}" data-j="${j}">✓ Usar${p.acao ? ` (${p.acao})` : ""}</button>${p.passiva ? "" : `<button class="botao prim" data-a="acao-arma-rolar" data-i="${i}" data-j="${j}">${ar.nome === "Adaga" && x.nome === "Estourar" ? "💥 Estourar" : "🎲 Rolar ataque"}</button>`}`);
+  `<button class="botao leve" data-a="acao-arma-usar" data-i="${i}" data-j="${j}">✓ Usar${p.acao ? ` (${p.acao})` : ""}</button>${p.passiva ? "" : `<button class="botao prim" data-a="acao-arma-rolar" data-i="${i}" data-j="${j}">${ar.nome === "Adaga" && x.nome === "Estourar" ? "💥 Estourar" : "🎲 Rolar ataque"}</button>`}`,
+    (c) => { const sel = c.querySelector("#aa-d"); if (!sel) return; const at = () => previaDano(i, int(sel.value)); sel.addEventListener("change", at); at(); });
 };
 A["acao-arma-rolar"] = (el) => {
   const i = int(el.dataset.i), j = int(el.dataset.j), ar = ARMAS[S.armas[i].grupo], x = ar.acoes[j], p = R.acaoArma(x.nome, x.texto);

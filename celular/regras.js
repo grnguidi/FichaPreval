@@ -6,6 +6,9 @@
   const ATR_POR_NOME = Object.fromEntries(Object.entries(NOMES_ATR).map(([k, v]) => [v, k]));
   const VALORES_INICIAIS = [16, 14, 12, 11, 10, 9, 8, 7];
   const CA_MAX = 30;   // 3.2: máxima 30; o que passar é perdido
+  // Teto de combate (3.3): efeitos somam no máximo +5; o excesso de acerto/resistência vira vantagem. Ataque +25, resistência +20.
+  const TETO_EFEITOS = 5, ATAQUE_MAX = 25, RESIST_MAX = 20;
+  const tetoCombate = (fora, efeitos, maximo) => [Math.min(maximo, fora + Math.min(TETO_EFEITOS, efeitos)), efeitos > TETO_EFEITOS];
   const NIVEL_MAX = 30;
   const PERICIAS = [
     ["Acrobacia", ["DES"], false], ["Adestramento", ["MEN"], true], ["Agricultura", ["INT"], true], ["Alquimia", ["INT"], true], ["Artes", ["MEN"], false],
@@ -573,7 +576,7 @@
   const R = {
     ATRIBUTOS, NOMES_ATR, ATR_POR_NOME, VALORES_INICIAIS, NIVEL_MAX, PERICIAS, PERICIAS_ATAQUE, PERICIAS_DEFESA, RESISTENCIAS,
     CONDICOES, LIMIARES_ACOES, ACERTO_ARMA, GRUPOS_ARMA, BONUS_SEM_ALMA,
-    cap, curva, bonusCombate, vantagem, pontosDeNivel, ganhoNoNivel, nivelAlma, maxNivelArma, slotsTalismas, derivadas,
+    TETO_EFEITOS, ATAQUE_MAX, RESIST_MAX, tetoCombate, cap, curva, bonusCombate, vantagem, pontosDeNivel, ganhoNoNivel, nivelAlma, maxNivelArma, slotsTalismas, derivadas,
     periciaFora, reqArma, atributoAtaque, reqFalta, reqUsoDuplo, danoComDados, statusVersao, statusTalento,
     EFEITOS_TALENTOS, ARMADURAS_PESADAS, efeitosTalentos, rolarExpr, rolarAtaque, custoMana, danoDoEncantamento,
     TIPOS_DANO, NOMES_DANO, DANO_SEM_RD, EFEITOS_LIVRO, NOTA_EFEITOS, CONDICAO_TESTE, CONDICAO_ATIVA, DESCANSOS_CURTOS_MAX, DESGASTE_TURNOS,

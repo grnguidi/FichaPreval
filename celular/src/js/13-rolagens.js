@@ -59,8 +59,11 @@ function gastarMunicao(i, tipo, qtd) {
   r[n] = Math.max(0, tem - (qtd < 0 ? tem : qtd));
   return qtd > tem ? `${n}: o contador tinha só ${tem} (ficou 0). Ajuste no − / + da arma.` : `${n}: ${tem} → ${r[n]}.`;
 }
-function atacar(i, o = {}) {
-  const w = S.armas[i], ar = ARMAS[w.grupo]; if (!ar) return;
+// Dano da arma i com "delta" níveis a mais (ação da arma, Tiro Carregado…): primeiro sobe o nível na tabela (somando os
+// níveis de talentos, sets, talismãs e da Fúria), depois entram os dados extras do atributo e as propriedades (Pesada sobe
+// o dado, Afiada soma um dado, Cruel/Poderosa somam fixo). Ex.: Arco nv 3 + Tiro Carregado (+2) = nível 5 (2d8); com Pesada, 2d10.
+function danoArma(i, delta = 0) {
+  const w = S.armas[i], ar = ARMAS[w.grupo]; if (!ar) return null;
   const nv = int(w.nivel, 1), k = R.atributoAtaque(ar, C.a);
   const l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0];
   // Machado Grande (3.3), passiva Fúria: cada acúmulo dá +1 de dano fixo e cada 25% da vida perdida, +1 nível de dano (máximo +3)
@@ -70,11 +73,22 @@ function atacar(i, o = {}) {
     const vmax = C.d.vida, vat = S.vida.atual === "" || S.vida.atual == null ? vmax : int(S.vida.atual, vmax);
     furiaNivel = vmax > 0 ? Math.max(0, Math.min(3, Math.floor((1 - vat / vmax) * 100 / 25))) : 0;
   }
-  const [lD, nvD] = R.linhaDanoNivel(ar.tabela, nv, C.ef.dano_nivel + int(o.delta) + furiaNivel);
-  const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0, props = R.lerProps(w.props);
+  const [lD, nvD] = R.linhaDanoNivel(ar.tabela, nv, C.ef.dano_nivel + int(delta) + furiaNivel);
+  const props = R.lerProps(w.props);
   const ep = R.efeitoProps(props, R.danoComDados(lD.dano, Math.floor(R.cap(C.a[k]) / 30)), int(l.critico, 20));
-  const per = periciaDaArma(w.grupo), lim = limiteAfiacao(ep);
-  const bonus = bonusPericiaAtaque(per, k) + (R.ACERTO_ARMA[nv] || 0) + maestria + ep.acerto;
+  return { w, ar, nv, k, l, lD, nvD, props, ep, furiaDano, furiaNivel };
+}
+// texto curto do dano: "2d10 · nível 5 · Pesada"
+function textoDano(x) {
+  const pd = x.props.map((p) => R.nomeProp ? R.nomeProp(p) : p).filter((n) => ["Pesada", "Afiada", "Cruel", "Poderosa"].includes(n));
+  return `${x.ep.dano}${x.furiaDano ? ` + ${x.furiaDano}` : ""}${x.nvD !== x.nv ? ` · nível ${x.nvD}` : ""}${pd.length ? ` · ${pd.join(", ")}` : ""}`;
+}
+function atacar(i, o = {}) {
+  const x = danoArma(i, o.delta); if (!x) return;
+  const { w, ar, nv, k, l, lD, nvD, props, ep, furiaDano, furiaNivel } = x;
+  const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0;
+  const per = periciaDaArma(w.grupo, k), lim = limiteAfiacao(ep);
+  const atk = ataquePericia(per, k, { arma: true, ef: maestria, fora: (R.ACERTO_ARMA[nv] || 0) + ep.acerto }), bonus = atk.b;
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : 0;
   const dg = S.desgaste[i] = Object.assign({ usados: 0, desgastada: false, em: 0, contado: -1 }, S.desgaste[i] || {});
   if (dg.desgastada) {
@@ -87,7 +101,7 @@ function atacar(i, o = {}) {
     const golpes = Math.max(1, int(o.golpes, 1)), ataques = [];
     for (let g = 0; g < golpes; g++) {
       if (g === 0 || !o.umAcerto) {
-        const a = R.rolarAtaque(bonus, vantPericiaAtaque(per, k) || o.vant === 1, ep.margem, rng, o.vant === -1);
+        const a = R.rolarAtaque(bonus, atk.vant || o.vant === 1, ep.margem, rng, o.vant === -1);
         if (o.critico && !a.desastre) a.critico = true;
         ataques.push(a);
       } else ataques.push(ataques[0]);
@@ -148,7 +162,7 @@ function atacar(i, o = {}) {
     if (props.length) linhas.push(`<span class="sub">Propriedades: ${esc(props.join(", "))}</span>`);
     if (custo) linhas.push(`<span class="sub">${custo}</span>`);
     { const acEq = int(C.eq.acerto) + (per === "Pontaria" ? int(C.eq.acerto_dist) : 0), mp = C.escolha.pericia_mestre.includes(per);
-      linhas.push(`<span class="sub">Teste de ${per}${acEq ? ` · inclui +${acEq} de sets e talismãs` : ""}${mp ? " · Mestre das Perícias +2 e vantagem" : ""}.</span>`); }
+      linhas.push(`<span class="sub">Teste de ${per}${acEq ? ` · inclui +${acEq} de sets e talismãs` : ""}${mp ? " · Mestre das Perícias +2 e vantagem" : ""}${atk.teto ? ` · efeitos somam +${atk.ef}: passa do teto de +5 e o excesso vira vantagem` : ""}.</span>`); }
     if (C.ef.acerto) linhas.push(`<span class="sub">Inclui +${C.ef.acerto} de acerto de talento situacional.</span>`);
     if (maestria) linhas.push(`<span class="sub">Inclui +1 de Maestria nesta arma.</span>`);
     linhas.push(`<span class="sub">${at.critico ? `Desgaste: o crítico reafiou a arma.` : dg.desgastada ? `<b class="erro">A arma desgastou</b>: sem uso no próximo turno.` : `Afiação: restam ${lim - dg.usados} turno(s) afiado(s) (vale para os outros ataques deste turno).`}</span>`);

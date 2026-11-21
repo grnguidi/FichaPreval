@@ -9,6 +9,24 @@ NOMES_ATR = {"VIT": "Vitalidade", "MEN": "Mente", "TEN": "Tenacidade", "FOR": "F
 ATR_POR_NOME = {v: k for k, v in NOMES_ATR.items()}
 VALORES_INICIAIS = [16, 14, 12, 11, 10, 9, 8, 7]
 CA_MAX = 30          # 3.2: máxima 30; o que passar é perdido
+# Teto de combate (3.3): bônus fixos de efeitos (talentos, talismãs, sets, refeições, encantamentos, habilidades de arma)
+# somam no máximo +5 num ataque, na CA ou num teste de resistência. Fora do teto: Bônus de Combate, nível / 3 e acerto
+# da arma. O excesso de acerto e de resistência vira vantagem; o de CA é perdido. Máximos: ataque +25, resistência +20.
+TETO_EFEITOS, ATAQUE_MAX, RESIST_MAX = 5, 25, 20
+
+
+def teto_combate(fora, efeitos, maximo):
+    """Devolve (bônus final, excesso vira vantagem)."""
+    return min(maximo, fora + min(TETO_EFEITOS, efeitos)), efeitos > TETO_EFEITOS
+
+
+def pericia_da_arma(grupo, atributo=""):
+    """Perícia de ataque da arma: Pontaria (Arco, Besta Pesada), Feitiçaria ou Desejo (Lira, pelo atributo), Luta (o resto)."""
+    if grupo in ("Arco", "Besta Pesada"):
+        return "Pontaria"
+    if grupo == "Lira":
+        return "Desejo" if atributo == "FE" else "Feitiçaria"
+    return "Luta"
 NIVEL_MAX = 30
 
 # Perícias fora de combate: nome -> atributos possíveis (usa o maior), requer treino
@@ -573,10 +591,6 @@ def pocao_espiritual_dados(nivel, curva_vit):
 
 DESGASTE_TURNOS = 3   # turnos de uso afiados (não ataques); o crítico reinicia; ao acabar a arma fica 1 turno sem uso
 
-
-def pericia_da_arma(grupo):
-    """Perícia de ataque da arma: Pontaria para Arco e Besta Pesada, Luta para as de corpo a corpo."""
-    return "Pontaria" if grupo in ("Arco", "Besta Pesada") else "Luta"
 
 
 def desgaste_apos_ataque(usados, critico, limite=DESGASTE_TURNOS):
