@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Exporta a ficha aberta para PDF (reportlab), no visual Catedral: roxo profundo, lilás e verde-claro,
-com dourado e chumbo; enfeites de vitral, rosáceas e janelas em arco."""
+com dourado e chumbo. A página é uma janela de catedral: moldura de chumbo e ouro com cantoneiras, colunas de vitral
+nas laterais, faixa de vitral no alto, arcada de claustro embaixo com o fólio em romanos, o título sob um arco ogival
+entre rosáceas e lancetas, seções em flâmulas com capitular gótica e os números do corpo em janelas ogivais."""
 import math
 import os
 import sys
@@ -116,6 +118,91 @@ def _quadrifolio(c, cx, cy, r):
     c.restoreState()
 
 
+def _ogiva(p, x, y, w, h_reto, h_arco):
+    """Contorno de janela em arco ogival (ponta no alto): lados retos de h_reto e arco de h_arco."""
+    p.moveTo(x, y)
+    p.lineTo(x, y + h_reto)
+    p.curveTo(x, y + h_reto + h_arco * 0.55, x + w * 0.28, y + h_reto + h_arco * 0.92, x + w / 2, y + h_reto + h_arco)
+    p.curveTo(x + w * 0.72, y + h_reto + h_arco * 0.92, x + w, y + h_reto + h_arco * 0.55, x + w, y + h_reto)
+    p.lineTo(x + w, y)
+    p.close()
+    return p
+
+
+def _arcada(c, x0, x1, y, alt=5 * mm):
+    """Arcada: fileira de arcos ogivais com trifólios, como o claustro de uma catedral."""
+    n = max(4, int((x1 - x0) / (7 * mm)))
+    w = (x1 - x0) / n
+    c.saveState()
+    for i in range(n):
+        x = x0 + i * w
+        c.setStrokeColor(CHUMBO)
+        c.setLineWidth(0.7)
+        c.setFillColor(VIDROS[i % 6] if i % 2 else colors.HexColor("#efe8f5"))
+        c.drawPath(_ogiva(c.beginPath(), x + 0.6, y, w - 1.2, alt * 0.45, alt * 0.55), stroke=1, fill=1)
+        c.setFillColor(OURO2)
+        c.setStrokeColor(OURO)
+        c.setLineWidth(0.3)
+        c.circle(x + w / 2, y + alt * 0.62, alt * 0.09, stroke=1, fill=1)
+    c.setStrokeColor(OURO)
+    c.setLineWidth(0.8)
+    c.line(x0, y, x1, y)
+    c.restoreState()
+
+
+def _coluna_vitral(c, x, y0, y1, larg=2.4 * mm):
+    """Coluna lateral de vitral: vidros estreitos empilhados, presos por chumbo."""
+    alt = 7 * mm
+    n = max(1, int((y1 - y0) / alt))
+    alt = (y1 - y0) / n
+    c.saveState()
+    c.setStrokeColor(CHUMBO)
+    c.setLineWidth(0.6)
+    for i in range(n):
+        c.setFillColor(VIDROS[(i * 2 + (1 if x > A4[0] / 2 else 0)) % 6])
+        c.rect(x, y0 + i * alt, larg, alt, stroke=1, fill=1)
+        if i % 3 == 1:   # um losango de vidro a cada três
+            cx, cy = x + larg / 2, y0 + i * alt + alt / 2
+            p = c.beginPath()
+            p.moveTo(cx, cy + alt * 0.32)
+            p.lineTo(cx + larg * 0.38, cy)
+            p.lineTo(cx, cy - alt * 0.32)
+            p.lineTo(cx - larg * 0.38, cy)
+            p.close()
+            c.setFillColor(OURO2)
+            c.drawPath(p, stroke=1, fill=1)
+    c.setLineWidth(1.0)
+    c.rect(x, y0, larg, y1 - y0, stroke=1, fill=0)
+    c.restoreState()
+
+
+def _cantoneira(c, cx, cy, r=3.2 * mm):
+    """Canto da moldura: quadrifólio dentro de um losango dourado."""
+    c.saveState()
+    p = c.beginPath()
+    p.moveTo(cx, cy + r * 1.35)
+    p.lineTo(cx + r * 1.35, cy)
+    p.lineTo(cx, cy - r * 1.35)
+    p.lineTo(cx - r * 1.35, cy)
+    p.close()
+    c.setFillColor(CHUMBO)
+    c.setStrokeColor(OURO)
+    c.setLineWidth(0.8)
+    c.drawPath(p, stroke=1, fill=1)
+    c.restoreState()
+    _quadrifolio(c, cx, cy, r * 0.85)
+
+
+def _romano(n):
+    out = ""
+    for v, s in ((1000, "M"), (900, "CM"), (500, "D"), (400, "CD"), (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
+                 (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")):
+        while n >= v:
+            out += s
+            n -= v
+    return out
+
+
 def _filete(c, x0, x1, y, cor=None, larg=1.0):
     c.saveState()
     c.setStrokeColor(cor or LILAS)
@@ -173,29 +260,119 @@ class Secao(Flowable):
 
     def __init__(self, texto, fonte, largura):
         super().__init__()
-        self.texto, self.fonte, self.width, self.height = texto, fonte, largura, 21
+        self.texto, self.fonte, self.width, self.height = texto, fonte, largura, 24
         self.keepWithNext = True
 
     def wrap(self, *_):
         return self.width, self.height
 
     def draw(self):
+        """Flâmula de chumbo com pontas recortadas, capitular dourada em fraktur e o resto em versalete claro."""
         c = self.canv
-        _quadrifolio(c, 2.8 * mm, 8.5, 2.4 * mm)
-        c.setFillColor(VINHO)
-        t = c.beginText(8 * mm, 5)
         cap, resto = self.texto[:1], self.texto[1:]
-        if frak_ok(cap):
-            t.setFont(FRAK, 16)
+        usa_frak = frak_ok(cap)
+        larg_txt = (pdfmetrics.stringWidth(cap, FRAK, 17) if usa_frak else 0) + pdfmetrics.stringWidth(resto if usa_frak else self.texto, self.fonte, 11) + 1.3 * len(self.texto)
+        x0, x1, y0, y1 = 6.5 * mm, 6.5 * mm + larg_txt + 9 * mm, 2.5, 17.5
+        c.saveState()
+        p = c.beginPath()   # flâmula: retângulo com cauda bifurcada à direita
+        p.moveTo(x0, y0)
+        p.lineTo(x1, y0)
+        p.lineTo(x1 - 3 * mm, (y0 + y1) / 2)
+        p.lineTo(x1, y1)
+        p.lineTo(x0, y1)
+        p.close()
+        c.setFillColor(CHUMBO)
+        c.setStrokeColor(OURO)
+        c.setLineWidth(0.9)
+        c.drawPath(p, stroke=1, fill=1)
+        c.setStrokeColor(OURO2)
+        c.setLineWidth(0.35)
+        c.line(x0 + 1.2, y0 + 1.6, x1 - 2.2, y0 + 1.6)
+        c.line(x0 + 1.2, y1 - 1.6, x1 - 2.2, y1 - 1.6)
+        c.restoreState()
+        # fio duplo dourado até o fim da coluna, com um trifólio no final
+        _filete(c, x1 + 1.5 * mm, self.width - 3 * mm, (y0 + y1) / 2 + 1.2, OURO, 0.7)
+        _filete(c, x1 + 1.5 * mm, self.width - 3 * mm, (y0 + y1) / 2 - 1.2, OURO, 0.7)
+        c.saveState()
+        c.setFillColor(LILAS)
+        c.setStrokeColor(CHUMBO)
+        c.setLineWidth(0.4)
+        for dx, dy in ((0, 1.3), (-1.2, -0.6), (1.2, -0.6)):
+            c.circle(self.width - 1.6 * mm + dx, (y0 + y1) / 2 + dy, 1.25, stroke=1, fill=1)
+        c.restoreState()
+        _quadrifolio(c, 3 * mm, (y0 + y1) / 2, 2.7 * mm)
+        t = c.beginText(x0 + 3.2 * mm, y0 + 4.2)
+        if usa_frak:
+            t.setFillColor(OURO2)
+            t.setFont(FRAK, 17)
             t.textOut(cap)
         else:
             resto = self.texto
-        t.setFont(self.fonte, 11.5)
-        t.setCharSpace(1.4)
+        t.setFillColor(colors.HexColor("#f3ecfa"))
+        t.setFont(self.fonte, 11)
+        t.setCharSpace(1.3)
         t.textOut(resto)
         c.drawText(t)
-        _filete(c, 0, self.width, 2.2, OURO, 0.7)
-        _filete(c, 0, self.width, 0.4, OURO, 0.7)
+
+
+class CaixasOgivais(Flowable):
+    """Fileira de janelas em arco ogival: o vidro colorido do arco leva o rótulo; a pedra embaixo, o valor."""
+
+    def __init__(self, itens, largura, fontes, limpa):
+        super().__init__()
+        self.itens, self.width, self.height = itens, largura, 25 * mm
+        self.F, self.FB, self.FI = fontes
+        self.L = limpa
+
+    def wrap(self, *_):
+        return self.width, self.height
+
+    def draw(self):
+        c = self.canv
+        n = len(self.itens)
+        w = self.width / n
+        for i, (rot, val, sub, cor) in enumerate(self.itens):
+            x, larg = i * w + 1.6 * mm, w - 3.2 * mm
+            h_reto, h_arco = 13.5 * mm, 9 * mm
+            c.saveState()
+            # a pedra (corpo) e o vidro (arco) com o rótulo
+            c.setFillColor(CAMPO)
+            c.setStrokeColor(CHUMBO)
+            c.setLineWidth(1.4)
+            c.drawPath(_ogiva(c.beginPath(), x, 1, larg, h_reto, h_arco), stroke=1, fill=1)
+            p = c.beginPath()
+            p.moveTo(x, 1 + h_reto)
+            p.curveTo(x, 1 + h_reto + h_arco * 0.55, x + larg * 0.28, 1 + h_reto + h_arco * 0.92, x + larg / 2, 1 + h_reto + h_arco)
+            p.curveTo(x + larg * 0.72, 1 + h_reto + h_arco * 0.92, x + larg, 1 + h_reto + h_arco * 0.55, x + larg, 1 + h_reto)
+            p.close()
+            c.setFillColor(cor or C["ATR"])
+            c.drawPath(p, stroke=1, fill=1)
+            c.setStrokeColor(OURO)
+            c.setLineWidth(0.5)
+            c.drawPath(_ogiva(c.beginPath(), x + 1.6, 2.6, larg - 3.2, h_reto - 1.6, h_arco - 1.8), stroke=1, fill=0)
+            # rótulo no vidro, valor grande e a linha de apoio
+            c.setFillColor(colors.HexColor("#f6f1fa"))
+            rot_t = self.L(rot.upper())
+            tam = 6.6
+            while pdfmetrics.stringWidth(rot_t, self.FB, tam) > larg * 0.78 and tam > 4.8:
+                tam -= 0.2
+            c.setFont(self.FB, tam)
+            c.drawCentredString(x + larg / 2, 1 + h_reto + 2.3 * mm, rot_t)
+            c.setFillColor(TINTA)
+            v = self.L(val)
+            tv = 15
+            while pdfmetrics.stringWidth(v, self.FB, tv) > larg * 0.9 and tv > 8:
+                tv -= 0.5
+            c.setFont(self.FB, tv)
+            c.drawCentredString(x + larg / 2, 1 + 6.2 * mm, v)
+            c.setFillColor(TINTA2)
+            st = self.L(sub)
+            ts = 6.8
+            while pdfmetrics.stringWidth(st, self.FI, ts) > larg * 0.92 and ts > 4.8:
+                ts -= 0.2
+            c.setFont(self.FI, ts)
+            c.drawCentredString(x + larg / 2, 1 + 2.2 * mm, st)
+            c.restoreState()
 
 
 def _fontes():
@@ -244,7 +421,7 @@ def gerar_pdf(caminho, app):
     s_num = ParagraphStyle("n", fontName=FB, fontSize=16, leading=19, textColor=TINTA, alignment=TA_CENTER)
     s_rot = ParagraphStyle("r", fontName=FB, fontSize=7, leading=9, textColor=FAIXA, alignment=TA_CENTER)
 
-    W = A4[0] - 30 * mm
+    W = A4[0] - 34 * mm
 
     def P(t, s=s_cel):
         return Paragraph(L(t), s)
@@ -257,6 +434,7 @@ def gerar_pdf(caminho, app):
         dados = [[Paragraph(L(c), sc) for c in cab]] + [[x if hasattr(x, "wrap") else P(x) for x in ln] for ln in linhas]
         t = Table(dados, colWidths=larg, repeatRows=1)
         estilo = [("BACKGROUND", (0, 0), (-1, 0), cor), ("GRID", (0, 0), (-1, -1), 0.3, OURO),
+                  ("BOX", (0, 0), (-1, -1), 1.3, CHUMBO), ("LINEBELOW", (0, 0), (-1, 0), 1.2, OURO),
                   ("VALIGN", (0, 0), (-1, -1), "TOP"), ("TOPPADDING", (0, 0), (-1, -1), 2.5), ("BOTTOMPADDING", (0, 0), (-1, -1), 2.5),
                   ("BACKGROUND", (0, 1), (-1, -1), CAMPO)]
         if zebra:
@@ -266,16 +444,7 @@ def gerar_pdf(caminho, app):
         return t
 
     def caixas(itens, cor_padrao=C["ATR"]):
-        cel = []
-        for rot, val, sub, cor in itens:
-            inner = Table([[Paragraph(L(rot.upper()), s_rot)], [Paragraph(L(val), s_num)], [Paragraph(L(sub), ParagraphStyle("x", parent=s_peq, alignment=TA_CENTER))]],
-                          colWidths=[W / len(itens) - 4])
-            inner.setStyle(TableStyle([("BACKGROUND", (0, 0), (0, 0), cor or cor_padrao), ("BACKGROUND", (0, 1), (0, -1), CAMPO),
-                                       ("BOX", (0, 0), (-1, -1), 0.6, OURO), ("TOPPADDING", (0, 0), (-1, -1), 2), ("BOTTOMPADDING", (0, 0), (-1, -1), 2)]))
-            cel.append(inner)
-        t = Table([cel], colWidths=[W / len(itens)] * len(itens))
-        t.setStyle(TableStyle([("LEFTPADDING", (0, 0), (-1, -1), 2), ("RIGHTPADDING", (0, 0), (-1, -1), 2)]))
-        return t
+        return CaixasOgivais([(r, v, s, cor or cor_padrao) for r, v, s, cor in itens], W, (F, FB, FI), L)
 
     e = []
     nome = idt.get("nome") or "Sonhador"
@@ -444,33 +613,57 @@ def gerar_pdf(caminho, app):
         canv.saveState()
         canv.setFillColor(PERG)
         canv.rect(0, 0, A4[0], A4[1], stroke=0, fill=1)
-        # a página é uma janela: moldura de chumbo por fora, dourada por dentro
+        # pedra da catedral: fiadas de blocos bem claras ao fundo
+        canv.setStrokeColor(colors.HexColor("#e9e3da"))
+        canv.setLineWidth(0.35)
+        fiada = 9 * mm
+        for j, y in enumerate(range(int(10 * mm), int(A4[1] - 10 * mm), int(fiada))):
+            canv.line(10 * mm, y, A4[0] - 10 * mm, y)
+            for x in range(int(10 * mm + (0 if j % 2 else 11 * mm)), int(A4[0] - 10 * mm), int(22 * mm)):
+                canv.line(x, y, x, y + fiada)
+        # a página é uma janela: moldura de chumbo por fora, dourada por dentro, colunas de vitral nas laterais
         canv.setStrokeColor(CHUMBO)
-        canv.setLineWidth(2.2)
-        canv.rect(9 * mm, 9 * mm, A4[0] - 18 * mm, A4[1] - 18 * mm)
+        canv.setLineWidth(2.4)
+        canv.rect(8 * mm, 8 * mm, A4[0] - 16 * mm, A4[1] - 16 * mm)
         canv.setStrokeColor(OURO)
-        canv.setLineWidth(0.6)
-        canv.rect(10.5 * mm, 10.5 * mm, A4[0] - 21 * mm, A4[1] - 21 * mm)
-        # faixa de vitral no alto; embaixo, uma fileira de janelas em arco em cada canto
-        _faixa_vitral(canv, 10.5 * mm, A4[1] - 10.5 * mm - 6.5 * mm, A4[0] - 21 * mm)
-        for i in range(5):
-            _lanceta(canv, 13 * mm + i * 5.2 * mm, 11.5 * mm)
-            _lanceta(canv, A4[0] - 13 * mm - 4.2 * mm - i * 5.2 * mm, 11.5 * mm)
-        _filete(canv, 40 * mm, A4[0] - 40 * mm, 12 * mm, LILAS, 0.8)
+        canv.setLineWidth(0.7)
+        canv.rect(9.4 * mm, 9.4 * mm, A4[0] - 18.8 * mm, A4[1] - 18.8 * mm)
+        _coluna_vitral(canv, 10.6 * mm, 20 * mm, A4[1] - 18 * mm)
+        _coluna_vitral(canv, A4[0] - 13 * mm, 20 * mm, A4[1] - 18 * mm)
+        _faixa_vitral(canv, 9.4 * mm, A4[1] - 9.4 * mm - 6 * mm, A4[0] - 18.8 * mm, 6 * mm)
+        for cx, cy in ((8 * mm, 8 * mm), (A4[0] - 8 * mm, 8 * mm), (8 * mm, A4[1] - 8 * mm), (A4[0] - 8 * mm, A4[1] - 8 * mm)):
+            _cantoneira(canv, cx, cy)
+        # embaixo, uma arcada de claustro; no meio, o fólio em algarismos romanos num quadrifólio
+        _arcada(canv, 14 * mm, A4[0] / 2 - 12 * mm, 10.4 * mm)
+        _arcada(canv, A4[0] / 2 + 12 * mm, A4[0] - 14 * mm, 10.4 * mm)
+        _quadrifolio(canv, A4[0] / 2, 13.2 * mm, 4.6 * mm)
+        canv.setFillColor(CHUMBO)
+        canv.setFont(FB, 7)
+        canv.drawCentredString(A4[0] / 2, 12.4 * mm, _romano(doc.page))
         if doc.page == 1:
-            _rosacea(canv, 25 * mm, A4[1] - 33 * mm, 8 * mm)
-            if not _foto(canv, st.get("foto"), A4[0] - 15 * mm - 32 * mm, A4[1] - 20.5 * mm - 32 * mm, 32 * mm):
-                _rosacea(canv, A4[0] - 25 * mm, A4[1] - 33 * mm, 8 * mm)
-            for k in range(2):   # lancetas ao lado do título
-                _lanceta(canv, A4[0] / 2 - 62 * mm + k * 5.2 * mm, A4[1] - 36 * mm)
-                _lanceta(canv, A4[0] / 2 + 52.6 * mm + k * 5.2 * mm, A4[1] - 36 * mm)
-            _filete(canv, A4[0] / 2 - 46 * mm, A4[0] / 2 - 8 * mm, A4[1] - 40.4 * mm, OURO, 0.9)
-            _filete(canv, A4[0] / 2 + 8 * mm, A4[0] / 2 + 46 * mm, A4[1] - 40.4 * mm, OURO, 0.9)
-        canv.setFont(FI, 8)
+            # o título fica sob um arco ogival dourado, entre rosáceas e lancetas
+            canv.saveState()
+            canv.setStrokeColor(OURO)
+            canv.setLineWidth(1.1)
+            canv.drawPath(_ogiva(canv.beginPath(), A4[0] / 2 - 54 * mm, A4[1] - 43 * mm, 108 * mm, 8 * mm, 15 * mm), stroke=1, fill=0)
+            canv.setStrokeColor(CHUMBO)
+            canv.setLineWidth(0.5)
+            canv.drawPath(_ogiva(canv.beginPath(), A4[0] / 2 - 52 * mm, A4[1] - 43 * mm, 104 * mm, 8 * mm, 13.5 * mm), stroke=1, fill=0)
+            canv.restoreState()
+            _quadrifolio(canv, A4[0] / 2, A4[1] - 18.6 * mm, 2.6 * mm)
+            _rosacea(canv, 27 * mm, A4[1] - 32 * mm, 8.5 * mm)
+            com_foto = _foto(canv, st.get("foto"), A4[0] - 17 * mm - 32 * mm, A4[1] - 20.5 * mm - 32 * mm, 32 * mm)
+            if not com_foto:
+                _rosacea(canv, A4[0] - 27 * mm, A4[1] - 32 * mm, 8.5 * mm)
+            for k in range(2):   # lancetas ao lado do arco (do lado da foto, ela ocupa o lugar)
+                _lanceta(canv, A4[0] / 2 - 65 * mm + k * 5.2 * mm, A4[1] - 43 * mm, h=12 * mm)
+                if not com_foto:
+                    _lanceta(canv, A4[0] / 2 + 55.6 * mm + k * 5.2 * mm, A4[1] - 43 * mm, h=12 * mm)
+        canv.setFont(FI, 7.5)
         canv.setFillColor(TINTA2)
-        canv.drawCentredString(A4[0] / 2, 5.5 * mm, L(f"{idt.get('nome') or 'Sonhador'} · Conestoga connection · página {doc.page}"))
+        canv.drawCentredString(A4[0] / 2, 4.2 * mm, L(f"{idt.get('nome') or 'Sonhador'} · Conestoga connection · fólio {_romano(doc.page)}"))
         canv.restoreState()
 
-    doc = SimpleDocTemplate(caminho, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=21 * mm, bottomMargin=19 * mm,
+    doc = SimpleDocTemplate(caminho, pagesize=A4, leftMargin=17 * mm, rightMargin=17 * mm, topMargin=21 * mm, bottomMargin=21 * mm,
                             title=f"Ficha — {idt.get('nome') or 'Sonhador'}", author=idt.get("player", ""))
     doc.build(e, onFirstPage=fundo, onLaterPages=fundo)
