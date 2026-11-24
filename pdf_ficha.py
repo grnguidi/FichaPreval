@@ -7,6 +7,7 @@ import math
 import os
 import sys
 
+import regras as R
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -403,6 +404,94 @@ def _limpa(txt, unicode_ok):
     return txt
 
 
+_TIRA = [r"^como (?:uma )?(?:a[çc][ãa]o (?:comum|b[ôo]nus|completa|de movimento|livre)|rea[çc][ãa]o)\s*,?\s*",
+         r"^voc[êe] gasta uma a[çc][ãa]o (?:comum|b[ôo]nus|completa|de movimento)\s*(?:para|e)?\s*(?:que\s*)?", r"^para\s+", r"^voc[êe] pode gastar uma a[çc][ãa]o (?:comum|b[ôo]nus|completa|de movimento)\s*(?:,|para|e)?\s*",
+         r"^voc[êe] pode gastar\s*", r"^voc[êe] pode\s*", r"^gaste\s*"]
+
+
+def _resumo(texto, limite=150):
+    """Primeira frase do texto do livro, sem o "Como uma ação X, você pode…", cortada num limite."""
+    import re
+    t = re.sub(r"\s+", " ", texto or "").strip()
+    for rx in _TIRA:
+        t = re.sub(rx, "", t, flags=re.I)
+    frases, t = re.split(r"(?<=[.!?])\s", t), ""
+    for f in frases:   # uma frase; duas se a primeira for curta
+        t = (t + " " + f).strip()
+        if len(t) >= 60:
+            break
+    t = t.rstrip(".")
+    t = t[:1].upper() + t[1:]
+    if len(t) > limite:
+        t = t[:limite].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return t
+
+
+def resumo_acoes(app, i, arma):
+    """Linhas [ação, tipo, efeito] com o dano já calculado. Ex.: Chuva de Flechas · Completa · até 5 × 4d10 (crítico 12d10) · 5 flechas."""
+    import re
+    import dados_fisicos as DF
+    linhas = []
+    base = app.dano_arma(i, 0)
+    for x in arma["acoes"]:
+        if x.get("sub") or x["nome"].strip() in ("•", "Nota"):
+            continue
+        r = R.acao_arma(x["nome"], x["texto"])
+        if r.get("nota"):
+            continue
+        tl = (x["texto"] or "").lower()
+        nome = re.sub(r"^passiva:\s*", "", x["nome"], flags=re.I)
+        delta = r.get("delta", 0)
+        m = re.search(r"aumentar o dano em (\d+|um|uma|dois) n[íi]ve", tl)
+        if m and not delta:
+            delta = {"um": 1, "uma": 1, "dois": 2}.get(m.group(1)) or int(m.group(1))
+        if r.get("passiva"):
+            linhas.append([nome, "Passiva", _resumo(x["texto"])])
+            continue
+        if "metade do dano" in tl and "vira pontos" in tl:   # Preparar Flecha: o dano rolado vira pontos de condição
+            ep0 = base["ep"]
+            conds = ", ".join(c for c in ("Veneno", "Sangramento", "Congelamento", "Sono", "Loucura", "Podridão") if c.lower() in tl)
+            linhas.append([nome, r.get("acao") or "—", f"próxima flecha: role {ep0['dano']} (crítico {DF.critico(ep0['dano'], 3 if any(R.nome_prop(p) == 'Destruidora' for p in base['props']) else 2)}); "
+                                                      f"metade vira dano e o valor inteiro vira pontos de {conds or 'condição'}"])
+            continue
+        gatilho = re.match(r"^(ao |quando |sempre que |caso )", tl) and not r.get("acao")
+        if not r.get("ataque") or gatilho:
+            linhas.append([nome, "Gatilho" if gatilho else (r.get("acao") or "—"), _resumo(x["texto"])])
+            continue
+        dx = app.dano_arma(i, delta) or base
+        ep = dx["ep"]
+        mult = r.get("mult") or (3 if any(R.nome_prop(p) == "Destruidora" for p in dx["props"]) else 2)
+        dano = ep["dano"] + (f" + {dx['furia_dano']}" if dx["furia_dano"] else "")
+        crit = DF.critico(ep["dano"], mult)
+        partes = []
+        n = r.get("golpes", 1)
+        golpes = (f"até {n} × " if r.get("ate") else f"{n} × ") if n > 1 else ""
+        if r.get("critico"):
+            partes.append(f"crítico automático: {golpes}{crit}")
+        else:
+            partes.append(f"{golpes}{dano} (crítico {crit})")
+        partes += [f"+ {xx} {tp}" for xx, tp, cnd in ep["extras"] if not cnd]
+        if dx["nv_dano"] != dx["nv"]:
+            partes.append(f"dano de nível {dx['nv_dano']}")
+        if r.get("vantagem") == 1:
+            partes.append("com vantagem")
+        elif r.get("vantagem") == -1:
+            partes.append("com desvantagem")
+        if r.get("teste"):
+            partes.append(f"alvo testa {r['teste']}")
+        q = r.get("municao", 0)
+        if q:
+            tipo = r.get("municao_tipo") or "munição"
+            plural = tipo[:-2] + "ões" if tipo.endswith("ão") else tipo + "s"
+            partes.append("todas as " + plural if q < 0 else f"{q} {tipo if q == 1 else plural}")
+        extra = _resumo(x["texto"], 90) if x["nome"] not in ("Atacar",) and n == 1 else ""
+        tipo_acao = r.get("acao") or "Comum"
+        if r.get("acao") == "Bônus" and re.search(r"pr[óo]ximo ataque", tl):
+            tipo_acao, partes[0] = "Bônus", "próximo ataque: " + partes[0]
+        linhas.append([nome, tipo_acao, " · ".join(partes) + (f"  — {extra}" if extra and r.get("acao") != "Bônus" or (extra and "próximo" not in partes[0]) else "")])
+    return linhas
+
+
 def gerar_pdf(caminho, app):
     F, FB, FI, uni = _fontes()
     L = lambda t: _limpa(t, uni)  # noqa: E731
@@ -530,14 +619,17 @@ def gerar_pdf(caminho, app):
                        ui["props"].get()])
     e.append(tabela(["Arma", "Dano", "Tipo", "Crít.", "Ataque", "Peso", "Propriedades"], linhas or [["—", "", "", "", "", "", ""]],
                     [32 * mm, 28 * mm, 22 * mm, 12 * mm, 38 * mm, 12 * mm, W - 144 * mm], cor=C["ATK"]))
-    for ui in app.armas_ui:
+    # ações de cada arma, resumidas e já com o dano calculado (nível, dados de atributo, propriedades, golpes e crítico)
+    for i, ui in enumerate(app.armas_ui):
         arma = app.armas_por_nome.get(ui["grupo"].get())
         if not arma or not arma.get("acoes"):
             continue
-        e.append(Paragraph(L(f"Ações — {arma['nome']}"), ParagraphStyle("aa", parent=s_txt, fontName=FB, textColor=VINHO, spaceBefore=6)))
-        for x in arma["acoes"]:
-            e.append(Paragraph(("&nbsp;&nbsp;&nbsp;&nbsp;" if x.get("sub") else "") + f"<b>{L(x['nome'])}</b> — {L(x['texto'])}",
-                               ParagraphStyle("ax", parent=s_txt, fontSize=8.5, leading=10.5, spaceAfter=1.5)))
+        linhas = resumo_acoes(app, i, arma)
+        if not linhas:
+            continue
+        e.append(Spacer(1, 3))
+        e.append(tabela([f"Ações — {arma['nome']} nv {ui['nivel'].get()}", "Ação", "Efeito (já calculado)"], linhas,
+                        [38 * mm, 20 * mm, W - 58 * mm], cor=CHUMBO))
     eq = st["equip"]
     e.append(Spacer(1, 4))
     e.append(tabela(["Proteção", "Equipamento", "CA", "Peso"],
