@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Regras de Prevalecentes (PREVA 3.3) — cálculos puros, sem interface."""
+"""Regras de Prevalecentes (PREVA 3.4) — cálculos puros, sem interface."""
 import math
 import re
 

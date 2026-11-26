@@ -540,7 +540,7 @@ def gerar_pdf(caminho, app):
     if frak_ok(nome):
         s_tit = ParagraphStyle("T", parent=s_tit, fontName=FRAK, fontSize=30, leading=32)
     e.append(Paragraph(L(nome), s_tit))
-    e.append(Paragraph(L("Conestoga connection · Ficha do Sonhador · edição 3.3"), s_sub))
+    e.append(Paragraph(L("Conestoga connection · Ficha do Sonhador · edição 3.4"), s_sub))
     e.append(Spacer(1, 22))
     import foto as _F
     tem_foto = _F.valida(st.get("foto"))      # com foto, a identificação encolhe para dar lugar a ela

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Texto da janela "Regras usadas nos cálculos" (menu Ajuda)."""
-REGRAS_TXT = """Fórmulas (PREVA 3.3)
+REGRAS_TXT = """Fórmulas (PREVA 3.4)
 
 Atributos: distribuição inicial 16/14/12/11/10/9/8/7; +10 pontos por nível e +5 extras em níveis múltiplos de 3 (nível máx. 30).
 Sem alma ("Jogando sem uma Alma"): +2 pontos de atributo a mais por nível, e a aba Alma não é usada.
@@ -71,6 +71,22 @@ Elemental/Sagrada/Profana +1d6; Reforçada desgaste 4; Voraz cura 1d10 no críti
 Talismãs: 1 espaço + 1 a cada 6 níveis (máx. 5).
 Versões de encantamento: as superiores costumam custar mais Mana, mas versões de utilidade podem custar menos; vale o custo escrito.
 Lira: atributo de ataque, requisito e perícia são Inteligência ou Fé, à escolha (o programa usa o maior dos dois).
+
+Novidades do livro 3.4 (só referência, o programa não calcula):
+Ambiente e Perigos: grau Leve / Moderado / Grave = DT 10 / 15 / 20 + NMP ÷ 3 e dano de 5% / 15% / 30% da vida máxima
+(passou no teste: metade). Frio: falha põe 25 na barra de Congelamento. Calor: 1ª falha deixa Lento, 2ª seguida causa o dano.
+Em chamas: 5% da vida máxima de Fogo no início do turno; apagar = ação comum (Reflexo DT Leve). Penumbra: −2 à distância
+e em Percepção visual além de 9 m; escuridão total = Cegueira. Armadilhas: achar (Percepção) e desarmar (Tecnologia, ação
+completa) contra a DT do grau; falhar por 5 ou mais dispara.
+Perda de Membros: um único golpe com dano final ≥ metade da vida máxima remove 1 membro (role 1d8: olhos, mãos, braços,
+pernas). Danos mentais, Veneno, Sangramento, Podridão e Congelamento não removem. Visão Parcial −2 à distância e em
+Percepção visual; Mão Única sem uso duplo nem escudo com arma, duas mãos −4 de acerto e −1 dado; Perneta deslocamento
+pela metade e −2 em Reflexo e Atletismo. A perda é permanente.
+Montarias: montar/desmontar = ação de movimento (3 m). Montado, usa o deslocamento da montaria; comandar um ataque dela
+custa sua ação de movimento. Investida de 6 m em linha reta: +1 dado no 1º ataque corpo a corpo; à distância em movimento −2.
+Cultos e Igrejas: com Fé 20 ou mais, o personagem funda um Culto (Grau 1 a 5) e converte comunidades por Conflito Social.
+Cada Tema dá Bênção, Prece (1 por descanso longo) e Milagre (1 por Andar); os bônus contam para o teto de +5.
+Novo talismã: Olho Caído Putrefato.
 
 Talentos aplicados automaticamente: Vida Dura, Fôlego de Guerreiro, Mochileiro, Mula de Carga, Cabeça Cheia, Mente Expandida,
 Pé Ligeiro, Pele Grossa, Mão Extra, Mente Infinita, Treinado, Colecionador de Talismãs, Relicário, Veterano de Armadura,

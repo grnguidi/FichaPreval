@@ -1757,7 +1757,7 @@
    "acoes": [
     {
      "nome": "Atacar",
-     "texto": "Como ação comum, você ataca o alvo usando o nível da Lira, de alcance 9m. Cada ataque gera 2 acúmulos de Melodia (Paz, Calma ou Melancolia) a sua escolha, com um limite de 5 de cada tipo. Você gasta Melodias para aplicar efeitos ao redor do combate. Uma melodia se encerra após 1 turno.",
+     "texto": "Como ação comum, você ataca o alvo usando o nível da Lira, de alcance 9m. Cada ataque gera 2 acúmulos de Melodia (Paz, Calma ou Melancolia) à sua escolha, com um limite de 5 de cada tipo. Você gasta Melodias para aplicar efeitos ao redor do combate. Uma melodia se encerra após 1 turno.",
      "sub": false
     },
     {
@@ -4985,7 +4985,7 @@
      "acao": "Comum",
      "distancia": "18 Metros",
      "requisitos": "30 Inteligência, Cajado",
-     "descricao": "Ao usar um Encantamento com requisito menor ou igual à 20 de inteligência ou Fé, você pode conjurar um conjunto de pedregulhos congelantes, que causam 3d8 de dano e causam 3d8 de Congelamento.",
+     "descricao": "Ao usar um Encantamento com requisito menor ou igual a 20 de inteligência ou Fé, você pode conjurar um conjunto de pedregulhos congelantes, que causam 3d8 de dano e causam 3d8 de Congelamento.",
      "req_attrs": [
       {
        "attr": "INT",
@@ -5169,7 +5169,7 @@
      "acao": "Reação",
      "distancia": "Você",
      "requisitos": "55 Inteligência, Cajado",
-     "descricao": "Ao ser alvo de um golpe, você causa uma explosão de nevasca em volta de você. Você se torna Fragilizado por 1 turno, mas uma área de 9m é considerada a magia “Lentidão Congelante”, enquanto pra você é “Deslizar em Gelo”, e você recebe uma ação de movimento para gastar na hora. Por último, o ser mais próximo de você recebe 4d10 de condição Congelamento.",
+     "descricao": "Ao ser alvo de um golpe, você causa uma explosão de nevasca em volta de você. Você se torna Fragilizado por 1 turno, mas uma área de 9m é considerada a magia “Lentidão Congelante”, enquanto para você é “Deslizar em Gelo”, e você recebe uma ação de movimento para gastar na hora. Por último, o ser mais próximo de você recebe 4d10 de condição Congelamento.",
      "req_attrs": [
       {
        "attr": "INT",
@@ -8573,7 +8573,7 @@
      "acao": "Bônus",
      "distancia": "Toque",
      "requisitos": "10 Inteligência, Cajado",
-     "descricao": "Cria um cogumelo no corpo do alvo. Caso mais de um alvo que tenha ao menos um cogumelo no corpo estejam à 1.5m de distância, todos os cogumelos estouram causando 1d6 impacto por cogumelo nos alvos.",
+     "descricao": "Cria um cogumelo no corpo do alvo. Caso mais de um alvo que tenha ao menos um cogumelo no corpo estejam a 1.5m de distância, todos os cogumelos estouram causando 1d6 impacto por cogumelo nos alvos.",
      "req_attrs": [
       {
        "attr": "INT",
@@ -14489,7 +14489,7 @@
      "acao": "Bônus",
      "distancia": "44m",
      "requisitos": "30 Fé, Selo",
-     "descricao": "O usuário toca uma música linda em um instrumento próximo. Qualquer aliado que escutar sua melodía recebe vantagem em testes de vontade e causam dano máximo no primeiro dado de dano rolado.",
+     "descricao": "O usuário toca uma música linda em um instrumento próximo. Qualquer aliado que escutar sua melodia recebe vantagem em testes de vontade e causam dano máximo no primeiro dado de dano rolado.",
      "req_attrs": [
       {
        "attr": "FE",
@@ -15081,7 +15081,7 @@
      "acao": "Comum",
      "distancia": "24m",
      "requisitos": "40 Fé, Selo",
-     "descricao": "Em uma área de 24m a sua escolha, começará a chover. Após isso, por 3 turnos, você pode escolher qualquer ser dentro da chuva e gastar uma ação bônus ou comum para causar um raio, causando 4d10 + 4 de dano de Relâmpago, sem precisar de teste de Acerto.",
+     "descricao": "Em uma área de 24m à sua escolha, começará a chover. Após isso, por 3 turnos, você pode escolher qualquer ser dentro da chuva e gastar uma ação bônus ou comum para causar um raio, causando 4d10 + 4 de dano de Relâmpago, sem precisar de teste de Acerto.",
      "req_attrs": [
       {
        "attr": "FE",
@@ -15177,7 +15177,7 @@
      "acao": "Comum",
      "distancia": "1,5m",
      "requisitos": "55 Fé, Selo",
-     "descricao": "Ao golpear um prevalecente e causar um crítico, um raio ancestral acompanha seu golpe, instantâneamente finalizando o inimigo. Este feitiço apenas possui efeito se o prevalecente estiver com 100 de vida ou menos.",
+     "descricao": "Ao golpear um prevalecente e causar um crítico, um raio ancestral acompanha seu golpe, instantaneamente finalizando o inimigo. Este feitiço apenas possui efeito se o prevalecente estiver com 100 de vida ou menos.",
      "req_attrs": [
       {
        "attr": "FE",
@@ -18757,6 +18757,12 @@
    "familia": "Dicionário do Morto",
    "nome": "Dicionário do Morto",
    "efeito": "Você lê idiomas mortos ou arcanos sem precisar de teste. Sempre que o faz, role 1d6: com 1, o autor sussurra de volta e você recebe 10 de Loucura permanente.",
+   "bonus": {}
+  },
+  {
+   "familia": "Olho Caído Putrefato",
+   "nome": "Olho Caído Putrefato",
+   "efeito": "Um olho inchado de uma reserva de magia grande demais para o corpo que o recebe, guardando dentro de si o instante que acabou de passar. Para equipá-lo, você precisa arrancar um dos seus olhos e encaixá-lo no lugar: o olho original é perdido (veja Perda de Membros). Se você já perdeu um olho, ele ocupa a órbita vazia e nenhum olho original é perdido. Enquanto não for usado, você enxerga normalmente por ele. Uma vez equipado, não pode ser removido. Uso único: como reação, você volta ao estado em que estava no início do seu turno anterior. Voltam vida, mana, vigor, vida temporária, testes de morte e cicatrizes, condições e suas barras, bônus e penalidades ativos, usos de habilidades, itens gastos, membros perdidos nesse intervalo e sua posição. Os demais personagens, criaturas e o cenário não voltam. Depois de usado, o olho perde o efeito e a visão: você conta como tendo perdido esse olho (Visão Parcial, ou Cegueira se o outro olho também estiver perdido), e o talismã continua fundido a você. Não é possível equipar um segundo Olho Caído Putrefato.",
    "bonus": {}
   },
   {

@@ -1,4 +1,4 @@
-/* Regras de Prevalecentes (PREVA 3.3) — tradução fiel de regras.py */
+/* Regras de Prevalecentes (PREVA 3.4) — tradução fiel de regras.py */
 (function (raiz) {
   "use strict";
   const ATRIBUTOS = ["VIT", "MEN", "TEN", "FOR", "DES", "INT", "FE", "ARC"];

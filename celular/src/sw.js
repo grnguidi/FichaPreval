@@ -1,6 +1,6 @@
 // Guarda o app no aparelho para funcionar sem internet.
 // A página busca primeiro na rede (assim uma versão nova aparece na hora) e usa a cópia guardada sem internet.
-const VERSAO = "prevalecentes-mesa-v7";
+const VERSAO = "prevalecentes-mesa-v8";
 const ARQUIVOS = ["./", "./index.html", "./manifest.webmanifest", "./icone-192.png", "./icone-512.png", "./icone-mascara-512.png", "./icone-apple-180.png"];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(VERSAO).then((c) => c.addAll(ARQUIVOS)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", (e) => {

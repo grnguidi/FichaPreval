@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Ficha de Personagem — Prevalecentes (PREVA 3.3)
+"""Ficha de Personagem — Prevalecentes (PREVA 3.4)
 Calcula características derivadas, controla pontos por nível e oferece menus
 de armas, encantamentos e talentos marcando o que pode ou não ser aprendido.
 Layout segue a ficha oficial (páginas I a VII).
@@ -563,7 +563,7 @@ class App(tk.Tk):
         rd.pack(side="left", anchor="n", padx=(0, 12), before=tit)
         desenhar_rosacea(rd, 29, 29, 26)
         tk.Label(tit, text="Conestoga connection", bg=FUNDO, fg=OURO2, font=(FONTE_FRAK, 24) if FONTE_FRAK else (FONTE_TIT, 22, "bold")).pack(anchor="w")
-        tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.3", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
+        tk.Label(tit, text="Ficha do Sonhador  ·  edição 3.4", bg=FUNDO, fg=MESA_TXT, font=(FONTE, 9, "italic")).pack(anchor="w")
         self.lbl_modo = tk.Label(tit, text="", bg=FUNDO, fg=OURO2, font=(FONTE, 9, "bold"))
         self.lbl_modo.pack(anchor="w", pady=(4, 0))
 
