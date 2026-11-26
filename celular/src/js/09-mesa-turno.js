@@ -22,7 +22,7 @@ function usosLista() {
 }
 function recarregarUsos(evento) {
   for (const u of usosLista()) if (R.recarrega(u.periodo, evento)) delete S.usos[u.chave];
-  if (evento === "longo") S.alma.restantes = "";
+  if (evento === "longo") { S.alma.restantes = ""; if (S.culto) S.culto.preces_usadas = 0; }
 }
 // Amuleto da Regeneração: cura no começo do turno (nenhuma cura acorda um Incapaz)
 function curaDoTurno() {
@@ -98,13 +98,14 @@ A["alma-recup"] = (el, ev) => { if (ev) ev.stopPropagation(); mudar((s) => { s.a
 
 // defesa: efeitos (talento +2, sets e talismãs) entram no teto de combate (+5; o excesso vira vantagem; máximo +20)
 function defesa(n, k, tn) {
-  const ef = (C.tal.has(tn) ? 2 : 0) + ((C.eq.def || {})[n] || 0), [b, extra] = R.tetoCombate(C.d.bc[k] + C.d.n3, ef, R.RESIST_MAX);
-  return { b, vant: R.vantagem(C.a[k]) || extra };
+  const ref = n === "Reflexo" && C.pm;   // membros perdidos: Perneta −2, Cegueira/Sem Pernas com desvantagem
+  const ef = (C.tal.has(tn) ? 2 : 0) + ((C.eq.def || {})[n] || 0), [b, extra] = R.tetoCombate(C.d.bc[k] + C.d.n3 + (ref ? C.pm.reflexo : 0), ef, R.RESIST_MAX);
+  return { b, vant: R.vantagem(C.a[k]) || extra, desv: !!(ref && C.pm.desv_reflexo) };
 }
 function bonusDefesa(n, k, tn) { return defesa(n, k, tn).b; }
 A["rolar-def"] = (el) => {
   const [n, k, tn] = R.PERICIAS_DEFESA.find((x) => x[0] === el.dataset.n), b = bonusDefesa(n, k, tn);
-  const r = Dados.teste(b, defesa(n, k, tn).vant ? 2 : 1);
+  const df = defesa(n, k, tn), r = Dados.teste(b, df.vant ? 2 : 1, df.desv);
   mostrarRolagem(`🛡 ${n}`, [txtTeste(n, r, "resist"),
     `<span class="sub">Compare com a DT do efeito ou da habilidade do inimigo.</span>`]);
 };
@@ -128,7 +129,7 @@ A["rolar-atk"] = (el) => {
   const [n, atrs] = R.PERICIAS_ATAQUE.find((x) => x[0] === el.dataset.n);
   const k = atrs.reduce((m, x) => (C.d.bc[x] > C.d.bc[m] ? x : m), atrs[0]);
   const b = bonusPericiaAtaque(n, k);
-  const at = Dados.ataque(b, vantPericiaAtaque(n, k), 20);
+  const at = Dados.ataque(b, vantPericiaAtaque(n, k), 20, !!(C.pm && C.pm.desv_ataque));
   mostrarRolagem(`🎲 ${n}`, [txtAtaque(at, n), `<span class="sub">Teste de ${n} (${k}) sem arma; os ataques com arma ficam no cartão da arma.</span>`]);
 };
 A["contra"] = () => {

@@ -18,6 +18,7 @@ import foto as F
 import sessao
 import paleta as PAL
 import dados_fisicos as DF
+import corpo_culto as CU
 from ponte_sessao import PonteSessao
 from regras_texto import REGRAS_TXT
 from dados_prevalecentes import DADOS as _DADOS_EMBUTIDOS
@@ -283,7 +284,7 @@ class Dica:
         self.linha = None
 
 
-class App(tk.Tk):
+class App(CU.CorpoCultoMixin, tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(APP_NOME)
@@ -328,6 +329,9 @@ class App(tk.Tk):
         self.efeitos_mestre = []
         self.desgaste = {}         # arma (0/1) -> {"usados", "desgastada", "em", "contado"}: turnos afiados
         self.meus_turnos = 0       # turnos que o mestre passou para este jogador (sessão)
+        self.corpo = R.corpo_padrao()            # Perda de Membros (3.4): membro a membro, a espécie pode ter mais ou menos
+        self.pm = R.penalidades_membros(self.corpo)
+        self.culto = CU.normalizar(None)         # Cultos e Igrejas (3.4)
         self.turnos_n = 0          # turnos contados pelo app (Novo turno ou a vez na sessão): base da afiação
         self.descansos_curtos = 0  # desde o último descanso longo (máx. 2)
         self.janela_sessao = None
@@ -623,6 +627,8 @@ class App(tk.Tk):
         self._pag_encantamentos()
         self._pag_talentos()
         self._pag_anotacoes()
+        self._pag_corpo()
+        self._pag_crenca()
         self.abas_nomes = []
         for w in (self.nb.tabs() or ()):
             try:
@@ -666,7 +672,7 @@ class App(tk.Tk):
                 self.nb.add(self.aba_alma)
         except tk.TclError:
             pass
-        romanos = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
+        romanos = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"]
         i = 0
         for w, nome in self.abas_nomes:
             if w is self.aba_alma and sem:
@@ -1790,8 +1796,17 @@ class App(tk.Tk):
         d["espacos_encant"] += eq["espacos"]
         d["rd_tipo"], d["provocar_extra"], d["curto_vida_pct"] = eq["rd"], eq["provocar"], eq["curto_vida_pct"]
         self.eq = eq
+        pm = self.pm = R.penalidades_membros(self.corpo)   # Perda de Membros (3.4)
+        ef["ca"] += pm["ca"]
+        if pm["atletismo"]:
+            ef["pericia"]["Atletismo"] = ef["pericia"].get("Atletismo", 0) + pm["atletismo"]
+        if pm["percepcao"]:
+            ef["pericia"]["Percepção"] = ef["pericia"].get("Percepção", 0) + pm["percepcao"]
         self.aplicar_efeitos(d, ef)
+        d["movimento"] = R.movimento_com_membros(d["movimento"], pm)
         d["carga"] += R.carga_extra_itens(self._inventario(), self.itens_livro)   # Mochila: +5
+        if pm["carga_pct"] < 100:
+            d["carga"] = d["carga"] * pm["carga_pct"] // 100
         self.d, self.a, self.ef = d, a, ef
         self.esc = self.escolhas_talentos()
         avisos = []
@@ -1896,6 +1911,18 @@ class App(tk.Tk):
                           font=(FONTE, 9, "bold" if tem else "normal"))
         if lentidao:
             avisos.append(("erro", f"Carga {carga_atual:g}/{d['carga']}: Lentidão (movimento preso em 6m)."))
+        if pm["estados"]:
+            est = ", ".join(pm["estados"])
+            avisos.append(("ok", f"Corpo: {est} (aba Corpo)."))
+            grupos = [ui["grupo"].get() for ui in self.armas_ui if ui["grupo"].get() in self.armas_por_nome]
+            if pm["sem_uso_duplo"] and len(grupos) >= 2:
+                avisos.append(("erro", f"{est}: sem uso duplo de armas."))
+            if pm["sem_escudo_com_arma"] and self.arm["escudo"].get() and grupos:
+                avisos.append(("erro", f"{est}: sem escudo junto com arma."))
+            for n_, g_ in enumerate(grupos):
+                pa = R.penalidade_arma_membros(pm, g_, a["DES"])
+                if pa[3]:
+                    avisos.append(("erro", f"{g_}: {pa[3]}."))
         if exaustao:
             avisos.append(("erro", "Carga: 10 ou menos espaços livres — Exaustão."))
         if carga_atual > d["carga"]:
@@ -2048,6 +2075,8 @@ class App(tk.Tk):
         self._desenhar_armas_acoes()
         self._desenhar_habs()
         self._desenhar_meta()
+        self._pintar_corpo()     # aba Corpo (Perda de Membros)
+        self._pintar_crenca()    # aba Crença (Cultos e Igrejas)
         if self.meta.get("caminho") and not self._caminho():
             avisos.append(("erro", f"Meta de Vida: Caminho desconhecido ({self.meta['caminho']})."))
 
@@ -2106,8 +2135,11 @@ class App(tk.Tk):
         linha_dano = self._linha_arma(arma["nome"], nv_dano) or linha
         props = R.ler_props(ui["props"].get())
         ep = R.efeito_props(props, R.dano_com_dados(linha_dano["dano"], R.cap(self.a[k]) // 30), to_int(linha["critico"], 20))
+        pen = R.penalidade_arma_membros(self.pm, arma["nome"], self.a["DES"])   # membros perdidos (3.4)
+        if pen[1] < 0:
+            ep["dano"] = R.tirar_dado(ep["dano"])
         return {"arma": arma, "nv": nv, "k": k, "linha": linha, "linha_dano": linha_dano, "nv_dano": nv_dano, "props": props,
-                "ep": ep, "furia_dano": furia_dano, "teto10": bruto > 10}
+                "ep": ep, "furia_dano": furia_dano, "teto10": bruto > 10, "pen": pen}
 
     def texto_dano(self, x):
         pd = [R.nome_prop(p) for p in x["props"] if R.nome_prop(p) in ("Pesada", "Afiada", "Cruel", "Poderosa")]
@@ -2273,8 +2305,12 @@ class App(tk.Tk):
                                    + (f"  (+{extra} dado por {k})" if extra else ""))
             ui["l_tipo"].configure(text=l["tipo"])
             per = R.pericia_da_arma(g, k)
-            acerto, vant_a, ef_a = self.ataque_pericia(per, k, True, 1 if g in self.esc["maestria"] else 0, R.ACERTO_ARMA.get(nv, 0) + ep["acerto"])
-            ui["l_acerto"].configure(text=f"1d20 +{acerto}" + (" (2d20, maior)" if vant_a else "") + (" · teto" if ef_a > R.TETO_EFEITOS else "") + f"  [{per} · {k}]")
+            pen = dx["pen"]
+            acerto, vant_a, ef_a = self.ataque_pericia(per, k, True, 1 if g in self.esc["maestria"] else 0, R.ACERTO_ARMA.get(nv, 0) + ep["acerto"] + pen[0])
+            ui["l_acerto"].configure(text=f"1d20 {'+' if acerto >= 0 else '−'}{abs(acerto)}" + (" (2d20, maior)" if vant_a and not pen[2] else " (2d20, menor)" if pen[2] and not vant_a else "")
+                                     + (" · teto" if ef_a > R.TETO_EFEITOS else "") + f"  [{per} · {k}]"
+                                     + (f"  · corpo: {pen[3] or ', '.join(x for x in (f'{pen[0]} de acerto' if pen[0] else '', '−1 dado' if pen[1] else '') if x)}"
+                                        if pen[0] or pen[1] or pen[3] else ""))
             ui["l_crit"].configure(text=f"{ep['margem']}" + (" ×3" if ep["mult"] == 3 else ""))
             extra_p = self.esc["dominio"].get(g, 0)
             ui["l_props_max"].configure(text=f"{len(props)}/{l['propriedades'] + extra_p}" + (f" (+{extra_p} Domínio)" if extra_p else ""))
@@ -2753,9 +2789,15 @@ class App(tk.Tk):
             return DF.ataque(self._pedido(), bonus, vant, margem, desv)
         return R.rolar_ataque(bonus, vant, margem, self._rng, desvantagem=desv)
 
-    def d_teste(self, bonus, nd20=1):
+    def d_teste(self, bonus, nd20=1, desv=False):
         if self.fisico():
-            return DF.teste(self._pedido(), bonus, nd20)
+            return DF.teste(self._pedido(), bonus, nd20, desv)
+        if desv:   # membros perdidos: a desvantagem tira um d20 de vantagem; sem nenhum, 2d20 e fica o menor
+            if nd20 > 1:
+                nd20 -= 1
+            else:
+                d = [self._rng(20), self._rng(20)]
+                return {"d20": d, "natural": min(d), "bonus": bonus, "total": min(d) + bonus, "menor": True}
         return R.rolar_pericia(bonus, nd20, self._rng)
 
     def d_expr(self, e, dobrar=False, mult=2):
@@ -2771,7 +2813,7 @@ class App(tk.Tk):
     def _txt_ataque(self, at, rot="Acerto"):
         if at.get("fisico"):
             return DF.txt_ataque(at, rot, self.talentos_escolhidos())
-        d20 = " e ".join(map(str, at["d20"])) + (" (fica o maior)" if len(at["d20"]) > 1 else "")
+        d20 = " e ".join(map(str, at["d20"])) + ((" (desvantagem: fica o menor)" if at["natural"] < max(at["d20"]) else " (fica o maior)") if len(at["d20"]) > 1 else "")
         txt = f"{rot}: {at['total']}  [d20 {d20} {'+' if at['bonus'] >= 0 else ''}{at['bonus']}]"
         if at["desastre"]:
             txt += "  — DESASTRE: erra sempre; o alvo pode atacar você como ação livre."
@@ -2799,10 +2841,12 @@ class App(tk.Tk):
         self.recalc()
         x = self.dano_arma(i, int(o.get("delta") or 0))
         nv, k, ef, nv_dano, linha, linha_dano, props, ep = x["nv"], x["k"], self.ef, x["nv_dano"], x["linha"], x["linha_dano"], x["props"], x["ep"]
-        furia_dano = x["furia_dano"]
+        furia_dano, pen = x["furia_dano"], x["pen"]
+        if pen[3] and not messagebox.askyesno(APP_NOME, f"{arma['nome']}: {pen[3]} (aba Corpo).\n\nAtacar mesmo assim?"):
+            return
         maestria = 1 if arma["nome"] in self.esc["maestria"] else 0
         per = R.pericia_da_arma(arma["nome"], k)
-        bonus, vant_atk, ef_atk = self.ataque_pericia(per, k, True, maestria, R.ACERTO_ARMA.get(nv, 0) + ep["acerto"])
+        bonus, vant_atk, ef_atk = self.ataque_pericia(per, k, True, maestria, R.ACERTO_ARMA.get(nv, 0) + ep["acerto"] + pen[0])
         lim = ep["desgaste"] + self._afiacao_extra()
         dg = self.desgaste.setdefault(i, {"usados": 0, "desgastada": False, "em": 0, "contado": -1})
         if dg["desgastada"]:
@@ -2818,7 +2862,7 @@ class App(tk.Tk):
         ataques = []   # um teste de acerto por disparo, ou um só para todos ("única jogada de acerto")
         for g in range(golpes):
             if g == 0 or not o.get("um_acerto"):
-                at_g = self.d_ataque(bonus, vant_atk or o.get("vant") == 1, ep["margem"], o.get("vant") == -1)
+                at_g = self.d_ataque(bonus, vant_atk or o.get("vant") == 1, ep["margem"], o.get("vant") == -1 or pen[2])
                 if o.get("critico") and not at_g["desastre"]:
                     at_g["critico"] = True
             ataques.append(at_g)
@@ -2957,7 +3001,7 @@ class App(tk.Tk):
             return
         ac_impl = R.ACERTO_ARMA.get(self._nivel_impl(e["dominio"]), 0)   # acerto do cajado/selo (como o da arma)
         bonus = self.d["bc"][k] + self.nivel() // 3 + ac_impl
-        at = self.d_ataque(bonus, R.vantagem(self.a[k]), 20)
+        at = self.d_ataque(bonus, R.vantagem(self.a[k]), 20, self.pm["desv_ataque"])
         if ac_impl:
             avisos.insert(0, f"Inclui +{ac_impl} de acerto do {'cajado' if k == 'INT' else 'selo'}.")
         aviso = self.marcar_acao(v.get("acao"))
@@ -2998,7 +3042,7 @@ class App(tk.Tk):
         if not pinfo or "calc" not in pinfo:
             return
         bonus, dados = pinfo["calc"]
-        r = self.d_teste(bonus, dados)
+        r = self.d_teste(bonus, dados, nome == "Atletismo" and self.pm["desv_atletismo"])
         self.registrar(f"🎲 {nome}", [self._txt_d20(nome, dict(r, bonus=bonus)),
                                       "DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80"])
 
@@ -3023,6 +3067,7 @@ class App(tk.Tk):
         self.recarregar_usos(tipo)
         self.turno, self.contra_usados = {}, 0
         if tipo == "longo":
+            self.culto["preces_usadas"] = 0      # Prece do Culto: 1 uso por descanso longo (+1 nos Graus 4 e 5)
             for dg in self.desgaste.values():
                 dg.update(usados=0, desgastada=False, contado=-1)
         linhas = [f"{k.capitalize()}: {ats[k]} → {novos[k]}" for k in ("vida", "mana", "vigor")]
@@ -3308,13 +3353,13 @@ class App(tk.Tk):
     def _txt_d20(self, nome, r, tipo="pericia"):
         if r.get("fisico"):
             return DF.txt_teste(nome, r, tipo, self.talentos_escolhidos())
-        return f"{nome}: {r['total']}  [d20 {', '.join(map(str, r['d20']))}{' → maior' if len(r['d20']) > 1 else ''} +{r['bonus']}]"
+        return f"{nome}: {r['total']}  [d20 {', '.join(map(str, r['d20']))}{(' → menor (desvantagem)' if r.get('menor') else ' → maior') if len(r['d20']) > 1 else ''} +{r['bonus']}]"
 
     def rolar_defesa(self, n):
         self.recalc()
         _, k, tn = next(x for x in R.PERICIAS_DEFESA if x[0] == n)
         b, vant = self.defesa(n, k, tn)
-        r = self.d_teste(b, 2 if vant else 1)
+        r = self.d_teste(b, 2 if vant else 1, n == "Reflexo" and self.pm["desv_reflexo"])
         r.setdefault("bonus", b)
         self.registrar(f"🛡 {n}", [self._txt_d20(n, dict(r, bonus=b), "resist"), "Compare com a DT do efeito ou da habilidade do inimigo."])
 
@@ -3382,7 +3427,8 @@ class App(tk.Tk):
     def defesa(self, n, k, tn):
         """Defesa com o teto de combate: efeitos até +5 (o excesso vira vantagem), máximo +20."""
         ef = (2 if tn in self.talentos_escolhidos() else 0) + self.eq["def"].get(n, 0)
-        b, extra = R.teto_combate(self.d["bc"][k] + self.nivel() // 3, ef, R.RESIST_MAX)
+        ref = self.pm["reflexo"] if n == "Reflexo" else 0   # membros perdidos: Perneta −2
+        b, extra = R.teto_combate(self.d["bc"][k] + self.nivel() // 3 + ref, ef, R.RESIST_MAX)
         return b, R.vantagem(self.a[k]) or extra
 
     def _afiacao_extra(self):
@@ -3393,7 +3439,7 @@ class App(tk.Tk):
         atrs = next(x[1] for x in R.PERICIAS_ATAQUE if x[0] == n)
         k = max(atrs, key=lambda x: self.d["bc"][x])
         b = self.bonus_pericia_ataque(n, k)
-        at = self.d_ataque(b, self.vant_pericia_ataque(n, k), 20)
+        at = self.d_ataque(b, self.vant_pericia_ataque(n, k), 20, self.pm["desv_ataque"])
         self.registrar(f"🎲 {n}", [self._txt_ataque(at, n),
                                    f"Teste de {n} ({k}) sem arma; os ataques com arma ficam nos botões das armas."])
 
@@ -4572,6 +4618,7 @@ class App(tk.Tk):
             "especie_notas": self.v_esp_notas.get(),
             "foto": self.foto,
             "anotacoes": [dict(n) for n in getattr(self, "anotacoes", [])],
+            "corpo": R.normalizar_corpo(self.corpo), "culto": dict(self.culto),
         }
 
     def aplicar(self, s):
@@ -4629,6 +4676,9 @@ class App(tk.Tk):
                 it["item"].set(iv.get("item", "")); it["carga"].set(iv.get("carga", "")); it["qtd"].set(iv.get("qtd", ""))
             self.desgaste = {int(k): dict(v) for k, v in (s.get("desgaste") or {}).items() if str(k) in ("0", "1")}
             self.turnos_n = to_int(s.get("turnos_n"), 0)
+            self.corpo = R.normalizar_corpo(s.get("corpo"))
+            self.culto = CU.normalizar(s.get("culto"))
+            self._culto_para_ui()
             self.descansos_curtos = to_int(s.get("descansos_curtos"), 0)
             self.v_dinheiro.set(s.get("dinheiro", ""))
             if s.get("dinheiro_c") is None:   # ficha antiga: lê o dinheiro escrito à mão

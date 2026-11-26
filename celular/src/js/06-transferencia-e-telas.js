@@ -163,17 +163,18 @@ function linhaArma(i) {
   if (!ar) return h + "</div>";
   const nv = int(w.nivel, 1), l = ar.tabela.find((x) => x.nivel === nv) || ar.tabela[0], k = R.atributoAtaque(ar, C.a);
   const props = R.lerProps(w.props), dx = danoArma(i, 0), ep = dx.ep;   // já com os níveis de dano de talentos, sets, talismãs e Fúria
-  const extra = Math.floor(R.cap(C.a[k]) / 30), per = periciaDaArma(w.grupo, k), atk = ataquePericia(per, k, { arma: true, ef: C.escolha.maestria.includes(w.grupo) ? 1 : 0, fora: (R.ACERTO_ARMA[nv] || 0) + ep.acerto }), acerto = atk.b;
+  const extra = Math.floor(R.cap(C.a[k]) / 30), per = periciaDaArma(w.grupo, k), atk = ataquePericia(per, k, { arma: true, ef: C.escolha.maestria.includes(w.grupo) ? 1 : 0, fora: (R.ACERTO_ARMA[nv] || 0) + ep.acerto + dx.pen[0] }), acerto = atk.b;
   const dom = C.escolha.dominio[w.grupo] || 0, pmax = l.propriedades + dom, prob = R.problemasProps(props, pmax);
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : "—";
   const falta = statusArma(C, w.grupo, nv, props);
-  h += `<dl><div><dt>Dano</dt><dd>${esc(ep.dano + (dx.furiaDano ? ` + ${dx.furiaDano}` : "") + ep.extras.filter((x) => !x[2]).map((x) => ` + ${x[0]} ${x[1]}`).join(""))}${dx.nvD !== nv ? ` <small>(nível ${dx.nvD})</small>` : ""}</dd></div><div><dt>${per}</dt><dd>1d20 +${acerto}${atk.vant ? " (vant.)" : ""}${atk.teto ? " · teto" : ""}</dd></div>
+  h += `<dl><div><dt>Dano</dt><dd>${esc(ep.dano + (dx.furiaDano ? ` + ${dx.furiaDano}` : "") + ep.extras.filter((x) => !x[2]).map((x) => ` + ${x[0]} ${x[1]}`).join(""))}${dx.nvD !== nv ? ` <small>(nível ${dx.nvD})</small>` : ""}</dd></div><div><dt>${per}</dt><dd>1d20 ${acerto < 0 ? "−" + -acerto : "+" + acerto}${atk.vant && !dx.pen[2] ? " (vant.)" : !atk.vant && dx.pen[2] ? " (desv.)" : ""}${atk.teto ? " · teto" : ""}</dd></div>
     <div><dt>Crítico</dt><dd>${ep.margem}${ep.mult === 3 ? " ×3" : ""}</dd></div><div><dt>Tipo</dt><dd>${esc(l.tipo)}</dd></div><div><dt>DT</dt><dd>${10 + C.d.bc[k] + C.d.n3}</dd></div>
     <div><dt>Vigor/atk</dt><dd>${vig}</dd></div></dl>
     <button class="sel ${props.length ? "" : "vazio"}" style="margin-top:6px;font-size:14px" data-a="esc-props" data-i="${i}">Propriedades ${props.length}/${pmax}${dom ? ` (+${dom} Domínio)` : ""}: ${esc(props.join(", ") || "nenhuma")}</button>
     ${prob.length ? `<div class="erro" style="font-size:13.5px;margin-top:4px">${NO} ${esc(prob.join("; "))}</div>` : ""}
     <div class="sub">${k} · peso ${l.espaco}${C.escolha.maestria.includes(w.grupo) ? " · Maestria +1" : ""}${extra ? ` · +${extra} dado de dano por ${k}` : ""}</div>
     ${falta.length ? `<div class="erro" style="font-size:13.5px;margin-top:4px">${NO} falta: ${esc(falta.join(", "))}</div>` : ""}
+    ${dx.pen[3] ? `<div class="erro" style="font-size:13.5px;margin-top:4px">${NO} ${esc(dx.pen[3])} (Ficha › Corpo)</div>` : dx.pen[0] || dx.pen[1] ? `<div class="sub" style="color:var(--vinho)">Corpo: ${[dx.pen[0] ? `${dx.pen[0]} de acerto` : "", dx.pen[1] ? "−1 dado de dano" : ""].filter(Boolean).join(", ")} (${esc(C.pm.estados.join(", "))})</div>` : ""}
     ${(() => { const dg = S.desgaste[i] || {}; return dg.desgastada
       ? `<div class="erro" style="font-size:13.5px;margin-top:4px">Desgastada: sem uso por um turno. <a href="#" data-a="reafiar" data-i="${i}">Já passou</a></div>`
       : `<div class="sub">Afiada: ${limiteAfiacao(ep) - int(dg.usados)}/${limiteAfiacao(ep)} turnos de uso · o crítico reafia</div>`; })()}
@@ -252,8 +253,9 @@ function pPericias() {
       const mestre = C.escolha.pericia_mestre.includes(nome);
       const discreta = nome === "Furtividade" && S.armas.some((w) => ARMAS[w.grupo] && R.lerProps(w.props).map(R.nomeProp).includes("Discreta")) ? 5 : 0;
       const bonus = bonus0 + (C.ef.pericia[nome] || 0) + (mestre ? 2 : 0) + discreta;
-      return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados + (mestre ? 1 : 0)}"><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
-        <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados + (mestre ? 1 : 0)}d20${mestre ? " · Mestre" : ""}</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
+      const desv = nome === "Atletismo" && C.pm.desv_atletismo;
+      return `<div class="item" data-a="rolar-per" data-n="${esc(nome)}" data-b="${bonus}" data-d="${dados + (mestre ? 1 : 0)}"${desv ? ' data-desv="1"' : ""}><span class="check ${tr ? "on" : ""}" data-a="treinar" data-n="${esc(nome)}"></span>
+        <div class="tx"><b>${esc(nome)}${req ? " •" : ""}</b><small>${atrs ? atrs.join("/") : `Prevalência usa ${at[0]}`} · ${dados + (mestre ? 1 : 0)}d20${mestre ? " · Mestre" : ""}${desv ? " · desvantagem (corpo)" : ""}</small></div><span class="num">+${bonus}</span><span class="sub">🎲</span></div>`;
     }).join("")}</div><p class="sub ajuda">${banco.modo === "edicao" ? "Toque na perícia para ver o que ela faz" : "Toque na perícia para rolar (1d20 a mais a cada 20 pontos do atributo, fica o maior)"}. A caixa marca o treino (Modo Edição). • exige treino.</p>`;
   h += secao("Perícia de ataque treinada") + `<div>${R.PERICIAS_ATAQUE.map(([nn]) => `<span class="chip ${S.pericia_ataque === nn ? "on" : ""}" data-a="per-atk" data-n="${nn}">${nn}</span>`).join("")}</div>`;
   h += secao("Atributo da Prevalência") + `<div>${R.ATRIBUTOS.map((k) => `<span class="chip ${S.prevalencia_attr === k ? "on" : ""}" data-a="prev-attr" data-k="${k}">${k}</span>`).join("")}</div>`;

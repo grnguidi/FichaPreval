@@ -17,10 +17,17 @@ const Dados = {
     return { fisico: true, d20: [], n: dois ? 2 : 1, menor: !!desv && !vant, bonus: b, total: null, margem, critico: false, garantido: false, desastre: false };
   },
   // teste de perícia ou resistência: N d20, fica com o maior
-  teste(b, nd20 = 1) {
-    if (!fisico()) return R.rolarPericia(b, nd20, rng);
-    const n = Math.max(1, int(nd20, 1)); pedirDados(n, 20);
-    return { fisico: true, d20: [], n, bonus: b, total: null };
+  // desv (membros perdidos): a desvantagem tira um d20 de vantagem; sem nenhum, rola 2d20 e fica com o menor
+  teste(b, nd20 = 1, desv = false) {
+    let n = Math.max(1, int(nd20, 1)), menor = false;
+    if (desv) { if (n > 1) n -= 1; else { n = 2; menor = true; } }
+    if (!fisico()) {
+      if (!menor) return R.rolarPericia(b, n, rng);
+      const d = [rng(20), rng(20)];
+      return { d20: d, natural: Math.min(...d), bonus: b, total: Math.min(...d) + b, menor: true };
+    }
+    pedirDados(n, 20);
+    return { fisico: true, d20: [], n, menor, bonus: b, total: null };
   },
   // dano e pontos de condição: devolve [total, partes] como R.rolarExpr; no modo físico, total = null
   expr(e, dobrar = false, mult = 2) {
@@ -50,8 +57,8 @@ function txtDanoFisico(info, rot) {
 }
 // teste de perícia/resistência (rolado ou a rolar)
 function txtTeste(nome, r, tipo = "pericia") {
-  if (r.fisico) return `${nome}: role ${qtosD20(r.n)} <b>${sinal(r.bonus)}</b>.` + notaRerrolar(tipo);
-  return `${nome}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? " → maior" : ""} ${r.bonus >= 0 ? "+" : ""}${r.bonus}]</span>`;
+  if (r.fisico) return `${nome}: role ${qtosD20(r.n, r.menor)} <b>${sinal(r.bonus)}</b>.` + notaRerrolar(tipo);
+  return `${nome}: <b style="font-size:20px">${r.total}</b> <span class="sub">[d20 ${r.d20.join(", ")}${r.d20.length > 1 ? (r.menor ? " → menor (desvantagem)" : " → maior") : ""} ${r.bonus >= 0 ? "+" : ""}${r.bonus}]</span>`;
 }
 // resumo do que pegar na mesa: "2d20 · 3d10 · 1d6"
 function resumoDados() {

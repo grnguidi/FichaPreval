@@ -10,7 +10,7 @@ function registrarDiario(entrada) {   // o diário fica guardado com a ficha (ú
 const rng = (f) => 1 + Math.floor(Math.random() * f);
 function txtAtaque(at, rot = "Acerto") {
   if (at.fisico) return txtAtaqueFisico(at, rot);
-  let t = `${rot}: <b style="font-size:20px">${at.total}</b> <span class="sub">[d20 ${at.d20.join(" e ")}${at.d20.length > 1 ? " → maior" : ""} ${at.bonus >= 0 ? "+" : ""}${at.bonus}]</span>`;
+  let t = `${rot}: <b style="font-size:20px">${at.total}</b> <span class="sub">[d20 ${at.d20.join(" e ")}${at.d20.length > 1 ? (at.natural < Math.max(...at.d20) ? " → menor (desvantagem)" : " → maior") : ""} ${at.bonus >= 0 ? "+" : ""}${at.bonus}]</span>`;
   if (at.desastre) t += `<br><b class="erro">DESASTRE</b>: erra sempre; o alvo pode atacar você como ação livre.`;
   else if (at.garantido) t += `<br><b class="ok">20 NATURAL</b>: acerto garantido e crítico (dobra os dados).`;
   else if (at.critico) t += `<br><b class="ok">CRÍTICO</b>: dobra os dados de dano (o acerto ainda compara com a CA).`;
@@ -79,7 +79,9 @@ function danoArma(i, delta = 0) {
   const [lD, nvD] = R.linhaDanoNivel(ar.tabela, nv, C.ef.dano_nivel + int(delta) + furiaNivel);
   const props = R.lerProps(w.props);
   const ep = R.efeitoProps(props, R.danoComDados(lD.dano, Math.floor(R.cap(C.a[k]) / 30)), int(l.critico, 20));
-  return { w, ar, nv, k, l, lD, nvD, props, ep, furiaDano, furiaNivel };
+  const pen = R.penalidadeArmaMembros(C.pm, w.grupo, C.a.DES);   // membros perdidos: arma de duas mãos com uma mão só = −1 dado
+  if (pen[1] < 0) ep.dano = R.tirarDado(ep.dano);
+  return { w, ar, nv, k, l, lD, nvD, props, ep, furiaDano, furiaNivel, pen };
 }
 // texto curto do dano: "2d10 · nível 5 · Pesada"
 function textoDano(x) {
@@ -88,10 +90,11 @@ function textoDano(x) {
 }
 function atacar(i, o = {}) {
   const x = danoArma(i, o.delta); if (!x) return;
-  const { w, ar, nv, k, l, lD, nvD, props, ep, furiaDano, furiaNivel } = x;
+  const { w, ar, nv, k, l, lD, nvD, props, ep, furiaDano, furiaNivel, pen } = x;
+  if (pen[3] && !o.mesmoAssim) { toast(`${esc(ar.nome)}: ${pen[3]} (Ficha › Corpo).`); return; }
   const maestria = C.escolha.maestria.includes(w.grupo) ? 1 : 0;
   const per = periciaDaArma(w.grupo, k), lim = limiteAfiacao(ep);
-  const atk = ataquePericia(per, k, { arma: true, ef: maestria, fora: (R.ACERTO_ARMA[nv] || 0) + ep.acerto }), bonus = atk.b;
+  const atk = ataquePericia(per, k, { arma: true, ef: maestria, fora: (R.ACERTO_ARMA[nv] || 0) + ep.acerto + pen[0] }), bonus = atk.b;
   const vig = ar.vigor ? (nv >= 8 ? 10 : nv >= 4 ? 8 : 5) : 0;
   const dg = S.desgaste[i] = Object.assign({ usados: 0, desgastada: false, em: 0, contado: -1 }, S.desgaste[i] || {});
   if (dg.desgastada) {
@@ -104,7 +107,7 @@ function atacar(i, o = {}) {
     const golpes = Math.max(1, int(o.golpes, 1)), ataques = [];
     for (let g = 0; g < golpes; g++) {
       if (g === 0 || !o.umAcerto) {
-        const a = Dados.ataque(bonus, atk.vant || o.vant === 1, ep.margem, o.vant === -1);
+        const a = Dados.ataque(bonus, atk.vant || o.vant === 1, ep.margem, o.vant === -1 || pen[2]);
         if (o.critico && !a.desastre) a.critico = true;
         ataques.push(a);
       } else ataques.push(ataques[0]);
@@ -187,7 +190,7 @@ A["rolar-ini"] = () => {
 };
 A["rolar-per"] = (el) => {
   if (banco.modo === "edicao" && !el.dataset.rolar) return infoPericia(el);
-  const r = Dados.teste(int(el.dataset.b), int(el.dataset.d, 1));
+  const r = Dados.teste(int(el.dataset.b), int(el.dataset.d, 1), !!el.dataset.desv);
   mostrarRolagem(`🎲 ${esc(el.dataset.n)}`, [txtTeste(esc(el.dataset.n), r, "pericia"),
     `<span class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</span>`]);
 };
@@ -267,7 +270,7 @@ A["conjurar"] = (el, ev) => {
   if (C.eq.mana_pct && manaC != null) manaC = Math.max(1, Math.round(manaC * (100 - C.eq.mana_pct) / 100));   // Pergaminho do Oculto
   pagar("mana_atual", C.d.mana, manaC, "Mana", (custo) => {
     const acImpl = impl ? (R.ACERTO_ARMA[impl] || 0) : 0;   // "+ acerto do cajado" (Magias) ou do selo (Feitiços)
-    const at = Dados.ataque(C.d.bc[k] + C.d.n3 + acImpl, R.vantagem(C.a[k]), 20);
+    const at = Dados.ataque(C.d.bc[k] + C.d.n3 + acImpl, R.vantagem(C.a[k]), 20, !!C.pm.desv_ataque);
     const linhas = [txtAtaque(at, per), `DT para o alvo resistir: <b>${k === "INT" ? C.d.dt_feiticaria : C.d.dt_desejo}</b>`];
     if (acImpl) linhas.push(`<span class="sub">Inclui +${acImpl} de acerto do ${k === "INT" ? "cajado" : "selo"} nv ${impl}.</span>`);
     const avisoAcao = marcarAcao(v.acao);
@@ -330,7 +333,7 @@ function infoPericia(el) {
     <div class="desc">${esc(resumo)}</div>
     <p class="sub">Teste: ${el.dataset.d}d20 (1 a mais a cada 20 pontos do atributo, fica o maior) +${el.dataset.b}. Treinada soma a Curva do atributo; todas somam nível ÷ 2.</p>
     <p class="sub">DT: fácil 10 · média 15 · difícil 25 · muito difícil 35 · heroica 50 · lendária 80</p>`,
-  `<button class="botao leve" data-a="treinar" data-n="${esc(n)}" data-fechar="1">${tr ? "Tirar o treino" : "Treinar"}</button><button class="botao prim" data-a="rolar-per" data-rolar="1" data-n="${esc(n)}" data-b="${el.dataset.b}" data-d="${el.dataset.d}">🎲 Rolar</button>`);
+  `<button class="botao leve" data-a="treinar" data-n="${esc(n)}" data-fechar="1">${tr ? "Tirar o treino" : "Treinar"}</button><button class="botao prim" data-a="rolar-per" data-rolar="1" data-n="${esc(n)}" data-b="${el.dataset.b}" data-d="${el.dataset.d}"${el.dataset.desv ? ' data-desv="1"' : ""}>🎲 Rolar</button>`);
 }
 A["treinar"] = (el) => { if (el.dataset.fechar) fecharFolha(); mudar((s) => { const n = el.dataset.n; s.pericias = s.pericias.includes(n) ? s.pericias.filter((x) => x !== n) : s.pericias.concat([n]); }); };
 A["per-atk"] = (el) => mudar((s) => { s.pericia_ataque = el.dataset.n; });

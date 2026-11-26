@@ -20209,5 +20209,115 @@
    "desc": "Dois metros de elos de ferro. Tranca uma porta, prende um prisioneiro ou ancora equipamento."
   }
  ],
- "itens_regras": "Poções de Mana e de Vigor são poções da perícia Alquimia e não têm limite por combate; o freio é a ação de beber, a Carga e o preço. As de nível 3 e 4 só se fazem por Alquimia (laboratório da Base). O Elixir de Mana e o Elixir de Vigor só podem ser usados uma vez por descanso longo."
+ "itens_regras": "Poções de Mana e de Vigor são poções da perícia Alquimia e não têm limite por combate; o freio é a ação de beber, a Carga e o preço. As de nível 3 e 4 só se fazem por Alquimia (laboratório da Base). O Elixir de Mana e o Elixir de Vigor só podem ser usados uma vez por descanso longo.",
+ "cultos": {
+  "resumo": "Com Fé 20 ou mais, o personagem funda um Culto e vira o Profeta dele. Cada personagem tem um único Culto, e cada seguidor segue um só. Ao fundar, anote nome e divindade, Tema e duas regras: uma coisa que os seguidores devem fazer e uma que nunca podem fazer. Se o Profeta quebra uma regra, o Culto fica Abalado e ele perde os poderes até se redimir em uma cena diante dos seguidores.",
+  "conversao": "Converter uma comunidade (vila, tribo, bairro, guilda) é um Conflito Social: a Resistência segue a Disposição (Simpático 1, Neutro 2, Relutante 3, Hostil 4, Inflexível 5); comunidade de fé forte começa Relutante ou pior. Religião também vale como abordagem. Palavra do Profeta: com Religião, História ou Intuição, o Profeta remove 2 pontos de Resistência com sucesso por 5 ou mais (os outros, por 10 ou mais). Aliados fazem uma abordagem por rodada. Resolver um problema da comunidade é alavanca forte. Uma vila exige 1 conflito; uma cidade, 2 (conselho e povo).",
+  "graus": [
+   {
+    "grau": 1,
+    "tamanho": "Poucos",
+    "objetivo": "Celebrar o primeiro rito diante de pelo menos 3 seguidores",
+    "poderes": "Vantagem em testes sociais com seguidores do Culto"
+   },
+   {
+    "grau": 2,
+    "tamanho": "Uma vila ou tribo",
+    "objetivo": "Converter uma comunidade",
+    "poderes": "Bênção. O Culto pode ter 1 Discípulo"
+   },
+   {
+    "grau": 3,
+    "tamanho": "Uma cidade",
+    "objetivo": "Fundar um local sagrado e superar uma crise",
+    "poderes": "Prece (1 uso por descanso longo)"
+   },
+   {
+    "grau": 4,
+    "tamanho": "Uma região",
+    "objetivo": "Manter Discípulos em 3 lugares de povos diferentes, sem o Profeta por perto, durante 1 mês de jogo",
+    "poderes": "Bênção a até 18 m. +1 uso da Prece. Até 2 Discípulos"
+   },
+   {
+    "grau": 5,
+    "tamanho": "Todo o Andar",
+    "objetivo": "Uma facção poderosa ou um Prevalecente do Andar aceita o Culto",
+    "poderes": "Milagre (1 vez por Andar). +1 uso da Prece. Até 3 Discípulos"
+   }
+  ],
+  "temas": {
+   "Cura": {
+    "bencao": "O descanso longo dá vida temporária igual a 5% da vida máxima (soma com Casa Modesta e Curandeiro).",
+    "prece": "Ação bônus: um aliado a 9 m recupera 10% da vida máxima.",
+    "milagre": "Um aliado Incapaz volta com 25% da vida e sem falhas nem sucessos acumulados. Não revive quem já morreu."
+   },
+   "Proteção": {
+    "bencao": "+1 de CA durante a primeira rodada de cada combate.",
+    "prece": "Reação: reduz em 5 × o Grau o dano de um golpe que atinge um aliado a 9 m.",
+    "milagre": "Por 1 minuto, os aliados a 9 m têm resistência a todos os tipos de dano, exceto Magia Pura e Relâmpago."
+   },
+   "Fartura": {
+    "bencao": "As refeições do descanso longo contam como 1 nível acima, no máximo nível 3.",
+    "prece": "Ação bônus: você e os aliados a 9 m recuperam 25% do Vigor máximo.",
+    "milagre": "As refeições do próximo descanso longo contam como nível 4 para todo o grupo."
+   },
+   "Viagem": {
+    "bencao": "Ignoram o custo extra do terreno difícil natural.",
+    "prece": "Ação livre: você ou um aliado a 9 m se move até 9 m sem provocar Golpe de Oportunidade.",
+    "milagre": "Uma viagem de até 1 dia é feita sem encontros hostis."
+   },
+   "Saber": {
+    "bencao": "Vantagem em testes de História e Religião.",
+    "prece": "Ação livre: um aliado a 9 m repete um teste de conhecimento (História, Ciências, Religião ou Tática) e fica com o melhor.",
+    "milagre": "Revela ao grupo um Ponto Chave de um animal ou Prevalecente que ainda vão enfrentar, mesmo sem tê-lo estudado."
+   },
+   "Coragem": {
+    "bencao": "Vantagem em testes contra Abalado e Amedrontado.",
+    "prece": "Reação: um aliado a 9 m que falhou em um teste de resistência contra uma condição mental repete o teste.",
+    "milagre": "Por 1 rodada, os aliados a 9 m recebem +2 de acerto e vantagem no primeiro ataque de cada turno."
+   }
+  },
+  "poderes_nota": "Bênção: sempre ativa, para o Profeta e os aliados a até 9 m (Grau 2). Prece: 1 uso por descanso longo no Grau 3, +1 nos Graus 4 e 5. Milagre: 1 vez por Andar (Grau 5); quando pede teste, a DT é 10 + Bônus de Combate de Fé + nível ÷ 3. Tudo conta para o teto de +5.",
+  "igrejas": [
+   {
+    "nome": "Capela",
+    "base": "5 (Mansão Comunitária)",
+    "vagas": 1
+   },
+   {
+    "nome": "Templo",
+    "base": "7 (Cidadela)",
+    "vagas": 2
+   },
+   {
+    "nome": "Catedral",
+    "base": "8 (Bastião da Intérprete)",
+    "vagas": 3
+   }
+  ],
+  "igreja_beneficios": [
+   {
+    "grau": 2,
+    "nome": "Bênção do descanso",
+    "texto": "Quem descansou na Igreja mantém a Bênção do Tema até o próximo descanso longo, mesmo longe do Profeta."
+   },
+   {
+    "grau": 3,
+    "nome": "Seguidores na Base",
+    "texto": "A Base conta como se tivesse as Funções Agronômico e Pecuário, sem NPC para elas."
+   },
+   {
+    "grau": 4,
+    "nome": "Proteção em combate",
+    "texto": "No início de cada combate, o Profeta escolhe 1 aliado, que recebe +2 de CA até o fim do combate (não soma com a Função Guardião)."
+   },
+   {
+    "grau": 5,
+    "nome": "Fama e Milagre extra",
+    "texto": "+1 alavanca em conflitos sociais com NPCs do Andar, e o Milagre do Tema pode ser usado 1 vez a mais por Andar."
+   }
+  ],
+  "igreja_nota": "Um descanso longo na Igreja tira Abalado, Amedrontado e Aterrorizado, mesmo sem Culto. Para colocar o Culto na Igreja: Grau 2 ou mais, vaga livre e uma cerimônia com pelo menos 1 Discípulo.",
+  "andar": "Ao subir de Andar, seguidores, Discípulos, locais sagrados e Igreja ficam para trás. O Profeta mantém o Tema e as duas regras. No Andar novo o Culto recomeça no Grau 1, e o Grau 2 exige só a primeira conversão."
+ }
 }

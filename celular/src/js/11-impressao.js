@@ -80,7 +80,7 @@ function folhaImpressao() {
     .concat(R.PERICIAS_DEFESA.map(([n, k, tn]) => [n, `+${bonusDefesa(n, k, tn)}`]))) + `<p class="linha">DT Feitiçaria ${d.dt_feiticaria} · DT Desejo ${d.dt_desejo} · Resistências: ${d.resistencias.join(", ") || "—"}</p>`;
   h += sec("Armas e proteção") + t(["Arma", "Nível", "Acerto", "Dano", "Crítico", "Propriedades"], S.armas.map((w, i) => [w, i]).filter(([w]) => ARMAS[w.grupo]).map(([w, i]) => {
       const x = danoArma(i, 0), per = periciaDaArma(w.grupo, x.k);
-      const atk = ataquePericia(per, x.k, { arma: true, ef: C.escolha.maestria.includes(w.grupo) ? 1 : 0, fora: (R.ACERTO_ARMA[x.nv] || 0) + x.ep.acerto });
+      const atk = ataquePericia(per, x.k, { arma: true, ef: C.escolha.maestria.includes(w.grupo) ? 1 : 0, fora: (R.ACERTO_ARMA[x.nv] || 0) + x.ep.acerto + x.pen[0] });
       return [esc(w.grupo), w.nivel, `${per} 1d20 +${atk.b}${atk.vant ? " (vant.)" : ""}`, esc(x.ep.dano) + (x.nvD !== x.nv ? ` (nível ${x.nvD})` : ""), `${x.ep.margem}${x.props.some((p) => p.startsWith("Destruidora")) ? " ×3" : ""}`, esc(w.props || "—")];
     }))
     + S.armas.map((w, i) => [w, i]).filter(([w]) => ARMAS[w.grupo]).map(([w, i]) => { const l = resumoAcoes(i); return l.length ? `<table class="acoes"><thead><tr><th>Ações — ${esc(w.grupo)} nv ${w.nivel}</th><th>Ação</th><th>Efeito (já calculado)</th></tr></thead><tbody>${l.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table>` : ""; }).join("")

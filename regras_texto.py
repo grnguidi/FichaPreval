@@ -72,7 +72,7 @@ Talismãs: 1 espaço + 1 a cada 6 níveis (máx. 5).
 Versões de encantamento: as superiores costumam custar mais Mana, mas versões de utilidade podem custar menos; vale o custo escrito.
 Lira: atributo de ataque, requisito e perícia são Inteligência ou Fé, à escolha (o programa usa o maior dos dois).
 
-Novidades do livro 3.4 (só referência, o programa não calcula):
+Novidades do livro 3.4 (Perda de Membros é aplicada pela aba Corpo; Cultos ficam na aba Crença; o resto é referência):
 Ambiente e Perigos: grau Leve / Moderado / Grave = DT 10 / 15 / 20 + NMP ÷ 3 e dano de 5% / 15% / 30% da vida máxima
 (passou no teste: metade). Frio: falha põe 25 na barra de Congelamento. Calor: 1ª falha deixa Lento, 2ª seguida causa o dano.
 Em chamas: 5% da vida máxima de Fogo no início do turno; apagar = ação comum (Reflexo DT Leve). Penumbra: −2 à distância
@@ -82,6 +82,8 @@ Perda de Membros: um único golpe com dano final ≥ metade da vida máxima remo
 pernas). Danos mentais, Veneno, Sangramento, Podridão e Congelamento não removem. Visão Parcial −2 à distância e em
 Percepção visual; Mão Única sem uso duplo nem escudo com arma, duas mãos −4 de acerto e −1 dado; Perneta deslocamento
 pela metade e −2 em Reflexo e Atletismo. A perda é permanente.
+Espécie com mais ou menos membros (aba Corpo): a penalidade conta quantos sobram (2 ou mais: nenhuma; 1: a de perder 1;
+nenhum: a de perder os 2). Membros que a espécie nunca teve não penalizam.
 Montarias: montar/desmontar = ação de movimento (3 m). Montado, usa o deslocamento da montaria; comandar um ataque dela
 custa sua ação de movimento. Investida de 6 m em linha reta: +1 dado no 1º ataque corpo a corpo; à distância em movimento −2.
 Cultos e Igrejas: com Fé 20 ou mais, o personagem funda um Culto (Grau 1 a 5) e converte comunidades por Conflito Social.

@@ -41,15 +41,19 @@ function calcular() {
   d.ca += ef.ca; d.movimento += ef.mov; d.iniciativa_bonus += ef.iniciativa;
   d.descoberta += ef.descoberta; d.contra_encant += ef.contra;
   d.carga += R.cargaExtraItens(S.inventario || [], ITENS);   // Mochila: +5
+  const pm = R.penalidadesMembros(S.corpo);   // Perda de Membros (3.4)
+  if (pm.carga_pct < 100) d.carga = Math.floor(d.carga * pm.carga_pct / 100);
   let carga = R.pesoInventario(S.inventario || []) + R.pesoPecasSet(S.set || {});
   carga += (arm ? arm.peso : 0) + (esc ? esc.peso : 0) - (tal.has("Veterano de Armadura") && arm ? 2 : 0);
   carga += S.talismas.filter((t) => t.nome).length;
   S.armas.forEach((w) => { const ar = ARMAS[w.grupo]; if (ar) { const l = ar.tabela.find((x) => x.nivel === int(w.nivel, 1)); if (l) carga += l.espaco; } });
   const eq = efeitosEquip(nv, tal, { carga_pct: d.carga > 0 ? Math.floor(carga * 100 / d.carga) : 100, mov_base: d.movimento });
-  d.ca = Math.max(10, Math.min(R.CA_MAX, d.ca + eq.ca)); d.movimento += eq.mov; d.mana += eq.mana; d.vigor += eq.vigor;
+  d.ca = Math.max(10, Math.min(R.CA_MAX, d.ca + eq.ca + pm.ca)); d.movimento = R.movimentoComMembros(d.movimento + eq.mov, pm); d.mana += eq.mana; d.vigor += eq.vigor;
   d.espacos_encant += eq.espacos; d.contra_encant += eq.contra; d.rd_tipo = eq.rd; d.provocar_extra = eq.provocar; d.curto_vida_pct = eq.curto_vida_pct;
   ef.dano_nivel += eq.dano_nivel;
   ef.pericia = Object.assign({}, ef.pericia); for (const [k, v] of Object.entries(eq.per)) ef.pericia[k] = (ef.pericia[k] || 0) + v;
+  if (pm.atletismo) ef.pericia.Atletismo = (ef.pericia.Atletismo || 0) + pm.atletismo;
+  if (pm.percepcao) ef.pericia["Percepção"] = (ef.pericia["Percepção"] || 0) + pm.percepcao;
   d.vida_auto = d.vida; d.mana_auto = d.mana;
   if (S.manual.vida != null) d.vida = int(S.manual.vida);
   if (S.manual.mana != null) d.mana = int(S.manual.mana);
@@ -60,7 +64,7 @@ function calcular() {
   const ini = R.ATRIBUTOS.map((k) => int(S.atributos[k].inicial)).filter(Boolean);
   const treinadas = new Set(S.pericias);
   const escolha = R.efeitosEscolhas(S.talentos, S.talentos_escolha || {});
-  const C = { escolha, nv, tal, a, tb, d, ef, eq, ativos, nVida, soma, arm, esc, carga, lentidao, exaustao, mov: lentidao ? Math.min(6, d.movimento) : d.movimento, disp, gastos, resto: disp - gastos, treinadas, avisos: [] };
+  const C = { pm, escolha, nv, tal, a, tb, d, ef, eq, ativos, nVida, soma, arm, esc, carga, lentidao, exaustao, mov: lentidao ? Math.min(6, d.movimento) : d.movimento, disp, gastos, resto: disp - gastos, treinadas, avisos: [] };
   // avisos
   const av = C.avisos;
   for (const k of Object.keys(S.manual)) av.push(["info", `${R.NOMES_ATR[k] || (k === "vida" ? "Vida máx." : "Mana máx.")} com valor manual (${S.manual[k]}).`]);
@@ -77,6 +81,10 @@ function calcular() {
   if (usados > d.espacos_encant) av.push(["erro", `Encantamentos equipados ocupam ${usados} de ${d.espacos_encant} espaços.`]);
   if (lentidao) av.push(["erro", `Carga ${carga} de ${d.carga}: Lentidão (movimento 6 m).`]);
   if (exaustao) av.push(["erro", "Carga: 10 ou menos espaços livres — Exaustão."]);
+  if (pm.estados.length) av.push(["info", `Corpo: ${pm.estados.join(", ")} (Ficha › Corpo).`]);
+  if (pm.sem_uso_duplo && armasEq().length >= 2) av.push(["erro", `${pm.estados.join(", ")}: sem uso duplo de armas.`]);
+  if (pm.sem_escudo_com_arma && S.equip.escudo && armasEq().length) av.push(["erro", `${pm.estados.join(", ")}: sem escudo junto com arma.`]);
+  S.armas.forEach((w, i) => { if (!ARMAS[w.grupo]) return; const pa = R.penalidadeArmaMembros(pm, w.grupo, a.DES); if (pa[3]) av.push(["erro", `Arma ${i + 1} (${w.grupo}): ${pa[3]}.`]); });
   const nTal = S.talismas.filter((t) => t.nome).length;
   if (nTal > d.talismas) av.push(["erro", `Talismãs: ${nTal} equipados, limite ${d.talismas}.`]);
   S.armas.forEach((w, i) => { const f = w.grupo && ARMAS[w.grupo] ? statusArma(C, w.grupo, int(w.nivel, 1)) : []; if (f.length) av.push(["erro", `Arma ${i + 1} (${w.grupo}): ${f.join(", ")}.`]); });

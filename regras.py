@@ -1309,6 +1309,9 @@ CAMINHOS = [
                                 "Preparar uma poção única de nível 4 com um item de um Prevalecente do Andar (exige Horta S, na Base nível 6 ou mais)."]),
     ("Diplomata", "Persuasão", ["Ganhar a confiança de uma tribo ou facção do Andar.", "Resolver 3 conflitos por negociação, sem violência.",
                                 "Unir facções do Andar em torno de uma causa, de modo que 3 NPCs com Funções diferentes aceitem acompanhar o grupo."]),
+    ("Profeta", "Religião", ["Converter uma comunidade e fundar o Culto diante do sacerdote mentor (Grau 2).",   # 3.4
+                             "Fundar um local sagrado e superar uma crise do Culto (Grau 3).",
+                             "Fazer uma facção poderosa ou um Prevalecente do Andar aceitar o Culto (Grau 5)."]),
 ]
 ETAPAS_META = ["Aprendiz", "Prática", "Obra-prima"]
 METAS_MAX = 5
@@ -1371,3 +1374,197 @@ def ler_dinheiro(texto):
         total += int(m.group(1))
         achou = True
     return total if achou else None
+
+
+# ---------------- Corpo: Perda de Membros (3.4) ----------------
+# Cada membro é guardado um a um (como no 1d8 do livro), e a espécie pode ter mais ou menos olhos, braços e pernas.
+# A penalidade usa quantos sobram: com 2 ou mais, nenhuma; com 1, a de "perdeu 1"; com 0, a de "perdeu os 2".
+# Membros que a espécie nunca teve não dão penalidade (só os perdidos contam).
+TIPOS_MEMBRO = (("olhos", "Olho"), ("bracos", "Braço"), ("pernas", "Perna"))
+ARMAS_DUAS_MAOS = ("Arco", "Lança-Arma", "Lâmina-Dínamo", "Espada Grande", "Machado Grande", "Besta Pesada", "Bastão")
+ARMAS_DISTANCIA = ("Arco", "Besta Pesada")
+
+
+def nome_membro(tipo, i):
+    base = dict(TIPOS_MEMBRO)[tipo]
+    if i < 2:
+        return f"{base} {('esquerdo', 'direito')[i] if tipo != 'pernas' else ('esquerda', 'direita')[i]}"
+    return f"{base} {i + 1}"
+
+
+def nome_mao(nome_braco):
+    return nome_braco.replace("Braço", "Mão").replace("esquerdo", "esquerda").replace("direito", "direita")
+
+
+def corpo_padrao(olhos=2, bracos=2, pernas=2):
+    c = {"olhos": [{"nome": nome_membro("olhos", i), "perdido": False} for i in range(olhos)],
+         "bracos": [{"nome": nome_membro("bracos", i), "perdido": False, "mao": True} for i in range(bracos)],
+         "pernas": [{"nome": nome_membro("pernas", i), "perdido": False} for i in range(pernas)],
+         "outros": []}
+    return c
+
+
+def normalizar_corpo(c):
+    if not isinstance(c, dict):
+        return corpo_padrao()
+    out = {}
+    for tipo, _ in TIPOS_MEMBRO:
+        lista = c.get(tipo)
+        if not isinstance(lista, list):
+            lista = corpo_padrao()[tipo]
+        itens = []
+        for i, m in enumerate(lista[:12]):
+            m = m if isinstance(m, dict) else {}
+            x = {"nome": str(m.get("nome") or nome_membro(tipo, i)), "perdido": bool(m.get("perdido"))}
+            if tipo == "bracos":
+                x["mao"] = bool(m.get("mao", True)) and not x["perdido"]
+            itens.append(x)
+        out[tipo] = itens
+    out["outros"] = [{"nome": str(m.get("nome") or "Membro"), "perdido": bool(m.get("perdido"))}
+                     for m in (c.get("outros") or []) if isinstance(m, dict)][:12]
+    return out
+
+
+def _nivel_perda(total, sobram):
+    """0 = sem penalidade, 1 = 'perdeu 1', 2 = 'perdeu os 2'."""
+    if sobram >= total or sobram >= 2:
+        return 0
+    return 1 if sobram == 1 else 2
+
+
+def penalidades_membros(corpo):
+    c = normalizar_corpo(corpo)
+    olhos, bracos, pernas = c["olhos"], c["bracos"], c["pernas"]
+    p = {"estados": [], "ca": 0, "reflexo": 0, "atletismo": 0, "percepcao": 0, "acerto_dist": 0,
+         "desv_ataque": False, "desv_reflexo": False, "desv_atletismo": False, "carga_pct": 100, "mov": "",
+         "maos": 0, "nivel_maos": 0, "nivel_bracos": 0, "sem_uso_duplo": False, "sem_escudo_com_arma": False,
+         "sem_agarrar": False, "sem_oportunidade": False, "notas": []}
+    o = _nivel_perda(len(olhos), sum(1 for m in olhos if not m["perdido"]))
+    if o == 1:
+        p["estados"].append("Visão Parcial")
+        p["acerto_dist"] = -2
+        p["percepcao"] = -2
+        p["notas"].append("Visão Parcial: −2 em ataques à distância (alvo a mais de 3 m) e em Percepção que dependa de visão.")
+    elif o == 2:
+        p["estados"].append("Cegueira")
+        p["desv_ataque"] = p["desv_reflexo"] = True
+        p["ca"] -= 2
+        p["notas"].append("Cegueira: desvantagem em ataques e Reflexo, −2 de CA, falha automática em testes de visão; "
+                          "contra alvo que só ouve, 50% de chance de errar.")
+    bracos_ok = [m for m in bracos if not m["perdido"]]
+    maos = sum(1 for m in bracos_ok if m["mao"])
+    p["maos"] = maos
+    nb = _nivel_perda(len(bracos), len(bracos_ok))
+    nm = max(nb, _nivel_perda(len(bracos), maos))
+    p["nivel_maos"], p["nivel_bracos"] = nm, nb
+    if nm >= 1:
+        p["sem_uso_duplo"] = True
+    if nm == 1:
+        p["estados"].append("Braço Único" if nb == 1 else "Mão Única")
+        p["sem_escudo_com_arma"] = True
+        p["notas"].append("Mão Única: uma arma de uma mão ou um foco; sem uso duplo e sem escudo junto com arma; "
+                          "armas de duas mãos com −4 de acerto e −1 dado de dano.")
+    elif nm == 2:
+        p["estados"].append("Sem Braços" if nb == 2 else "Sem Mãos")
+        p["sem_escudo_com_arma"] = True
+        if nb == 2:
+            p["notas"].append("Sem Braços: só ataca desarmado (chutes e cabeçadas); falha automática em Atletismo que exija os braços.")
+        else:
+            p["notas"].append("Sem Mãos: não empunha armas, escudos nem focos; ataca desarmado ou com arma de uma mão "
+                              "presa ao antebraço, com desvantagem. Sem armas de duas mãos.")
+    if nb == 1:
+        p["atletismo"] -= 2
+        p["sem_agarrar"] = True
+        p["carga_pct"] = 75
+        p["notas"].append("Braço Único: −2 em Atletismo, sem a ação Agarrar, Carga reduzida em 25%.")
+    elif nb == 2:
+        p["sem_agarrar"] = True
+        p["carga_pct"] = 50
+        p["notas"].append("Carga reduzida à metade.")
+    np_ = _nivel_perda(len(pernas), sum(1 for m in pernas if not m["perdido"]))
+    if np_ == 1:
+        p["estados"].append("Perneta")
+        p["mov"] = "metade"
+        p["reflexo"] -= 2
+        p["atletismo"] -= 2
+        p["notas"].append("Perneta: deslocamento pela metade e −2 em Reflexo e Atletismo.")
+    elif np_ == 2:
+        p["estados"].append("Sem Pernas")
+        p["mov"] = "arrasta"
+        p["desv_reflexo"] = p["desv_atletismo"] = True
+        p["sem_oportunidade"] = True
+        p["notas"].append("Sem Pernas: só se arrasta 1,5 m por ação de movimento; −2 de CA contra corpo a corpo, "
+                          "desvantagem em Reflexo e Atletismo, sem Golpe de Oportunidade.")
+    outros = [m["nome"] for m in c["outros"] if m["perdido"]]
+    if outros:
+        p["notas"].append("Perdidos (sem regra do livro, o Mestre decide): " + ", ".join(outros) + ".")
+    return p
+
+
+def movimento_com_membros(mov, p):
+    if p["mov"] == "metade":
+        return mov / 2
+    if p["mov"] == "arrasta":
+        return 1.5
+    return mov
+
+
+def tirar_dado(dano):
+    """−1 dado de dano (no dado maior; nunca abaixo de 1 dado)."""
+    dados = re.findall(r"(\d+)d(\d+)", dano)
+    if not dados:
+        return dano
+    maior = max(int(f) for _, f in dados)
+    for q, f in dados:
+        if int(f) == maior:
+            return dano if int(q) <= 1 else re.sub(rf"\b{q}d{f}\b", f"{int(q) - 1}d{f}", dano, count=1)
+    return dano
+
+
+def penalidade_arma_membros(p, grupo, des=0):
+    """(acerto, dados de dano, desvantagem, motivo que impede o ataque com a arma ou '')."""
+    acerto, dados, desv, proibe = 0, 0, p["desv_ataque"], ""
+    if grupo in ARMAS_DISTANCIA:
+        acerto += p["acerto_dist"]
+    duas = grupo in ARMAS_DUAS_MAOS and not (grupo == "Bastão" and cap(des) >= 50)
+    if p["nivel_bracos"] == 2:
+        proibe = "sem braços, só ataca desarmado"
+    elif p["nivel_maos"] == 2:
+        if duas:
+            proibe = "sem mãos não usa arma de duas mãos"
+        else:
+            desv = True
+    elif p["nivel_maos"] == 1 and duas:
+        acerto -= 4
+        dados -= 1
+    return acerto, dados, desv, proibe
+
+
+def membros_para_sortear(corpo):
+    """Membros que ainda podem ser perdidos, um por linha do 1d8 do livro: [(tipo, índice, 'mao' ou '', nome)]."""
+    c = normalizar_corpo(corpo)
+    out = [("olhos", i, "", m["nome"]) for i, m in enumerate(c["olhos"]) if not m["perdido"]]
+    out += [("bracos", i, "mao", nome_mao(m["nome"])) for i, m in enumerate(c["bracos"]) if not m["perdido"] and m["mao"]]
+    out += [("bracos", i, "", m["nome"]) for i, m in enumerate(c["bracos"]) if not m["perdido"]]
+    out += [("pernas", i, "", m["nome"]) for i, m in enumerate(c["pernas"]) if not m["perdido"]]
+    return out
+
+
+def perde_membro(dano, vida_max):
+    return vida_max > 0 and dano >= vida_max / 2
+
+
+# ---------------- Cultos e Igrejas (3.4) ----------------
+CULTO_FE_MIN = 20
+IGREJAS = {"Capela": 1, "Templo": 2, "Catedral": 3}
+
+
+def poderes_culto(grau, igreja_grau5=False):
+    """O que o Culto dá em cada Grau: Bênção (2), Preces por descanso longo (3: 1, 4: 2, 5: 3), Milagres por Andar (5)."""
+    g = max(1, min(5, int(grau or 1)))
+    return {"vant_social": True, "bencao": g >= 2, "preces": max(0, g - 2), "milagres": (1 + (1 if igreja_grau5 else 0)) if g >= 5 else 0,
+            "discipulos": {2: 1, 3: 1, 4: 2, 5: 3}.get(g, 0), "bencao_alcance": 18 if g >= 4 else 9}
+
+
+def dt_milagre(a, nivel):
+    return 10 + bonus_combate(a.get("FE", 0)) + nivel // 3

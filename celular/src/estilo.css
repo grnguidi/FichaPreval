@@ -523,3 +523,4 @@ html.noite .turno-aviso.sua,html.noite .ficha-acao.t-bonus,html.noite .modo-pill
 /* dados físicos */
 .pegue{margin:0 0 8px;padding:8px 12px;border:1.5px solid var(--chumbo);border-radius:14px 14px 4px 4px;background:var(--campo);font-family:var(--tit);letter-spacing:.03em}
 .pegue b{color:var(--vinho);font-size:18px}
+.item.on{outline:2px solid var(--ouro);outline-offset:-2px}

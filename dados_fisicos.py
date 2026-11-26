@@ -38,10 +38,12 @@ def ataque(pedido, bonus, vant, margem=20, desv=False):
             "margem": margem, "critico": False, "garantido": False, "desastre": False, "natural": None}
 
 
-def teste(pedido, bonus, nd20=1):
-    n = max(1, int(nd20 or 1))
+def teste(pedido, bonus, nd20=1, desv=False):
+    n, menor = max(1, int(nd20 or 1)), False
+    if desv:   # membros perdidos: a desvantagem tira um d20 de vantagem; sem nenhum, 2d20 e fica o menor
+        n, menor = (n - 1, False) if n > 1 else (2, True)
     pedido.pedir(n, 20)
-    return {"fisico": True, "d20": [], "n": n, "bonus": bonus, "total": None}
+    return {"fisico": True, "d20": [], "n": n, "menor": menor, "bonus": bonus, "total": None}
 
 
 def expr(pedido, e, mult=2):
@@ -79,4 +81,4 @@ def txt_dano(info, rot="Dano"):
 
 
 def txt_teste(nome, r, tipo="pericia", talentos=()):
-    return f"{nome}: role {qtos_d20(r['n'])} {sinal(r['bonus'])}." + nota_rerrolar(tipo, talentos)
+    return f"{nome}: role {qtos_d20(r['n'], r.get('menor'))} {sinal(r['bonus'])}." + nota_rerrolar(tipo, talentos)

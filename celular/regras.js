@@ -573,6 +573,112 @@
     return achou ? total : null;
   }
 
+  // ---------------- Corpo: Perda de Membros (3.4) — veja regras.py
+  const TIPOS_MEMBRO = [["olhos", "Olho"], ["bracos", "Braço"], ["pernas", "Perna"]];
+  const ARMAS_DUAS_MAOS = ["Arco", "Lança-Arma", "Lâmina-Dínamo", "Espada Grande", "Machado Grande", "Besta Pesada", "Bastão"];
+  const ARMAS_DISTANCIA = ["Arco", "Besta Pesada"];
+  function nomeMembro(tipo, i) {
+    const base = Object.fromEntries(TIPOS_MEMBRO)[tipo];
+    if (i < 2) return `${base} ${tipo !== "pernas" ? ["esquerdo", "direito"][i] : ["esquerda", "direita"][i]}`;
+    return `${base} ${i + 1}`;
+  }
+  const nomeMao = (b) => b.replace("Braço", "Mão").replace("esquerdo", "esquerda").replace("direito", "direita");
+  function corpoPadrao(olhos = 2, bracos = 2, pernas = 2) {
+    const r = (n) => [...Array(n).keys()];
+    return { olhos: r(olhos).map((i) => ({ nome: nomeMembro("olhos", i), perdido: false })),
+      bracos: r(bracos).map((i) => ({ nome: nomeMembro("bracos", i), perdido: false, mao: true })),
+      pernas: r(pernas).map((i) => ({ nome: nomeMembro("pernas", i), perdido: false })), outros: [] };
+  }
+  function normalizarCorpo(c) {
+    if (!c || typeof c !== "object" || Array.isArray(c)) return corpoPadrao();
+    const out = {};
+    for (const [tipo] of TIPOS_MEMBRO) {
+      const lista = Array.isArray(c[tipo]) ? c[tipo] : corpoPadrao()[tipo];
+      out[tipo] = lista.slice(0, 12).map((m, i) => {
+        m = m && typeof m === "object" ? m : {};
+        const x = { nome: String(m.nome || nomeMembro(tipo, i)), perdido: !!m.perdido };
+        if (tipo === "bracos") x.mao = (m.mao === undefined ? true : !!m.mao) && !x.perdido;
+        return x;
+      });
+    }
+    out.outros = (Array.isArray(c.outros) ? c.outros : []).filter((m) => m && typeof m === "object").slice(0, 12)
+      .map((m) => ({ nome: String(m.nome || "Membro"), perdido: !!m.perdido }));
+    return out;
+  }
+  const nivelPerda = (total, sobram) => (sobram >= total || sobram >= 2 ? 0 : sobram === 1 ? 1 : 2);
+  function penalidadesMembros(corpo) {
+    const c = normalizarCorpo(corpo), { olhos, bracos, pernas } = c;
+    const p = { estados: [], ca: 0, reflexo: 0, atletismo: 0, percepcao: 0, acerto_dist: 0,
+      desv_ataque: false, desv_reflexo: false, desv_atletismo: false, carga_pct: 100, mov: "",
+      maos: 0, nivel_maos: 0, nivel_bracos: 0, sem_uso_duplo: false, sem_escudo_com_arma: false,
+      sem_agarrar: false, sem_oportunidade: false, notas: [] };
+    const o = nivelPerda(olhos.length, olhos.filter((m) => !m.perdido).length);
+    if (o === 1) {
+      p.estados.push("Visão Parcial"); p.acerto_dist = -2; p.percepcao = -2;
+      p.notas.push("Visão Parcial: −2 em ataques à distância (alvo a mais de 3 m) e em Percepção que dependa de visão.");
+    } else if (o === 2) {
+      p.estados.push("Cegueira"); p.desv_ataque = p.desv_reflexo = true; p.ca -= 2;
+      p.notas.push("Cegueira: desvantagem em ataques e Reflexo, −2 de CA, falha automática em testes de visão; contra alvo que só ouve, 50% de chance de errar.");
+    }
+    const ok = bracos.filter((m) => !m.perdido), maos = ok.filter((m) => m.mao).length;
+    p.maos = maos;
+    const nb = nivelPerda(bracos.length, ok.length), nm = Math.max(nb, nivelPerda(bracos.length, maos));
+    p.nivel_maos = nm; p.nivel_bracos = nb;
+    if (nm >= 1) p.sem_uso_duplo = true;
+    if (nm === 1) {
+      p.estados.push(nb === 1 ? "Braço Único" : "Mão Única"); p.sem_escudo_com_arma = true;
+      p.notas.push("Mão Única: uma arma de uma mão ou um foco; sem uso duplo e sem escudo junto com arma; armas de duas mãos com −4 de acerto e −1 dado de dano.");
+    } else if (nm === 2) {
+      p.estados.push(nb === 2 ? "Sem Braços" : "Sem Mãos"); p.sem_escudo_com_arma = true;
+      p.notas.push(nb === 2 ? "Sem Braços: só ataca desarmado (chutes e cabeçadas); falha automática em Atletismo que exija os braços."
+        : "Sem Mãos: não empunha armas, escudos nem focos; ataca desarmado ou com arma de uma mão presa ao antebraço, com desvantagem. Sem armas de duas mãos.");
+    }
+    if (nb === 1) { p.atletismo -= 2; p.sem_agarrar = true; p.carga_pct = 75; p.notas.push("Braço Único: −2 em Atletismo, sem a ação Agarrar, Carga reduzida em 25%."); }
+    else if (nb === 2) { p.sem_agarrar = true; p.carga_pct = 50; p.notas.push("Carga reduzida à metade."); }
+    const np = nivelPerda(pernas.length, pernas.filter((m) => !m.perdido).length);
+    if (np === 1) { p.estados.push("Perneta"); p.mov = "metade"; p.reflexo -= 2; p.atletismo -= 2; p.notas.push("Perneta: deslocamento pela metade e −2 em Reflexo e Atletismo."); }
+    else if (np === 2) {
+      p.estados.push("Sem Pernas"); p.mov = "arrasta"; p.desv_reflexo = p.desv_atletismo = true; p.sem_oportunidade = true;
+      p.notas.push("Sem Pernas: só se arrasta 1,5 m por ação de movimento; −2 de CA contra corpo a corpo, desvantagem em Reflexo e Atletismo, sem Golpe de Oportunidade.");
+    }
+    const outros = c.outros.filter((m) => m.perdido).map((m) => m.nome);
+    if (outros.length) p.notas.push("Perdidos (sem regra do livro, o Mestre decide): " + outros.join(", ") + ".");
+    return p;
+  }
+  const movimentoComMembros = (mov, p) => (p.mov === "metade" ? mov / 2 : p.mov === "arrasta" ? 1.5 : mov);
+  function tirarDado(dano) {
+    const dados = [...dano.matchAll(/(\d+)d(\d+)/g)];
+    if (!dados.length) return dano;
+    const maior = Math.max(...dados.map((m) => +m[2])), m = dados.find((x) => +x[2] === maior);
+    return +m[1] <= 1 ? dano : dano.replace(new RegExp(`\\b${m[1]}d${m[2]}\\b`), `${+m[1] - 1}d${m[2]}`);
+  }
+  function penalidadeArmaMembros(p, grupo, des = 0) {
+    let acerto = 0, dados = 0, desv = p.desv_ataque, proibe = "";
+    if (ARMAS_DISTANCIA.includes(grupo)) acerto += p.acerto_dist;
+    const duas = ARMAS_DUAS_MAOS.includes(grupo) && !(grupo === "Bastão" && cap(des) >= 50);
+    if (p.nivel_bracos === 2) proibe = "sem braços, só ataca desarmado";
+    else if (p.nivel_maos === 2) { if (duas) proibe = "sem mãos não usa arma de duas mãos"; else desv = true; }
+    else if (p.nivel_maos === 1 && duas) { acerto -= 4; dados -= 1; }
+    return [acerto, dados, desv, proibe];
+  }
+  function membrosParaSortear(corpo) {
+    const c = normalizarCorpo(corpo), out = [];
+    c.olhos.forEach((m, i) => { if (!m.perdido) out.push(["olhos", i, "", m.nome]); });
+    c.bracos.forEach((m, i) => { if (!m.perdido && m.mao) out.push(["bracos", i, "mao", nomeMao(m.nome)]); });
+    c.bracos.forEach((m, i) => { if (!m.perdido) out.push(["bracos", i, "", m.nome]); });
+    c.pernas.forEach((m, i) => { if (!m.perdido) out.push(["pernas", i, "", m.nome]); });
+    return out;
+  }
+  const perdeMembro = (dano, vidaMax) => vidaMax > 0 && dano >= vidaMax / 2;
+  // ---------------- Cultos e Igrejas (3.4)
+  const CULTO_FE_MIN = 20, IGREJAS = { Capela: 1, Templo: 2, Catedral: 3 };
+  function poderesCulto(grau, igrejaGrau5 = false) {
+    const g = Math.max(1, Math.min(5, Math.trunc(Number(grau) || 1)));
+    return { vant_social: true, bencao: g >= 2, preces: Math.max(0, g - 2), milagres: g >= 5 ? 1 + (igrejaGrau5 ? 1 : 0) : 0,
+      discipulos: { 2: 1, 3: 1, 4: 2, 5: 3 }[g] || 0, bencao_alcance: g >= 4 ? 18 : 9 };
+  }
+  const dtMilagre = (a, nivel) => 10 + bonusCombate(a.FE || 0) + fdiv(nivel, 3);
+
   const R = {
     ATRIBUTOS, NOMES_ATR, ATR_POR_NOME, VALORES_INICIAIS, NIVEL_MAX, PERICIAS, PERICIAS_ATAQUE, PERICIAS_DEFESA, RESISTENCIAS,
     CONDICOES, LIMIARES_ACOES, ACERTO_ARMA, GRUPOS_ARMA, BONUS_SEM_ALMA,
@@ -587,6 +693,8 @@
     TIPOS_ACAO, ACOES_LIVRO, RECURSOS_ARMA, ALMA_TABELAS, ALMA_CATEGORIAS, ALMA_EXECUCAO, ALMA_AJUSTES, CAMINHOS, ETAPAS_META, METAS_MAX, CONTOS_POR, MOEDAS, PERICIAS_RESUMO, ATRIBUTOS_RESUMO, REFEICOES, efeitosAtributo,
     CA_MAX, dtProvocar, dtForca, contarCicatrizes, dtMedicina, efeitosEquipamento, talismaFamiliaNivel, acoesDoTurno, usosLimitados, recarrega, acaoArma, linhaDanoNivel, almaNivelEfetivo, almaDtAjuste, almaValor, recompensaMetas,
     precoEmContos, separarMoedas, formatarDinheiro, lerDinheiro,
+    TIPOS_MEMBRO, ARMAS_DUAS_MAOS, ARMAS_DISTANCIA, nomeMembro, nomeMao, corpoPadrao, normalizarCorpo, penalidadesMembros, movimentoComMembros, tirarDado,
+    penalidadeArmaMembros, membrosParaSortear, perdeMembro, CULTO_FE_MIN, IGREJAS, poderesCulto, dtMilagre,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = R; else raiz.R = R;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -19,6 +19,7 @@ function novoEstado() {
     manual: {}, talentos_ativos: [], talentos_escolha: {}, desgaste: {}, turnos_n: 0, descansos_curtos: 0,
     acoes_extras_tipos: [], turno: {}, usos: {}, contra_usados: 0, recursos: {}, dinheiro_c: 0, diario: [],
     meta: { caminho: "", mentor: "", etapas: [false, false, false], concluidas: 0, notas: "" },
+    corpo: R.corpoPadrao(), culto: Object.assign({}, CULTO_VAZIO),
   };
 }
 function normalizar(s) {
@@ -63,6 +64,8 @@ function normalizar(s) {
   out.alma.habilidades = (Array.isArray(out.alma.habilidades) ? out.alma.habilidades : []).filter((h) => h && (h.nome || h.efeito))
     .map((h) => Object.assign({ nome: "", efeito: "", tipo: "", cats: [], tabela: "", ajustes: [], execucao: "" }, h));
   out.descansos_curtos = int(out.descansos_curtos);
+  out.corpo = R.normalizarCorpo(s && s.corpo);   // Perda de Membros (3.4)
+  out.culto = normalizarCulto(out.culto);          // Cultos e Igrejas (3.4)
   return out;
 }
 function salvar() {

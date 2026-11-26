@@ -92,6 +92,24 @@ for _ in range(400):
     mx_ = {"vida": 100, "mana": 50, "vigor": 20}
     equip_t.append({"sets": sets_q, "tals": tals, "ativos": ativos, "ctx": ctx, "r": r_, "fila": fila_, "d": d_, "valor": valor_, "tipo": tipo_,
                     "dano": dano_, "pct": pct_, "tp": tp_, "mx": mx_, "desc": list(R.descanso(tp_, mx_, {"vida": 10, "mana": 5, "vigor": 3}, {}, pct_))})
+corpo_t = []
+for _ in range(600):
+    c = R.corpo_padrao(rnd.randint(0, 4), rnd.randint(0, 4), rnd.randint(0, 4))
+    for t in ("olhos", "bracos", "pernas"):
+        for m in c[t]:
+            m["perdido"] = rnd.random() < .35
+            if t == "bracos": m["mao"] = rnd.random() < .7
+    if rnd.random() < .3: c["outros"] = [{"nome": "Cauda", "perdido": rnd.random() < .5}]
+    if rnd.random() < .1: c = rnd.choice([None, {}, {"olhos": "x"}, []])
+    pm = R.penalidades_membros(c)
+    g, des = rnd.choice(DADOS["armas"])["nome"], rnd.randint(0, 99)
+    dano = rnd.choice(["1d8", "2d6 + 1d4", "3d10+2", "5", "1d4 + 1"])
+    corpo_t.append({"c": c, "norm": R.normalizar_corpo(c), "p": pm, "g": g, "des": des, "arma": list(R.penalidade_arma_membros(pm, g, des)),
+                    "mov": R.movimento_com_membros(rnd.choice([9, 12, 15]), pm), "mov_in": None, "sort": [list(x) for x in R.membros_para_sortear(c)],
+                    "dano": dano, "tirar": R.tirar_dado(dano), "grau": (gr := rnd.choice([0, 1, 2, 3, 4, 5, 7, "x"] if False else [0, 1, 2, 3, 4, 5, 7])),
+                    "ig": (ig := rnd.random() < .5), "poder": R.poderes_culto(gr, ig), "fe": (fe := rnd.randint(0, 120)), "nv": (nv := rnd.randint(1, 30)),
+                    "dtm": R.dt_milagre({"FE": fe}, nv)})
+    corpo_t[-1]["mov_in"] = None
 rec = [[p_, e, R.recarrega(p_, e)] for p_ in list(R.NIVEL_RECARGA) for e in R.EVENTO_RECARGA]
-json.dump({"casos": casos, "itens": DADOS["itens"], "acoes": acoes, "usos": usos, "extras": extras, "rec": rec, "sets": sets_t, "equip": equip_t}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
+json.dump({"casos": casos, "itens": DADOS["itens"], "acoes": acoes, "usos": usos, "extras": extras, "rec": rec, "sets": sets_t, "equip": equip_t, "corpo": corpo_t}, open(os.path.join(AQUI, "casos3.json"), "w", encoding="utf-8"), ensure_ascii=False)
 print(len(casos), "casos")

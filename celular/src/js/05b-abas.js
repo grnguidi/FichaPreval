@@ -11,16 +11,16 @@ const IC = {   // ícones de traço, todos do mesmo desenho (24×24, cor do text
 };
 const icone = (k) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]}</svg>`;
 const ABAS = {
-  ficha: { rot: "Ficha", subs: [["resumo", "Resumo"], ["atributos", "Atributos"], ["especie", "Espécie e alma"]] },
+  ficha: { rot: "Ficha", subs: [["resumo", "Resumo"], ["atributos", "Atributos"], ["corpo", "Corpo"], ["especie", "Espécie e alma"]] },
   combate: { rot: "Combate", subs: [["turno", "Turno"], ["armas", "Armas"], ["magias", "Magias"], ["defesas", "Defesas"]] },
   saberes: { rot: "Saberes", subs: [["pericias", "Perícias"], ["talentos", "Talentos"], ["grimorio", "Grimório"]] },
   bolsa: { rot: "Bolsa", subs: [["itens", "Itens"], ["equip", "Equipamento"], ["dinheiro", "Dinheiro"]] },
-  diario: { rot: "Diário", subs: [["notas", "Notas"], ["rolagens", "Rolagens"], ["metas", "Metas e vínculos"]] },
+  diario: { rot: "Diário", subs: [["notas", "Notas"], ["rolagens", "Rolagens"], ["metas", "Metas e vínculos"], ["crenca", "Crença"]] },
   grupo: { rot: "Grupo", subs: [] },
 };
 // nomes antigos de aba (botões, avisos e o Layout de mesa ainda podem pedir por eles)
 const ALIAS_ABA = { pericias: ["saberes", "pericias"], grimorio: ["saberes", "grimorio"], talentos: ["saberes", "talentos"], alma: ["ficha", "especie"],
-  notas: ["diario", "notas"], turno: ["combate", "turno"], metas: ["diario", "metas"], rolagens: ["diario", "rolagens"] };
+  notas: ["diario", "notas"], corpo: ["ficha", "corpo"], crenca: ["diario", "crenca"], turno: ["combate", "turno"], metas: ["diario", "metas"], rolagens: ["diario", "rolagens"] };
 function irPara(a, s) {
   if (ALIAS_ABA[a]) [a, s] = ALIAS_ABA[a];
   aba = ABAS[a] ? a : "ficha";
@@ -125,6 +125,7 @@ function paginaAtual() {
     const f = secoesDe(pFicha());
     if (s === "atributos") return montar(pegar(f, ["Atributos"]));
     if (s === "especie") return montar(secoesDe(pEspecie() + (S.sem_alma ? "" : pAlma())));
+    if (s === "corpo") return montar(secoesDe(pCorpo()));
     return montar(tirar(f, ["Atributos"]));
   }
   if (aba === "combate") {
@@ -150,6 +151,7 @@ function paginaAtual() {
   if (aba === "diario") {
     if (s === "rolagens") return montar(secoesDe(pRolagens()));
     if (s === "metas") return montar(pegar(secoesDe(pTalentos()), ["Metas de Vida", "Vínculos"]));
+    if (s === "crenca") return montar(secoesDe(pCrenca()));
     return montar(secoesDe(pNotas()));
   }
   if (aba === "grupo") return pGrupo();

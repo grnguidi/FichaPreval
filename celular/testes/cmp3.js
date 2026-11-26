@@ -57,6 +57,15 @@ for (const e of extras) {
   if (R.precoEmContos(e.txt) !== e.preco) falha(e, "preço " + e.txt, R.precoEmContos(e.txt), e.preco);
   if (!igual(R.recompensaMetas(e.metas_in), e.metas)) falha(e, "metas", R.recompensaMetas(e.metas_in), e.metas);
 }
+for (const x of (dados.corpo || [])) {
+  const n = R.normalizarCorpo(x.c); if (!igual(n, x.norm)) falha(x, "corpo normalizado", n, x.norm);
+  const p = R.penalidadesMembros(x.c); if (!igual(p, x.p)) falha(x, "penalidades de membros", p, x.p);
+  const a = R.penalidadeArmaMembros(x.p, x.g, x.des); if (!igual(a, x.arma)) falha(x, "arma e membros", a, x.arma);
+  const s = R.membrosParaSortear(x.c); if (!igual(s, x.sort)) falha(x, "sortear membro", s, x.sort);
+  if (R.tirarDado(x.dano) !== x.tirar) falha(x, "tirar dado", R.tirarDado(x.dano), x.tirar);
+  const pc = R.poderesCulto(x.grau, x.ig); if (!igual(pc, x.poder)) falha(x, "poderes do culto", pc, x.poder);
+  if (R.dtMilagre({ FE: x.fe }, x.nv) !== x.dtm) falha(x, "DT do milagre", R.dtMilagre({ FE: x.fe }, x.nv), x.dtm);
+}
 for (const [p, e, esp] of rec) if (R.recarrega(p, e) !== esp) falha(null, "recarga " + p + "/" + e, R.recarrega(p, e), esp);
 console.log(`ações de arma ${acoes.length}, textos de usos ${usos.length}, extras ${extras.length}`);
 console.log(`regras novas: ${casos.length} casos, ${erros} diferenças`);
